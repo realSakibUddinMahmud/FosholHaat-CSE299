@@ -1,0 +1,234 @@
+/*
+ * FosholHaat Web Global CSS
+ * Maps canonical --fh-* token variables from packages/tokens/web.css
+ * to the short-form variable names consumed by CSS modules.
+ * This file is imported in layout.tsx to ensure all token values
+ * are available globally.
+ */
+
+@import "../../../../packages/tokens/web.css";
+
+:root {
+  /* Brand */
+  --brand-primary: var(--fh-color-brand-primary);
+  --brand-strong: var(--fh-color-brand-strong);
+  --brand-hover: var(--fh-color-brand-hover);
+  --brand-active: var(--fh-color-brand-active);
+
+  /* Color */
+  --color-canvas: var(--fh-color-canvas);
+  --color-surface: var(--fh-color-surface);
+  --color-soft: var(--fh-color-soft);
+  --color-surface-muted: var(--fh-color-surface-muted);
+  --color-surface-neutral: var(--fh-color-surface-neutral);
+  --color-progress-track: var(--fh-color-progress-track);
+  --color-dark: var(--fh-color-dark);
+  --color-text-primary: var(--fh-color-text-primary);
+  --color-text-strong: var(--fh-color-text-strong);
+  --color-text-body: var(--fh-color-text-body);
+  --color-text-secondary: var(--fh-color-text-secondary);
+  --color-text-tertiary: var(--fh-color-text-tertiary);
+  --color-text-nav: var(--fh-color-text-nav);
+  --color-border-soft: var(--fh-color-border-soft);
+  --color-border-neutral: var(--fh-color-border-neutral);
+  --color-border-neutral-strong: var(--fh-color-border-neutral-strong);
+  --color-alert-live: var(--fh-color-alert-live);
+  --color-warning-low-stock: var(--fh-color-warning-low-stock);
+  --color-success-soft: var(--fh-color-success-soft);
+  --color-success-text: var(--fh-color-success-text);
+  --color-success-bright: var(--fh-color-success-bright);
+  --color-success-icon: var(--fh-color-success-icon);
+  --color-selected-surface: var(--fh-color-selected-surface);
+  --color-primary-tint: var(--fh-color-primary-tint);
+  --color-success-bright-tint: var(--fh-color-success-bright-tint);
+  --color-surface-glass: var(--fh-color-surface-glass);
+  --color-panel-glass: var(--fh-color-panel-glass);
+  --color-panel-glass-border: var(--fh-color-panel-glass-border);
+  --color-surface-overlay: var(--fh-color-surface-overlay);
+  --color-surface-overlay-strong: var(--fh-color-surface-overlay-strong);
+  --color-border-overlay: var(--fh-color-border-overlay);
+  --color-error-surface: var(--fh-color-error-surface);
+  --color-error-border: var(--fh-color-error-border);
+  --color-primary-tint-soft: var(--fh-color-primary-tint-soft);
+
+  /* Typography */
+  --font-family-sans: var(--fh-font-sans);
+  --font-brand-title: var(--fh-font-brand-title);
+  --font-section-title: var(--fh-font-section-title);
+  --font-hero-title: var(--fh-font-hero-title);
+  --font-product-card-title: var(--fh-font-product-card-title);
+  --font-body-meta: var(--fh-font-body-meta);
+  --font-cta-label: var(--fh-font-cta-label);
+  --font-utility-label: var(--fh-font-utility-label);
+
+  /* Spacing */
+  --spacing-shell-horizontal: var(--fh-space-shell-horizontal);
+  --spacing-header-top: var(--fh-space-header-top);
+  --spacing-search-height: var(--fh-space-search-height);
+  --spacing-pill-height: var(--fh-space-pill-height);
+  --spacing-hero-padding: var(--fh-space-hero-padding);
+  --spacing-product-card-padding: var(--fh-space-product-card-padding);
+  --spacing-separator-band-height: var(--fh-space-separator-band-height);
+
+  /* Radius */
+  --radius-base: var(--fh-radius-base);
+  --radius-control: var(--fh-radius-control);
+  --radius-panel: var(--fh-radius-panel);
+  --radius-large: var(--fh-radius-large);
+  --radius-card: var(--fh-radius-card);
+  --radius-sheet: var(--fh-radius-sheet);
+  --radius-product-card: var(--fh-radius-product-card);
+  --radius-hero-card: var(--fh-radius-hero-card);
+  --radius-pill: var(--fh-radius-pill);
+  --radius-micro-badge: var(--fh-radius-micro-badge);
+
+  /* Shadow */
+  --shadow-shell: var(--fh-shadow-shell);
+  --shadow-hero-card: var(--fh-shadow-hero-card);
+  --shadow-product-card: var(--fh-shadow-product-card);
+  --shadow-cta: var(--fh-shadow-cta);
+  --shadow-cta-heavy: var(--fh-shadow-cta-heavy);
+  --shadow-auth-shell: var(--fh-shadow-auth-shell);
+  --shadow-auth-panel: var(--fh-shadow-auth-panel);
+  --shadow-auth-card: var(--fh-shadow-auth-card);
+  --shadow-login-card: var(--fh-shadow-login-card);
+  --shadow-soft-lift: var(--fh-shadow-soft-lift);
+  --shadow-focus-ring: var(--fh-shadow-focus-ring);
+
+  /* Gradients */
+  --gradient-brand: var(--fh-gradient-brand);
+  --gradient-brand-text: var(--fh-gradient-brand-text);
+  --gradient-success-text: var(--fh-gradient-success-text);
+  --gradient-hero-panel: var(--fh-gradient-hero-panel);
+
+  /* Blur */
+  --blur-glass: var(--fh-blur-glass);
+
+  /* Motion */
+  --motion-fast: var(--fh-motion-fast);
+  --motion-standard: var(--fh-motion-standard);
+  --motion-slow: var(--fh-motion-slow);
+
+  /* UI semantics derived from canonical tokens */
+  --color-selection-background: var(--color-success-soft);
+  --color-selection-text: var(--color-text-strong);
+  --auth-shell-header-background: var(--color-surface-overlay-strong);
+  --auth-shell-panel-background: var(--color-surface-overlay-strong);
+  --auth-shell-footer-background: var(--color-surface-overlay-strong);
+  --auth-shell-divider-color: var(--color-border-overlay);
+  --auth-shell-background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-canvas) 100%);
+  --auth-hero-background: var(--gradient-hero-panel);
+  --auth-hero-kicker-color: var(--brand-primary);
+  --auth-hero-kicker-on-dark: var(--color-success-soft);
+  --auth-hero-title-color: var(--color-text-strong);
+  --auth-hero-accent-color: var(--brand-primary);
+  --auth-hero-body-color: var(--color-text-body);
+  --auth-hero-card-background: var(--color-surface-overlay-strong);
+  --auth-hero-card-border: var(--color-border-overlay);
+  --auth-hero-icon-background: var(--color-primary-tint-soft);
+  --auth-hero-icon-color: var(--brand-primary);
+  --auth-shell-stage-max-width: 1600px;
+  --auth-shell-stage-inline-gutter: calc(var(--spacing-shell-horizontal) * 2);
+  --auth-shell-stage-columns: minmax(0, 1fr) minmax(420px, 0.92fr);
+  --auth-shell-header-gap: var(--spacing-shell-horizontal);
+  --auth-shell-header-min-height: calc(var(--spacing-header-top) * 3.25);
+  --auth-shell-header-padding-inline: calc(var(--spacing-shell-horizontal) * 2);
+  --auth-shell-header-action-gap: var(--spacing-product-card-padding);
+  --auth-shell-hero-padding: calc(var(--spacing-header-top) * 3) calc(var(--spacing-header-top) * 2.5)
+    calc(var(--spacing-header-top) * 2.5);
+  --auth-shell-panel-padding: calc(var(--spacing-header-top) * 3) calc(var(--spacing-shell-horizontal) * 2)
+    calc(var(--spacing-header-top) * 2.5);
+  --auth-shell-footer-gap: var(--spacing-shell-horizontal);
+  --auth-shell-footer-padding: var(--spacing-shell-horizontal)
+    calc(var(--spacing-shell-horizontal) * 2) var(--spacing-header-top);
+  --auth-shell-footer-link-gap: calc(var(--spacing-product-card-padding) * 2);
+  --auth-shell-footer-text-size: 0.84rem;
+  --auth-shell-footer-note-spacing: 0.14em;
+  --auth-shell-footer-link-spacing: 0.12em;
+  --auth-shell-mobile-header-padding: 18px var(--spacing-header-top);
+  --auth-shell-mobile-panel-padding: calc(var(--spacing-header-top) * 1.5)
+    var(--spacing-shell-horizontal);
+  --auth-shell-mobile-footer-padding: var(--spacing-shell-horizontal) var(--spacing-header-top)
+    var(--spacing-header-top);
+  --auth-type-overline-size: calc(var(--spacing-product-card-padding));
+  --auth-type-overline-spacing: 0.15em;
+  --auth-type-display-size: calc(var(--spacing-header-top) * 2.5);
+  --auth-type-display-mobile-size: calc(var(--spacing-shell-horizontal) * 2);
+  --auth-type-section-size: calc(var(--spacing-shell-horizontal) * 1.5);
+  --auth-type-body-lg-size: calc(var(--spacing-header-top) * 0.75);
+  --auth-type-body-md-size: 0.95rem;
+  --auth-type-body-sm-size: calc(var(--spacing-product-card-padding));
+  --auth-type-label-size: 0.75rem;
+  --auth-type-label-compact-size: 0.625rem;
+  --auth-type-display-tracking: -0.05em;
+  --auth-type-section-tracking: -0.025em;
+  --auth-type-label-spacing: 0.05em;
+  --auth-type-label-wide-spacing: 0.1em;
+  --auth-type-step-spacing: 0.2em;
+  --auth-type-icon-xs-size: 0.75rem;
+  --auth-type-icon-sm-size: 0.8rem;
+  --auth-type-icon-md-size: 0.85rem;
+  --auth-type-icon-lg-size: 0.9rem;
+  --auth-type-feedback-size: 0.94rem;
+  --auth-type-role-display-size: calc(var(--spacing-shell-horizontal) * 2.4);
+  --auth-layout-card-padding: var(--spacing-header-top);
+  --auth-layout-card-gap: var(--spacing-product-card-padding);
+  --auth-layout-control-height: calc(var(--spacing-header-top) * 2.3333);
+  --auth-layout-control-radius: var(--radius-product-card);
+  --auth-layout-support-gap: 0.75rem;
+  --auth-layout-copy-max-width: 32rem;
+  --auth-layout-micro-gap: 0.25rem;
+  --auth-layout-pill-radius: 999px;
+  --auth-layout-card-border-width: 2px;
+  --auth-layout-divider-width: 1px;
+  --auth-login-stage-columns: minmax(0, 1fr) minmax(420px, 0.9fr);
+  --auth-login-hero-padding: calc(var(--spacing-header-top) * 3)
+    calc(var(--spacing-header-top) + var(--spacing-shell-horizontal))
+    calc(var(--spacing-header-top) * 2.5) calc(var(--spacing-header-top) * 2.5);
+  --auth-login-panel-padding: calc(var(--spacing-header-top) * 3)
+    calc(var(--spacing-header-top) * 2.5) calc(var(--spacing-header-top) * 2.5)
+    var(--spacing-header-top);
+  --auth-login-card-max-width: 28rem;
+  --auth-login-card-blur-offset: calc(var(--spacing-header-top) * -4);
+  --auth-login-card-blur-size: 12rem;
+  --auth-login-card-blur-strength: 3rem;
+  --auth-login-input-inline-padding: calc(var(--spacing-shell-horizontal) + 0.25rem);
+  --auth-login-toggle-right: calc(var(--spacing-shell-horizontal) * 0.88);
+  --auth-login-hero-background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-canvas) 100%);
+  --auth-role-left-max-width: 28rem;
+  --auth-role-right-max-width: 36rem;
+  --auth-language-stage-width: min(1440px, calc(100% - calc(var(--spacing-shell-horizontal) * 4)));
+  --auth-language-stage-width-mobile: calc(100% - calc(var(--spacing-shell-horizontal) * 1.6));
+  --auth-language-stage-margin-top: calc(var(--spacing-shell-horizontal) * 2);
+  --auth-language-stage-margin-top-mobile: var(--spacing-header-top);
+  --auth-language-frame-padding: calc(var(--spacing-header-top) * 2.6667)
+    calc(var(--spacing-header-top) * 2.5) calc(var(--spacing-header-top) * 2);
+  --auth-language-frame-padding-mobile: calc(var(--spacing-header-top) * 1.5) var(--spacing-header-top);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--color-selection-background);
+  color: var(--color-selection-text);
+  -webkit-text-fill-color: var(--color-selection-text);
+}
+
+::-moz-selection {
+  background: var(--color-selection-background);
+  color: var(--color-selection-text);
+}

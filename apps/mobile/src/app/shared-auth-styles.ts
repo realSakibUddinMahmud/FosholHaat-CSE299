@@ -1,0 +1,267 @@
+import { StyleSheet } from 'react-native';
+import { MOBILE_TOKENS, TOKENS } from '../styles/tokens';
+
+export const sharedAuthStyles = StyleSheet.create({
+  helperText: {
+    color: TOKENS.color.textSecondary,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  helperTextStrong: {
+    color: TOKENS.color.textPrimary,
+    fontWeight: '700',
+  },
+  primaryButton: {
+    backgroundColor: TOKENS.brand.primary,
+    borderRadius: MOBILE_TOKENS.radius.productCard,
+    minHeight: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: TOKENS.brand.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 5,
+  },
+  primaryButtonDisabled: {
+    opacity: 0.5,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  primaryButtonText: {
+    color: TOKENS.color.surface,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  arrowText: {
+    color: TOKENS.color.surface,
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  inputGroup: {
+    gap: 8,
+  },
+  label: {
+    color: TOKENS.color.textPrimary,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    fontWeight: '700',
+  },
+  inlineMeta: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  inlineAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaLink: {
+    color: TOKENS.brand.primary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  input: {
+    minHeight: 58,
+    borderRadius: MOBILE_TOKENS.radius.productCard,
+    borderWidth: 1,
+    borderColor: TOKENS.color.borderSoft,
+    paddingHorizontal: MOBILE_TOKENS.spacing.productCardPadding,
+    paddingVertical: 14,
+    backgroundColor: TOKENS.color.canvas,
+    color: TOKENS.color.textPrimary,
+    fontSize: 16,
+  },
+  focusedInput: {
+    borderColor: TOKENS.brand.primary,
+    backgroundColor: TOKENS.color.surface,
+  },
+  inputRow: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  inputWithLeading: {
+    paddingLeft: 52,
+  },
+  inputWithTrailing: {
+    paddingRight: 52,
+  },
+  leadingIcon: {
+    position: 'absolute',
+    left: MOBILE_TOKENS.spacing.productCardPadding,
+    color: TOKENS.color.textTertiary,
+    fontSize: 16,
+    fontWeight: '700',
+    zIndex: 1,
+  },
+  trailingAction: {
+    position: 'absolute',
+    right: MOBILE_TOKENS.spacing.productCardPadding,
+    color: TOKENS.color.textTertiary,
+    fontSize: 13,
+    fontWeight: '700',
+    zIndex: 1,
+  },
+  trailingActionButton: {
+    position: 'absolute',
+    right: MOBILE_TOKENS.spacing.productCardPadding,
+  },
+  optionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 18,
+    borderRadius: MOBILE_TOKENS.radius.productCard,
+    borderWidth: 2,
+    borderColor: TOKENS.color.soft,
+    backgroundColor: TOKENS.color.surface,
+    gap: 16,
+  },
+  optionCardActive: {
+    borderColor: TOKENS.brand.primary,
+    backgroundColor: TOKENS.color.selectedSurface,
+  },
+  optionBody: {
+    flex: 1,
+    gap: 4,
+  },
+  optionLead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+  },
+  optionBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: MOBILE_TOKENS.radius.productCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: TOKENS.color.soft,
+  },
+  optionBadgeActive: {
+    backgroundColor: TOKENS.brand.primary,
+  },
+  optionBadgeText: {
+    color: TOKENS.color.textSecondary,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    fontWeight: '800',
+  },
+  optionBadgeTextActive: {
+    color: TOKENS.color.surface,
+  },
+  optionTitle: {
+    color: TOKENS.color.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  optionDescription: {
+    color: TOKENS.color.textSecondary,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    lineHeight: 21,
+  },
+  radio: {
+    width: 24,
+    height: 24,
+    borderRadius: MOBILE_TOKENS.radius.control,
+    borderWidth: 2,
+    borderColor: TOKENS.color.textTertiary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioActive: {
+    borderColor: TOKENS.brand.primary,
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: MOBILE_TOKENS.radius.base,
+    backgroundColor: TOKENS.brand.primary,
+  },
+  roleCard: {
+    borderRadius: MOBILE_TOKENS.radius.card,
+    borderWidth: 2,
+    borderColor: TOKENS.color.soft,
+    backgroundColor: TOKENS.color.surface,
+    padding: 20,
+    gap: 10,
+  },
+  roleCardActive: {
+    borderColor: TOKENS.brand.primary,
+    backgroundColor: TOKENS.color.selectedSurface,
+  },
+  roleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  roleLead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    flex: 1,
+  },
+  roleBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: MOBILE_TOKENS.radius.productCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: TOKENS.color.soft,
+  },
+  roleBadgeActive: {
+    backgroundColor: TOKENS.brand.primary,
+  },
+  roleBadgeText: {
+    color: TOKENS.color.textPrimary,
+    fontSize: MOBILE_TOKENS.font.bodyMeta.size,
+    fontWeight: '800',
+  },
+  roleBadgeTextActive: {
+    color: TOKENS.color.surface,
+  },
+  roleTitle: {
+    color: TOKENS.color.textPrimary,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  roleSelect: {
+    color: TOKENS.brand.primary,
+    fontSize: MOBILE_TOKENS.font.bodyMeta.size,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  roleDescription: {
+    color: TOKENS.color.textSecondary,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    lineHeight: 22,
+  },
+  footerText: {
+    color: TOKENS.color.textSecondary,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  footerLink: {
+    color: TOKENS.brand.primary,
+    fontWeight: '800',
+  },
+  error: {
+    paddingHorizontal: MOBILE_TOKENS.spacing.productCardPadding,
+    paddingVertical: 12,
+    borderRadius: MOBILE_TOKENS.radius.card,
+    backgroundColor: TOKENS.color.errorSurface,
+    borderWidth: 1,
+    borderColor: TOKENS.color.errorBorder,
+  },
+  errorText: {
+    color: TOKENS.color.alertLive,
+    fontSize: MOBILE_TOKENS.font.ctaLabel.size,
+    fontWeight: '700',
+  },
+});

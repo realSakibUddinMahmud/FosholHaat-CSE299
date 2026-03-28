@@ -1,0 +1,184 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--auth-shell-background);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--auth-shell-header-gap);
+  min-height: var(--auth-shell-header-min-height);
+  padding: 0 var(--auth-shell-header-padding-inline);
+  border-bottom: var(--auth-layout-divider-width) solid var(--auth-shell-divider-color);
+  background: var(--auth-shell-header-background);
+  backdrop-filter: blur(var(--blur-glass));
+}
+
+.brandTitle {
+  color: var(--brand-primary);
+  font-size: var(--auth-type-section-size);
+  font-weight: 800;
+  letter-spacing: var(--auth-type-display-tracking);
+}
+
+.headerCenter {
+  display: flex;
+  justify-content: center;
+}
+
+.headerAction {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--auth-shell-header-action-gap);
+}
+
+.stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: var(--auth-shell-stage-columns);
+  align-items: stretch;
+  width: min(var(--auth-shell-stage-max-width), calc(100% - (var(--auth-shell-stage-inline-gutter) * 2)));
+  max-width: none;
+  margin: 0 auto;
+}
+
+.heroPanel {
+  display: flex;
+  align-items: center;
+  padding: var(--auth-shell-hero-padding);
+  background: var(--auth-hero-background);
+}
+
+.panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--auth-shell-panel-padding);
+  background: var(--auth-shell-panel-background);
+  border-left: var(--auth-layout-divider-width) solid var(--auth-shell-divider-color);
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--auth-shell-footer-gap);
+  padding: var(--auth-shell-footer-padding);
+  border-top: var(--auth-layout-divider-width) solid var(--auth-shell-divider-color);
+  background: var(--auth-shell-footer-background);
+}
+
+.footerNote {
+  color: var(--brand-primary);
+  font-size: var(--auth-shell-footer-text-size);
+  font-weight: 600;
+  letter-spacing: var(--auth-shell-footer-note-spacing);
+  text-transform: uppercase;
+}
+
+.footerLinks {
+  display: flex;
+  gap: var(--auth-shell-footer-link-gap);
+  color: var(--color-text-tertiary);
+  font-size: var(--auth-shell-footer-text-size);
+  font-weight: 500;
+  letter-spacing: var(--auth-shell-footer-link-spacing);
+  text-transform: uppercase;
+}
+
+@media (max-width: 1080px) {
+  .header {
+    grid-template-columns: 1fr;
+    justify-items: flex-start;
+    padding: var(--auth-shell-mobile-header-padding);
+  }
+
+  .headerCenter,
+  .headerAction {
+    justify-content: flex-start;
+  }
+
+  .stage {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .panel {
+    border-left: 0;
+    border-top: var(--auth-layout-divider-width) solid var(--auth-shell-divider-color);
+  }
+
+  .footer {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+    padding: var(--auth-shell-mobile-footer-padding);
+  }
+}
+
+@media (max-width: 720px) {
+  .brandTitle {
+    font-size: calc(var(--auth-type-section-size) * 0.9);
+  }
+
+  .heroPanel,
+  .panel {
+    padding: var(--auth-shell-mobile-panel-padding);
+  }
+
+  .footerLinks {
+    flex-wrap: wrap;
+    gap: var(--auth-shell-header-action-gap);
+  }
+}
+
+@media (max-height: 760px) and (min-width: 1081px) {
+  .header {
+    min-height: calc(var(--spacing-header-top) * 2.5);
+    padding: 0 calc(var(--spacing-shell-horizontal) * 1.25);
+  }
+
+  .stage {
+    width: min(var(--auth-shell-stage-max-width), calc(100% - (var(--spacing-shell-horizontal) * 2.5)));
+  }
+
+  .heroPanel,
+  .panel {
+    padding: calc(var(--spacing-header-top) * 1.25) calc(var(--spacing-shell-horizontal) * 1.25);
+  }
+
+  .footer {
+    padding: calc(var(--spacing-hero-padding) * 0.75) calc(var(--spacing-shell-horizontal) * 1.25);
+  }
+
+  .footerNote,
+  .footerLinks {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-height: 640px) and (min-width: 1081px) {
+  .header {
+    min-height: calc(var(--spacing-header-top) * 2.1);
+    padding: 0 var(--spacing-shell-horizontal);
+  }
+
+  .brandTitle {
+    font-size: calc(var(--auth-type-section-size) * 0.95);
+  }
+
+  .footer {
+    padding: calc(var(--spacing-hero-padding) * 0.5) var(--spacing-shell-horizontal);
+  }
+
+  .footerNote,
+  .footerLinks {
+    font-size: 0.68rem;
+  }
+}

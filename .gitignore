@@ -1,0 +1,41 @@
+node_modules/
+.next/
+.turbo/
+dist/
+build/
+coverage/
+.expo/
+.stitch/
+.agent/
+.agents/
+.claude/
+.codex_tmp/
+.github/
+Ai Studio Outputs/
+docs/
+sitemap/
+tmp/
+home/
+
+*.log
+*.tsbuildinfo
+*.docx
+
+AGENTS.md
+CLAUDE.md
+DESIGN.md
+prompt.md
+docs_dump.txt
+extracted_vibe_doc.txt
+lint-api-output.txt
+FosholHat UX Research & Planning.md
+How Big Companies Design App Interfaces.md
+wsl.localhost*
+
+/*.jpg
+/*.jpeg
+/*.png
+
+**/README.md
+**/AGENTS.md
+**/CLAUDE.md

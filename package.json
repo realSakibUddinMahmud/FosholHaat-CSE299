@@ -1,0 +1,45 @@
+{
+  "name": "fosholhaat-cse299",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "orchestration:generate-ready": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-generation-ready.mjs')).href)\"",
+    "orchestration:preflight": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); process.env.ORCHESTRATION_WORKSPACES='apps/api,apps/web,apps/mobile'; import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/preflight-check.mjs')).href)\"",
+    "orchestration:shared-auth:acceptance": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-shared-auth-acceptance.mjs')).href)\"",
+    "tokens:audit": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-design-token-discipline.mjs')).href)\"",
+    "lint": "npm run tokens:audit && npm -w apps/api run lint && npm -w apps/web run lint && npm -w apps/mobile run lint",
+    "typecheck": "npm -w apps/api run typecheck && npm -w apps/web run typecheck && npm -w apps/mobile run typecheck",
+    "test": "npm -w apps/api run test -- --runInBand && npm -w apps/web run test -- --runInBand && npm -w apps/mobile run test",
+    "build": "npm -w apps/api run build && npm -w apps/web run build && npm -w apps/mobile run build",
+    "dev:restart:windows": "cmd /d /s /c \"pushd %INIT_CWD% && node scripts\\preview\\run-restart-dev-stack.cjs\"",
+    "preview:web:windows": "powershell -ExecutionPolicy Bypass -File .\\scripts\\preview\\start-web-preview.ps1",
+    "preview:mobile:windows": "powershell -ExecutionPolicy Bypass -File .\\scripts\\preview\\start-mobile-preview.ps1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/realSakibUddinMahmud/FosholHaat-CSE299.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/realSakibUddinMahmud/FosholHaat-CSE299/issues"
+  },
+  "homepage": "https://github.com/realSakibUddinMahmud/FosholHaat-CSE299#readme",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "react-test-renderer": "^19.2.4"
+  },
+  "dependencies": {
+    "undici": "^7.24.6"
+  }
+}
