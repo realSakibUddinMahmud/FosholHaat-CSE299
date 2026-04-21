@@ -11,6 +11,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MOBILE_TOKENS, TOKENS } from '../styles/tokens';
+import { BrandLockup } from './brand-lockup';
 
 type SharedAuthLayoutProps = {
   rightAction?: React.ReactNode;
@@ -35,20 +36,12 @@ export function SharedAuthLayout({
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View style={styles.brandRow}>
-            <View style={styles.brandMark}>
-              <MaterialIcons name="eco" size={22} color={TOKENS.color.surface} />
-            </View>
-            <Text style={styles.brandTitle}>FosholHaat</Text>
-          </View>
+          <BrandLockup />
           {rightAction ? <View>{rightAction}</View> : null}
         </View>
 
         <View style={styles.main}>
           <View style={styles.titleBlock}>
-            <View style={styles.titleBadge}>
-              <Text style={styles.titleBadgeText}>FosholHaat</Text>
-            </View>
             <Text style={[styles.title, titleStyle]}>{title}</Text>
             {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
           </View>
@@ -81,25 +74,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  brandMark: {
-    width: 40,
-    height: 40,
-    borderRadius: MOBILE_TOKENS.radius.productCard,
-    backgroundColor: TOKENS.brand.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandTitle: {
-    color: TOKENS.brand.primary,
-    fontSize: MOBILE_TOKENS.font.sectionTitle.size,
-    fontWeight: MOBILE_TOKENS.font.sectionTitle.weight,
-    letterSpacing: -0.5,
-  },
   main: {
     flex: 1,
     width: '100%',
@@ -122,20 +96,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 18,
     elevation: 2,
-  },
-  titleBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: MOBILE_TOKENS.radius.control,
-    backgroundColor: TOKENS.color.selectedSurface,
-  },
-  titleBadgeText: {
-    color: TOKENS.brand.primary,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
   },
   title: {
     color: TOKENS.brand.primary,

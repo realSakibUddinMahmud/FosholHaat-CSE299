@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Screen Generation"
+  short_description: "Generate new Stitch screens from the approved FosholHaat design system"

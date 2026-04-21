@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Design Governor"
+  short_description: "Control Stitch output and enforce FosholHaat design consistency"

@@ -22,10 +22,12 @@ const requiredDocs = [
 ]
 
 const requiredControlFiles = [
+  'docs/implementation-skill-matrix.md',
   '.claude/agents/fosholhaat-orchestrator.md',
   '.claude/agents/fosholhaat-implementer.md',
   '.claude/agents/fosholhaat-validator.md',
   '.claude/commands/run-approved-slice.md',
+  'scripts/orchestration/check-skill-surface.mjs',
   'scripts/orchestration/preflight-check.mjs',
   'scripts/orchestration/check-generation-ready.mjs',
 ]

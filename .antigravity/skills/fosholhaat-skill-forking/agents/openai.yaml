@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Skill Forking"
+  short_description: "Fork generic skills into FosholHaat-specific workflow skills"

@@ -1,3 +1,4 @@
+import { BrandLockup } from "./brand-lockup";
 import styles from './shared-auth-shell.module.css';
 
 type SharedAuthShellProps = {
@@ -30,7 +31,9 @@ export function SharedAuthShell({
   return (
     <main className={styles.shell}>
       <header className={styles.header}>
-        <div className={styles.brandTitle}>FosholHaat</div>
+        <div className={styles.brandContainer}>
+          <BrandLockup />
+        </div>
         <div className={styles.headerCenter}>{headerCenter}</div>
         <div className={styles.headerAction}>{headerAction}</div>
       </header>

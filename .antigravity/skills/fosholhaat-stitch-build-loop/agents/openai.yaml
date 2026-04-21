@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Stitch Build Loop"
+  short_description: "Generate FosholHaat Stitch screens in a controlled iterative loop"

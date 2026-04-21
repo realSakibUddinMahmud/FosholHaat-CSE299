@@ -1,0 +1,462 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, var(--color-primary-tint), transparent 24%),
+    radial-gradient(circle at top right, var(--color-success-soft), transparent 20%),
+    linear-gradient(180deg, var(--color-canvas) 0%, var(--color-surface) 100%);
+  color: var(--color-text-primary);
+}
+
+.shell {
+  width: min(1200px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 32px 0 56px;
+  display: grid;
+  gap: 20px;
+}
+
+.hero,
+.detailHero,
+.workspace,
+.detailCard,
+.sideCard {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
+  box-shadow: var(--shadow-shell);
+}
+
+.hero,
+.detailHero,
+.workspace {
+  padding: 24px;
+}
+
+.hero,
+.detailHero {
+  display: grid;
+  gap: 14px;
+}
+
+.badgeRow,
+.statsRow,
+.toolbar,
+.contentGrid,
+.detailActions,
+.productTop,
+.factRow,
+.availabilityRow {
+  display: flex;
+  gap: 12px;
+}
+
+.badgeRow,
+.statsRow,
+.contentGrid,
+.availabilityRow {
+  flex-wrap: wrap;
+}
+
+.statsRow,
+.contentGrid {
+  align-items: stretch;
+}
+
+.badge,
+.badgeGhost,
+.tag,
+.chip,
+.sidePill,
+.availabilityPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.badge {
+  background: var(--color-success-soft);
+  color: var(--brand-primary);
+}
+
+.badgeGhost,
+.chip {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-soft);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  font-weight: 950;
+  color: var(--color-text-strong);
+}
+
+.lead,
+.panelLead,
+.sideBody,
+.productSummary,
+.emptyBody {
+  margin: 0;
+  color: var(--color-text-body);
+  line-height: 1.6;
+}
+
+.statsRow {
+  margin-top: 4px;
+}
+
+.statCard {
+  min-width: 180px;
+  flex: 1 1 0;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statValue,
+.panelCount,
+.price,
+.priceHero,
+.detailValue {
+  font-weight: 900;
+  color: var(--color-text-strong);
+}
+
+.statLabel,
+.searchLabel,
+.filterLabel,
+.detailLabel {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.toolbar {
+  align-items: end;
+  justify-content: space-between;
+}
+
+.searchWrap {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 500px);
+}
+
+.searchBox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface);
+}
+
+.searchInput {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.filterBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.chipRow,
+.tagRow,
+.sideStack,
+.productGrid {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  cursor: pointer;
+  border: 1px solid var(--color-border-soft);
+}
+
+.chipActive {
+  background: var(--brand-primary);
+  color: var(--color-surface);
+  border-color: transparent;
+}
+
+.contentGrid {
+  align-items: flex-start;
+}
+
+.listPanel {
+  flex: 1 1 640px;
+  display: grid;
+  gap: 14px;
+}
+
+.sidePanel {
+  flex: 0 1 300px;
+  display: grid;
+  gap: 14px;
+}
+
+.panelHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  color: var(--color-text-strong);
+}
+
+.panelCount {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--color-success-soft);
+}
+
+.productGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.productCard {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.productTop,
+.factRow,
+.detailSplit {
+  justify-content: space-between;
+}
+
+.productName {
+  font-size: 18px;
+  line-height: 1.15;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  color: var(--color-text-strong);
+}
+
+.productMeta {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.price,
+.priceHero {
+  background: var(--color-success-soft);
+  color: var(--brand-primary);
+  padding: 8px 12px;
+  border-radius: 999px;
+}
+
+.productSummary {
+  font-size: 14px;
+}
+
+.factRow {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tagRow {
+  align-items: center;
+}
+
+.tag,
+.sidePill,
+.availabilityPill {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-soft);
+}
+
+.productLink,
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  text-decoration: none;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+.productLink {
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--brand-primary);
+  color: var(--color-surface);
+}
+
+.backLink {
+  min-height: 44px;
+  padding: 0 14px;
+  background: var(--color-surface);
+  color: var(--brand-primary);
+  border: 1px solid var(--color-border-soft);
+}
+
+.sideCard,
+.detailCard {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.sideTitle {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--color-text-strong);
+}
+
+.sideBody {
+  font-size: 14px;
+}
+
+.sideStack {
+  align-items: flex-start;
+}
+
+.emptyState {
+  padding: 28px;
+  border-radius: 20px;
+  background: var(--color-surface-muted);
+  border: 1px dashed var(--color-border-soft);
+}
+
+.emptyTitle {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.detailActions {
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.detailSplit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detailValue {
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+.relatedLink {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  color: inherit;
+  text-decoration: none;
+}
+
+.relatedLink strong {
+  color: var(--brand-primary);
+}
+
+.availabilityRow {
+  align-items: center;
+}
+
+@media (max-width: 960px) {
+  .toolbar,
+  .contentGrid {
+    flex-direction: column;
+  }
+
+  .searchWrap,
+  .sidePanel,
+  .listPanel {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .productGrid,
+  .detailSplit {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    width: min(100% - 1rem, 100%);
+    padding-top: 20px;
+  }
+
+  .hero,
+  .detailHero,
+  .workspace {
+    padding: 18px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .panelHead {
+    align-items: start;
+    flex-direction: column;
+  }
+}

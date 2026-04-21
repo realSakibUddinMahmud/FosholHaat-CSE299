@@ -1,0 +1,270 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  gap: 20px;
+  background: linear-gradient(180deg, var(--color-canvas) 0%, var(--color-surface) 100%);
+  color: var(--color-text-primary);
+}
+
+.header,
+.summaryCard,
+.listCard,
+.detailCard,
+.emptyState {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface);
+}
+
+.header,
+.summaryCard,
+.listCard,
+.detailCard,
+.emptyState {
+  padding: 20px;
+}
+
+.header {
+  display: grid;
+  gap: 8px;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.title,
+.sectionTitle,
+.detailTitle {
+  margin: 0;
+}
+
+.subtitle,
+.sectionSubtitle,
+.detailSubtitle,
+.emptyText,
+.metaText {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.summaryRow,
+.tabs,
+.cardTop,
+.cardBottom,
+.detailMetaRow,
+.actionRow,
+.notesList {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.summaryRow {
+  align-items: stretch;
+}
+
+.summaryChip,
+.statusPill,
+.tab {
+  border-radius: 999px;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+}
+
+.summaryChip,
+.tab {
+  padding: 10px 14px;
+}
+
+.tab {
+  min-height: 44px;
+  font: inherit;
+  font-weight: 700;
+}
+
+.tabActive,
+.statusIncoming {
+  border-color: color-mix(in srgb, var(--brand-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--brand-primary) 10%, var(--color-canvas));
+  color: var(--brand-primary);
+}
+
+.statusAccepted {
+  color: var(--brand-strong);
+}
+
+.statusPacked {
+  color: var(--brand-primary);
+}
+
+.statusReady {
+  color: var(--color-text-primary);
+}
+
+.statusRejected {
+  color: var(--color-alert-live);
+}
+
+.layout {
+  display: grid;
+  gap: 20px;
+}
+
+.queueList {
+  display: grid;
+  gap: 12px;
+}
+
+.orderCard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--color-surface);
+}
+
+.orderCardActive {
+  border-color: color-mix(in srgb, var(--brand-primary) 32%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-primary) 18%, transparent);
+}
+
+.cardTop {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.buyerName,
+.orderId,
+.detailOrderId {
+  margin: 0;
+  font-weight: 700;
+}
+
+.orderId,
+.detailOrderId {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.metaText {
+  font-size: 0.9375rem;
+}
+
+.primaryAction,
+.ghostAction,
+.linkAction {
+  min-height: 44px;
+  border-radius: 12px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.primaryAction {
+  border: none;
+  background: var(--brand-primary);
+  color: var(--color-surface);
+}
+
+.ghostAction,
+.linkAction {
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-canvas);
+  color: var(--color-text-primary);
+}
+
+.detailLayout {
+  display: grid;
+  gap: 20px;
+}
+
+.detailGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.detailItem,
+.noteCard {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 16px;
+  background: var(--color-canvas);
+  padding: 14px;
+}
+
+.detailLabel {
+  margin: 0 0 6px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.detailValue {
+  margin: 0;
+  font-weight: 700;
+}
+
+.itemsList,
+.notesList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.itemsList {
+  display: grid;
+  gap: 10px;
+}
+
+.itemRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.itemName {
+  margin: 0;
+  font-weight: 700;
+}
+
+.itemMeta {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.emptyState {
+  text-align: center;
+  display: grid;
+  gap: 12px;
+}
+
+.emptyActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 960px) {
+  .layout,
+  .detailLayout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
+    align-items: start;
+  }
+
+  .detailLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

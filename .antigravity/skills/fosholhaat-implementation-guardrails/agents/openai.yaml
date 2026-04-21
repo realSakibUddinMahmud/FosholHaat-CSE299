@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Implementation Guardrails"
+  short_description: "Keep FosholHaat code generation safe, structured, and testable"
