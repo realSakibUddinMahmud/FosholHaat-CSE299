@@ -24,7 +24,11 @@ const envFilePath = [
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath, ignoreEnvFile: envFilePath.length === 0 }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath,
+      ignoreEnvFile: envFilePath.length === 0,
+    }),
     PrismaModule,
     AuthModule,
     BuyerDiscoveryModule,

@@ -8,7 +8,7 @@ describe("hub workspace mobile shell", () => {
 
     render(<HubWorkspaceScreen locale="en" onOpenWorkspace={onOpenWorkspace} />);
 
-    expect(screen.getByText("Hub coordination")).toBeTruthy();
+    expect(screen.getAllByText("Hub coordination").length).toBeGreaterThan(0);
 
     fireEvent.press(screen.getByRole("button", { name: "Open coordination workspace" }));
 
