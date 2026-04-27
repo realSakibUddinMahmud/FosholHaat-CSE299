@@ -5,6 +5,10 @@ import { Platform } from 'react-native';
  * Returns the base API URL based on the current environment.
  */
 export const getApiUrl = () => {
+  if (process.env.EXPO_PUBLIC_API_URL) {
+    return process.env.EXPO_PUBLIC_API_URL;
+  }
+
   if (__DEV__) {
     // Standard android emulator localhost is 10.0.2.2
     if (Platform.OS === 'android') {
@@ -25,7 +29,5 @@ export const getApiUrl = () => {
     return 'http://localhost:3000';
   }
 
-  // Blocker: Production API host is not yet established.
-  // Physical device testing in staging/prod requires explicit infra approval.
-  return ''; 
+  throw new Error('EXPO_PUBLIC_API_URL is required outside development.');
 };

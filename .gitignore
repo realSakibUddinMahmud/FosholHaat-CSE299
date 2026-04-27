@@ -10,7 +10,10 @@ coverage/
 .agents/
 .claude/
 .codex_tmp/
-.github/
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
+!.github/workflows/*.yaml
 Ai Studio Outputs/
 docs/
 sitemap/

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Leaf, Truck, CheckCircle2, Box, Calendar, Phone, MessageSquare, Package, MapPin, Radar } from 'lucide-react';
 import { getOrderById, getOrderCopy } from '../../order-data';
@@ -151,7 +152,13 @@ export function BuyerOrderTrackingView({ orderId, locale }: { orderId: string; l
 
             <div className="flex gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl mb-6">
               <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100">
-                <img src={order.imageUrl} alt={order.title} className="w-full h-full object-cover" />
+                <Image
+                  src={order.imageUrl}
+                  alt={order.title}
+                  width={64}
+                  height={64}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{order.title}</p>

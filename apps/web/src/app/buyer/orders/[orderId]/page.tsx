@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Leaf, Truck, Building2, Headset, Radar, MapPin } from 'lucide-react';
 import { getOrderById, getOrderCopy, getOrderStatusLabel } from '../order-data';
@@ -75,7 +76,13 @@ export function BuyerOrderDetailView({ orderId, locale }: { orderId: string; loc
               {order.items.map((item, index) => (
                 <div key={index} className="p-6 flex items-center gap-6">
                   <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100">
-                    <img src={order.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                    <Image
+                      src={order.imageUrl}
+                      alt={item.name}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-bold text-slate-900 dark:text-white">{item.name}</h4>

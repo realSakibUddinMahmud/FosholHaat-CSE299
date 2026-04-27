@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Leaf, ChevronRight, Truck, Package, Clock } from 'lucide-react';
 import { MOCK_ORDERS, getOrderCopy, getOrderStatusLabel } from './order-data';
 
@@ -57,9 +58,11 @@ export default function BuyerOrdersPage() {
               className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col md:flex-row"
             >
               <div className="w-full md:w-48 h-48 md:h-auto overflow-hidden">
-                <img
+                <Image
                   src={order.imageUrl}
                   alt={order.title}
+                  width={192}
+                  height={192}
                   className="w-full h-full object-cover"
                 />
               </div>
