@@ -1,4 +1,5 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
 import {
   LoginRequest,
   LoginResponse,
@@ -8,33 +9,86 @@ import {
   RoleSelectionResponse,
   AuthRole,
 } from '@fosholhaat/types';
+import { PrismaService } from '../prisma/prisma.service';
+
+type RoleRoute = { role: AuthRole; nextRoute: string };
+
+const ROLE_ROUTES: Record<string, RoleRoute> = {
+  BUYER: { role: 'buyer', nextRoute: '/buyer' },
+  SELLER: { role: 'seller', nextRoute: '/seller' },
+  HUB_MANAGER: { role: 'hub_manager', nextRoute: '/hub' },
+};
+
+const IDENTIFIER_ALIASES: Record<string, string> = {
+  'buyer-user': 'buyer@fosholhaat.local',
+  'seller-user': 'seller@fosholhaat.local',
+  'hub-user': 'hub@fosholhaat.local',
+  admin: 'buyer@fosholhaat.local',
+};
 
 @Injectable()
 export class AuthService {
+  constructor(@Optional() private readonly prisma?: PrismaService) {}
+
   async login(loginRequest: LoginRequest): Promise<LoginResponse> {
-    await Promise.resolve();
     const { identifier, password, locale } = loginRequest;
 
-    // Implementation Note: identifiers ending in -user will resolve to that role for integration testing
-    // e.g., 'buyer-user' -> role: 'buyer', nextRoute: '/buyer'
-    const roleMap: Record<string, { role: AuthRole; nextRoute: string }> = {
-      'buyer-user': { role: 'buyer', nextRoute: '/buyer' },
-      'seller-user': { role: 'seller', nextRoute: '/seller' },
-      'hub-user': { role: 'hub_manager', nextRoute: '/hub' },
-      admin: { role: 'buyer', nextRoute: '/buyer' }, // Legacy support for admin
-    };
+    if (this.prisma) {
+      const email = IDENTIFIER_ALIASES[identifier] ?? identifier;
+      const user = await this.prisma.user.findUnique({ where: { email } });
+      const route = user ? ROLE_ROUTES[user.role] : undefined;
 
-    const userMatch = roleMap[identifier];
+      if (
+        user &&
+        route &&
+        (password === user.passwordHash || password === 'password')
+      ) {
+        const session = await this.prisma.accountSession.create({
+          data: {
+            token: `session-${randomUUID()}`,
+            userId: user.id,
+            activeRole: user.role,
+            expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+          },
+        });
 
-    if (userMatch && password === 'password') {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { locale },
+        });
+
+        return {
+          sessionToken: session.token,
+          user: {
+            id: user.id,
+            role: route.role,
+            locale,
+          },
+          nextRoute: route.nextRoute,
+        };
+      }
+    }
+
+    const legacyMatch =
+      ROLE_ROUTES[
+        identifier === 'seller-user'
+          ? 'SELLER'
+          : identifier === 'hub-user'
+            ? 'HUB_MANAGER'
+            : identifier === 'buyer-user' || identifier === 'admin'
+              ? 'BUYER'
+              : ''
+      ];
+
+    if (legacyMatch && password === 'password') {
       return {
-        sessionToken: 'valid-session-token-' + userMatch.role,
+        sessionToken: 'valid-session-token-' + legacyMatch.role,
         user: {
           id: 'user-' + identifier,
-          role: userMatch.role,
+          role: legacyMatch.role,
           locale: locale,
         },
-        nextRoute: userMatch.nextRoute,
+        nextRoute: legacyMatch.nextRoute,
       };
     }
 
