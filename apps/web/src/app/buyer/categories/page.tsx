@@ -22,7 +22,7 @@ interface LiveProduct {
   packageLabel: string;
   stockLabel: string;
   sellerLabel: string;
-  verificationLabel: string;
+  verificationLabel?: string;
 }
 
 export default function CategoriesPage() {

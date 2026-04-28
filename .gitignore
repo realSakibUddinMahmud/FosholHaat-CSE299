@@ -57,3 +57,4 @@ lint_output.txt
 schema_clean.sql
 .antigravity/
 .codex/
+.vercel

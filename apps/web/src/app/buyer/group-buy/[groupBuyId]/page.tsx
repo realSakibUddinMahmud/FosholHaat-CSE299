@@ -215,7 +215,7 @@ export default function GroupBuyDetailPage() {
             type="button"
             className={styles.joinBtn}
             onClick={handleJoin}
-            disabled={joining || detail.status !== "LIVE"}
+            disabled={joining || detail.status !== "ACTIVE"}
           >
             {joining ? "Joining..." : "Join Group Buy →"}
           </button>

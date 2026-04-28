@@ -69,7 +69,7 @@ export default function BuyerOrderDetailPage() {
   /* Simulated mini-timeline for the status card */
   const miniSteps = [
     { key: "confirmed", label: "Order Confirmed", done: true },
-    { key: "dispatched", label: "Dispatched from Hub", done: order.status !== "PROCESSING" && order.status !== "CONFIRMED" },
+    { key: "dispatched", label: "Dispatched from Hub", done: order.status !== "PROCESSING" },
     { key: "transit", label: "In Transit to Destination", active: order.status === "IN_TRANSIT" || order.status === "SHIPPED", done: order.status === "DELIVERED" },
     { key: "delivery", label: "Out for Delivery", done: order.status === "DELIVERED" },
   ];
