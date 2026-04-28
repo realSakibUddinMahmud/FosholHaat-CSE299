@@ -18,6 +18,7 @@ import {
   type SortingQueueResponse,
 } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../lib/locale";
+import { apiPost } from "../../../lib/api-client";
 import { HUB_SORTING_DETAILS, HUB_SORTING_QUEUE } from "./sorting.data";
 import styles from "./sorting.module.css";
 
@@ -195,14 +196,14 @@ function SortingDetail({
       </section>
 
       <div className={styles.actionRow}>
-        <button type="button" className={styles.primaryAction}>
+        <button type="button" className={styles.primaryAction} onClick={() => apiPost(`/api/hub/sorting/${batch.batchId}/start`, { operatorName: "Hub manager" }).then(() => window.location.reload())}>
           {copy.actions.start}
           <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
         </button>
-        <button type="button" className={styles.secondaryAction}>
+        <button type="button" className={styles.secondaryAction} onClick={() => apiPost(`/api/hub/sorting/${batch.batchId}/hold`, { reason: "count-mismatch", note: "Checked from web workspace" }).then(() => window.location.reload())}>
           {copy.actions.hold}
         </button>
-        <button type="button" className={styles.ghostAction}>
+        <button type="button" className={styles.ghostAction} onClick={() => apiPost(`/api/hub/sorting/${batch.batchId}/complete`, { operatorName: "Hub manager" }).then(() => window.location.reload())}>
           {copy.actions.complete}
         </button>
       </div>

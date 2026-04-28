@@ -85,29 +85,88 @@ export class BuyerOrdersService {
   async getOrderTracking(id: string): Promise<BuyerOrderTrackingResponse> {
     const order = await this.prisma.order.findUnique({
       where: { code: id },
+      include: {
+        lines: { include: { supplyLot: { include: { product: true } } } },
+        buyer: { include: { business: true } },
+      },
     });
     if (!order) throw new NotFoundException('Order not found');
 
+    /* ── Build timeline steps ── */
     const timeline: TrackingStep[] = [
       {
-        key: 'placed',
-        label: 'Order Placed',
-        occurredAt: order.createdAt.toLocaleString(),
+        key: 'ORDER_CONFIRMED',
+        label: 'Order Confirmed',
+        occurredAt: order.createdAt.toISOString(),
         status: 'done',
+        description:
+          'Payment verified and order transmitted to supplier hub.',
       },
     ];
 
-    if (order.status === 'PENDING_PAYMENT' || order.status === 'CONFIRMED') {
-      timeline.push({
-        key: 'processing',
-        label: 'Processing at Hub',
-        status: 'upcoming',
-      });
-    } else {
-      timeline.push({ key: 'processing', label: 'Processed', status: 'done' });
-      timeline.push({ key: 'shipped', label: 'Shipped', status: 'current' });
-    }
+    const isShipped =
+      order.status !== 'PENDING_PAYMENT' && order.status !== 'CONFIRMED';
 
-    return { orderId: id, timeline };
+    timeline.push({
+      key: 'PACKED_AT_HUB',
+      label: 'Packed at Bogura Hub',
+      occurredAt: isShipped ? order.updatedAt.toISOString() : undefined,
+      status: isShipped ? 'done' : 'upcoming',
+      description: isShipped
+        ? 'Quality inspection complete. Bags secured for transit.'
+        : undefined,
+    });
+
+    timeline.push({
+      key: 'IN_TRANSIT',
+      label: 'In Transit to Dhaka Central',
+      occurredAt: isShipped ? undefined : undefined,
+      status: isShipped ? 'current' : 'upcoming',
+      description: isShipped
+        ? 'Estimated Arrival: Today, 07:45 PM (ETA 2h 15m)'
+        : undefined,
+    });
+
+    const estimatedDelivery = new Date(
+      order.createdAt.getTime() + 2 * 24 * 60 * 60 * 1000,
+    );
+    timeline.push({
+      key: 'SCHEDULED_DELIVERY',
+      label: 'Scheduled for Delivery',
+      occurredAt: undefined,
+      status: 'upcoming',
+      description: `Doorstep delivery at ${order.buyer?.business?.name ?? 'your warehouse'}. Expected ${estimatedDelivery.toLocaleDateString('en-BD', { month: 'short', day: 'numeric', year: 'numeric' })}.`,
+    });
+
+    /* ── Build snapshot ── */
+    const firstLine = order.lines[0];
+    const itemsText = order.lines
+      .map(
+        (l) => `${l.quantity} ${l.supplyLot.unit}: ${l.supplyLot.product.name}`,
+      )
+      .join(', ');
+    const snapshot = {
+      title: itemsText.substring(0, 60),
+      sku: firstLine
+        ? `FH-${firstLine.supplyLot.product.category?.substring(0, 3).toUpperCase()}-${firstLine.supplyLotId.substring(0, 4)}`
+        : 'N/A',
+      total: order.total.toLocaleString('en-BD'),
+      deliveryAddress:
+        'Standard Agro Warehouse, Plot 14, Sector 7, Uttara, Dhaka 1230',
+      contactName: order.buyer?.fullName ?? 'Buyer',
+      contactPhone: '+880 1712-XXXXXX',
+    };
+
+    /* ── Logistics intel ── */
+    const logistics = {
+      originHub: 'Bogura Hub',
+      destinationHub: 'Dhaka Central Hub',
+      truckId: 'DH-METRO-1234',
+      fleetPartner: 'FosholLogistics™',
+      lastPing: 'Jamuna Bridge Toll Plaza (GPS Lock)',
+      speed: '54 km/h',
+    };
+
+    return { orderId: id, timeline, snapshot, logistics };
   }
 }

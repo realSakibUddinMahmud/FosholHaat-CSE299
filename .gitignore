@@ -46,3 +46,14 @@ wsl.localhost*
 **/README.md
 **/AGENTS.md
 **/CLAUDE.md
+
+# Sensitive / scratch files
+scratch/
+test-db*.js
+test-db*.cjs
+*.crt
+*.crt:*
+lint_output.txt
+schema_clean.sql
+.antigravity/
+.codex/

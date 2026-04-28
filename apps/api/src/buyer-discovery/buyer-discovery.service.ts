@@ -38,7 +38,9 @@ export class BuyerDiscoveryService {
     const sort = this.resolveSort(query.sort);
     this.assertPage(query.page);
 
-    const where: any = { status: 'ACTIVE' };
+    const where: any = {
+      status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+    };
     if (query.categorySlug) {
       where.product = { category: query.categorySlug };
     }
@@ -49,7 +51,9 @@ export class BuyerDiscoveryService {
     });
 
     const allLots = await this.prisma.supplyLot.findMany({
-      where: { status: 'ACTIVE' },
+      where: {
+        status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+      },
       include: { product: true },
     });
 
@@ -80,7 +84,10 @@ export class BuyerDiscoveryService {
     this.assertPage(query.page);
 
     const items = await this.prisma.supplyLot.findMany({
-      where: { status: 'ACTIVE', product: { category: resolvedCategory } },
+      where: {
+        status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+        product: { category: resolvedCategory },
+      },
       include: { product: true, seller: true, business: true, groupBuys: true },
     });
 
@@ -113,7 +120,9 @@ export class BuyerDiscoveryService {
     const needle = searchTerm.toLowerCase();
 
     const allLots = await this.prisma.supplyLot.findMany({
-      where: { status: 'ACTIVE' },
+      where: {
+        status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+      },
       include: { product: true, seller: true, business: true, groupBuys: true },
     });
 

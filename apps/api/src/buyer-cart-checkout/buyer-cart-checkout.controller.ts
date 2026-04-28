@@ -21,6 +21,16 @@ export class BuyerCartCheckoutController {
     return this.buyerCartCheckoutService.getBuyerCart();
   }
 
+  @Post('cart/items')
+  async addBuyerCartLine(
+    @Body() body: BuyerCartMutationPayload & { supplyLotId?: string } = {},
+  ): Promise<BuyerCartResponse> {
+    return this.buyerCartCheckoutService.addBuyerCartLine(
+      body.supplyLotId ?? '',
+      body,
+    );
+  }
+
   @Patch('cart/items/:lineId')
   async updateBuyerCartLine(
     @Param('lineId') lineId: string,

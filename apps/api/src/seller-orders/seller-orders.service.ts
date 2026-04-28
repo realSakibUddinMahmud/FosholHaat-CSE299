@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
   Injectable,
@@ -126,16 +126,43 @@ export class SellerOrdersService {
   async acceptSellerOrder(
     orderId: string,
   ): Promise<SellerOrderMutationResponse> {
-    return { order: {} as any, message: 'Order accepted' };
+    const line = await this.prisma.orderLine.findUnique({
+      where: { id: orderId },
+    });
+    if (!line) throw new NotFoundException('Order not found');
+    await this.prisma.order.update({
+      where: { id: line.orderId },
+      data: { status: 'IN_FULFILLMENT' },
+    });
+    return {
+      ...(await this.getSellerOrder(orderId)),
+      message: 'Order accepted',
+    };
   }
 
   async packSellerOrder(orderId: string): Promise<SellerOrderMutationResponse> {
-    return { order: {} as any, message: 'Order packed' };
+    const line = await this.prisma.orderLine.findUnique({
+      where: { id: orderId },
+    });
+    if (!line) throw new NotFoundException('Order not found');
+    await this.prisma.order.update({
+      where: { id: line.orderId },
+      data: { status: 'IN_FULFILLMENT' },
+    });
+    return { ...(await this.getSellerOrder(orderId)), message: 'Order packed' };
   }
 
   async readySellerOrder(
     orderId: string,
   ): Promise<SellerOrderMutationResponse> {
-    return { order: {} as any, message: 'Order ready' };
+    const line = await this.prisma.orderLine.findUnique({
+      where: { id: orderId },
+    });
+    if (!line) throw new NotFoundException('Order not found');
+    await this.prisma.order.update({
+      where: { id: line.orderId },
+      data: { status: 'READY_FOR_DISPATCH' },
+    });
+    return { ...(await this.getSellerOrder(orderId)), message: 'Order ready' };
   }
 }

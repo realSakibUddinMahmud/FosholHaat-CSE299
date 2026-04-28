@@ -1,203 +1,252 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useParams } from 'next/navigation';
-import { ArrowLeft, Leaf, Truck, CheckCircle2, Box, Calendar, Phone, MessageSquare, Package, MapPin, Radar } from 'lucide-react';
-import { getOrderById, getOrderCopy } from '../../order-data';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Download,
+  MapPin,
+  Package,
+  Phone,
+  MessageSquare,
+  Share2,
+  ShieldCheck,
+  Truck,
+  AlertTriangle,
+} from "lucide-react";
+import type { BuyerOrderTrackingResponse } from "@fosholhaat/types";
+import { apiFetch } from "../../../../../lib/api-client";
+import { getOrderCopy } from "../../order-data";
+import styles from "./tracking.module.css";
 
-export function BuyerOrderTrackingView({ orderId, locale }: { orderId: string; locale: 'bn' | 'en' }) {
-  const copy = getOrderCopy(locale);
-  const order = getOrderById(orderId);
+/* ─── Timeline step icons by key ─── */
+function StepIcon({ stepKey, status }: { stepKey: string; status: string }) {
+  const isDone = status === "done";
+  const isCurrent = status === "current";
+  const cls = isDone ? styles.stepIconDone : isCurrent ? styles.stepIconCurrent : styles.stepIconUpcoming;
 
-  if (!order) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
-        <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{copy.notFoundTitle}</h1>
-          <p className="mt-2 text-sm text-slate-500">{copy.notFoundBody}</p>
-          <Link
-            href="/buyer/orders"
-            className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white"
-          >
-            {copy.backToOrders}
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/buyer/orders" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500">
-              <ArrowLeft size={20} />
-            </Link>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">
-              {copy.tracking}: #{order.id}
-            </h1>
-          </div>
-          <div className="text-primary p-2 bg-primary/10 rounded-lg">
-            <Leaf size={24} />
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
-            <h3 className="text-xl font-black mb-10 flex items-center gap-3">
-              <Radar className="text-primary" size={24} />
-              {copy.tracking}
-            </h3>
-
-            <div className="relative space-y-0 pl-4">
-              <div className="absolute left-8 top-2 bottom-8 w-1 bg-slate-100 dark:bg-slate-800" />
-
-              <div className="flex gap-8 pb-12 relative">
-                <div className="relative z-10 size-10 rounded-full bg-primary flex items-center justify-center text-white ring-8 ring-white dark:ring-slate-900">
-                  <CheckCircle2 size={24} />
-                </div>
-                <div className="pt-1">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">{copy.orderConfirmed}</h4>
-                  <p className="text-sm text-slate-500 mt-1">Oct 24, 2023 • 09:00 AM</p>
-                </div>
-              </div>
-
-              <div className="flex gap-8 pb-12 relative">
-                <div className="relative z-10 size-10 rounded-full bg-primary flex items-center justify-center text-white ring-8 ring-white dark:ring-slate-900">
-                  <Box size={20} />
-                </div>
-                <div className="pt-1">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">{copy.packedAtHub}</h4>
-                  <p className="text-sm text-slate-500 mt-1">Oct 24, 2023 • 02:30 PM</p>
-                </div>
-              </div>
-
-              <div className="flex gap-8 pb-12 relative">
-                <div className="absolute left-4 top-2 bottom-0 w-1 bg-primary/20" />
-                <div className="relative z-10 size-10 rounded-full bg-primary flex items-center justify-center text-white ring-8 ring-primary/20 animate-pulse">
-                  <Truck size={20} />
-                </div>
-                <div className="pt-1">
-                  <div className="inline-block px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase tracking-wider mb-2 rounded">
-                    {copy.currentlyActive}
-                  </div>
-                  <h4 className="text-xl font-black text-primary">{copy.inTransit}</h4>
-                  <p className="text-base font-bold text-slate-700 dark:text-slate-300 mt-1">
-                    {copy.estArrival}: {order.estDelivery}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-8 relative">
-                <div className="relative z-10 size-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 ring-8 ring-white dark:ring-slate-900">
-                  <Calendar size={20} />
-                </div>
-                <div className="pt-1">
-                  <h4 className="text-lg font-bold text-slate-400">{copy.delivered}</h4>
-                  <p className="text-sm text-slate-400 mt-1">Expected soon</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm flex flex-col md:flex-row">
-            <div className="p-8 flex-1">
-              <h3 className="text-lg font-bold mb-6">{copy.logisticsInfo}</h3>
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{copy.truckId}</p>
-                  <p className="text-lg font-black text-slate-900 dark:text-white">DH-METRO-1234</p>
-                </div>
-                <div>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{copy.fleet}</p>
-                  <p className="text-lg font-black text-slate-900 dark:text-white">Foshol Logistics</p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <button className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">
-                  <Phone size={18} />
-                  {copy.callDriver}
-                </button>
-                <button className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors">
-                  <MessageSquare size={18} />
-                  {copy.message}
-                </button>
-              </div>
-            </div>
-            <div className="md:w-72 bg-slate-200 dark:bg-slate-800 relative min-h-[200px]">
-              <div className="absolute inset-0 bg-primary/10" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                <div className="size-12 bg-primary rounded-full border-4 border-white flex items-center justify-center text-white shadow-xl">
-                  <Truck size={24} />
-                </div>
-              </div>
-              <div className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-3 py-1.5 rounded-lg text-xs font-black shadow-lg">
-                Jamuna Bridge Area
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <aside className="space-y-6">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <Package className="text-primary" size={20} />
-              {copy.orderSnapshot}
-            </h3>
-
-            <div className="flex gap-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl mb-6">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100">
-                <Image
-                  src={order.imageUrl}
-                  alt={order.title}
-                  width={64}
-                  height={64}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-slate-900 dark:text-white line-clamp-1">{order.title}</p>
-                <p className="text-xl font-black text-primary mt-1">{order.total}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-2">{copy.deliveryAddress}</p>
-                <div className="flex gap-3 text-sm">
-                  <MapPin size={18} className="text-primary shrink-0 mt-0.5" />
-                  <p className="font-medium text-slate-700 dark:text-slate-300 leading-relaxed">{order.shippingAddress}</p>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">{copy.contact}</p>
-                <p className="text-sm font-bold text-slate-900 dark:text-white">Mahbubur Rahman</p>
-                <p className="text-sm text-slate-500">+880 1712-XXXXXX</p>
-              </div>
-            </div>
-
-            <Link
-              href={`/buyer/orders/${order.id}`}
-              className="mt-8 w-full flex items-center justify-center gap-2 py-4 bg-primary/5 text-primary rounded-xl font-bold hover:bg-primary/10 transition-all"
-            >
-              {copy.viewOrderDetails}
-            </Link>
-          </div>
-        </aside>
-      </main>
-    </div>
-  );
+  if (stepKey === "ORDER_PLACED" || stepKey === "ORDER_CONFIRMED")
+    return <span className={cls}><CheckCircle2 size={20} /></span>;
+  if (stepKey === "PACKED_AT_HUB" || stepKey === "PROCESSING")
+    return <span className={cls}><Package size={20} /></span>;
+  if (stepKey === "IN_TRANSIT")
+    return <span className={cls}><Truck size={20} /></span>;
+  if (stepKey === "DELIVERED" || stepKey === "SCHEDULED_DELIVERY")
+    return <span className={cls}><MapPin size={20} /></span>;
+  return <span className={cls}><Clock size={20} /></span>;
 }
 
 export default function BuyerOrderTrackingPage() {
-  const params = useParams();
-  const orderId = params.orderId as string;
+  const params = useParams<{ orderId: string }>();
+  const orderId = params.orderId;
+  const copy = getOrderCopy("en");
+  const [tracking, setTracking] = useState<BuyerOrderTrackingResponse | null>(null);
+  const [error, setError] = useState("");
 
-  return <BuyerOrderTrackingView orderId={orderId} locale="bn" />;
+  useEffect(() => {
+    apiFetch<BuyerOrderTrackingResponse>(`/api/buyer/orders/${orderId}/tracking`)
+      .then(setTracking)
+      .catch((err: Error) => setError(err.message));
+  }, [orderId]);
+
+  /* Derive timeline steps */
+  const timeline = tracking?.timeline ?? [];
+  const currentStepIdx = timeline.findIndex((s) => s.status === "current");
+
+  /* Derive logistics metadata */
+  const logistics = tracking?.logistics;
+  const snapshot = tracking?.snapshot;
+
+  return (
+    <main className={styles.page}>
+      {/* ─── Breadcrumb ─── */}
+      <nav className={styles.breadcrumb}>
+        <Link href="/buyer">Dashboard</Link>
+        <span className={styles.breadSep}>›</span>
+        <Link href="/buyer/orders">My Orders</Link>
+        <span className={styles.breadSep}>›</span>
+        <span className={styles.breadActive}>Tracking #{orderId}</span>
+      </nav>
+
+      {/* ─── Header ─── */}
+      <div className={styles.headerRow}>
+        <div>
+          <h1 className={styles.title}>Order Tracking</h1>
+          <p className={styles.headerMeta}>
+            {tracking
+              ? `Managing bulk shipment from ${logistics?.originHub ?? "Origin Hub"} to ${logistics?.destinationHub ?? "Destination Hub"}`
+              : `Tracking order #${orderId}`}
+          </p>
+        </div>
+        <div className={styles.headerActions}>
+          <button type="button" className={styles.outlineBtn}>
+            <Download size={16} /> Download Invoice
+          </button>
+          <button type="button" className={styles.solidBtn}>
+            <Share2 size={16} /> Share Status
+          </button>
+        </div>
+      </div>
+
+      <hr className={styles.divider} />
+
+      {error ? <p className={styles.errorBanner}>{error}</p> : null}
+
+      {/* ─── Two-column layout ─── */}
+      <div className={styles.contentGrid}>
+        {/* ── LEFT: Live Shipment Timeline ── */}
+        <section className={styles.card}>
+          <h2 className={styles.cardTitle}>
+            <MapPin size={18} /> Live Shipment Timeline
+          </h2>
+
+          <ol className={styles.timeline}>
+            {timeline.map((step, idx) => {
+              const isDone = step.status === "done";
+              const isCurrent = step.status === "current";
+              const isLast = idx === timeline.length - 1;
+
+              return (
+                <li key={step.key} className={styles.timelineItem}>
+                  <div className={styles.timelineTrack}>
+                    <StepIcon stepKey={step.key} status={step.status} />
+                    {!isLast && (
+                      <div className={`${styles.timelineLine} ${isDone ? styles.timelineLineDone : ""}`} />
+                    )}
+                  </div>
+                  <div className={styles.timelineContent}>
+                    {isCurrent && <span className={styles.activeBadge}>CURRENTLY ACTIVE</span>}
+                    <h3 className={`${styles.stepLabel} ${isCurrent ? styles.stepLabelActive : ""} ${!isDone && !isCurrent ? styles.stepLabelUpcoming : ""}`}>
+                      {step.label}
+                    </h3>
+                    {step.occurredAt && (
+                      <p className={styles.stepDate}>{new Date(step.occurredAt).toLocaleString("en-BD", { dateStyle: "medium", timeStyle: "short" })}</p>
+                    )}
+                    {step.description && <p className={styles.stepDesc}>{step.description}</p>}
+
+                    {/* GPS ping info for in-transit step */}
+                    {isCurrent && logistics?.lastPing && (
+                      <div className={styles.gpsPing}>
+                        <div>
+                          <span className={styles.gpsPingLabel}>LAST PING</span>
+                          <span className={styles.gpsPingValue}>{logistics.lastPing}</span>
+                        </div>
+                        {logistics.speed && (
+                          <div>
+                            <span className={styles.gpsPingLabel}>SPEED</span>
+                            <span className={styles.gpsPingValue}>{logistics.speed}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+
+          {!timeline.length && !error && (
+            <p className={styles.loadingText}>Loading timeline...</p>
+          )}
+        </section>
+
+        {/* ── RIGHT: Shipment Snapshot + Quality ── */}
+        <aside className={styles.rightCol}>
+          {/* Shipment Snapshot */}
+          <div className={styles.card}>
+            <h2 className={styles.cardTitle}>
+              <Package size={18} /> Shipment Snapshot
+            </h2>
+
+            {snapshot && (
+              <>
+                <div className={styles.snapshotItem}>
+                  <div className={styles.snapshotIcon}><Truck size={20} /></div>
+                  <div>
+                    <div className={styles.snapshotName}>{snapshot.title}</div>
+                    <div className={styles.snapshotSku}>SKU: {snapshot.sku ?? "N/A"}</div>
+                    <div className={styles.snapshotPrice}>BDT {snapshot.total}</div>
+                  </div>
+                </div>
+
+                <div className={styles.snapshotSection}>
+                  <h4 className={styles.snapshotSectionTitle}>DELIVERY ADDRESS</h4>
+                  <p className={styles.snapshotText}>
+                    <MapPin size={14} /> {snapshot.deliveryAddress}
+                  </p>
+                </div>
+
+                <div className={styles.snapshotSection}>
+                  <h4 className={styles.snapshotSectionTitle}>BUSINESS CONTACT</h4>
+                  <p className={styles.snapshotContactName}>{snapshot.contactName}</p>
+                  <p className={styles.snapshotContactPhone}>{snapshot.contactPhone}</p>
+                </div>
+              </>
+            )}
+
+            <div className={styles.actionBtns}>
+              <button type="button" className={styles.outlineBtn}>
+                <Phone size={14} /> Contact Logistics Support
+              </button>
+              <button type="button" className={styles.dangerOutlineBtn}>
+                <AlertTriangle size={14} /> Report an Issue
+              </button>
+            </div>
+          </div>
+
+          {/* Quality Assurance */}
+          <div className={styles.qaCard}>
+            <h3 className={styles.qaTitle}>
+              <ShieldCheck size={18} /> Quality Assurance
+            </h3>
+            <p className={styles.qaDesc}>
+              Digitally verified 3-stage quality check performed at {logistics?.originHub ?? "the Hub"}.
+            </p>
+            <a href="#" className={styles.qaLink}>View Quality Certificate</a>
+          </div>
+        </aside>
+      </div>
+
+      {/* ─── Logistics Intelligence (bottom full-width) ─── */}
+      {logistics && (
+        <section className={styles.logisticsPanel}>
+          <div className={styles.logisticsInfo}>
+            <h2 className={styles.logisticsTitle}>Logistics Intelligence</h2>
+            <span className={styles.liveBadge}>Live tracking active</span>
+
+            <div className={styles.logisticsMeta}>
+              <div>
+                <span className={styles.logisticsLabel}>TRUCK ID</span>
+                <span className={styles.logisticsValue}>{logistics.truckId ?? "DH-METRO-1234"}</span>
+              </div>
+              <div>
+                <span className={styles.logisticsLabel}>FLEET PARTNER</span>
+                <span className={styles.logisticsValue}>{logistics.fleetPartner ?? "FosholLogistics™"}</span>
+              </div>
+            </div>
+
+            <div className={styles.logisticsActions}>
+              <button type="button" className={styles.outlineBtn}><Phone size={14} /> Call Driver</button>
+              <button type="button" className={styles.outlineBtn}><MessageSquare size={14} /> Message</button>
+            </div>
+          </div>
+
+          <div className={styles.mapPlaceholder}>
+            <Truck size={32} className={styles.mapIcon} />
+            <span className={styles.mapLabel}>{logistics.lastPing ?? "In Transit"}</span>
+          </div>
+        </section>
+      )}
+
+      {/* ─── Back link ─── */}
+      <div className={styles.backRow}>
+        <Link href={`/buyer/orders/${orderId}`} className={styles.backLink}>
+          <ArrowLeft size={16} /> Back to Order Details
+        </Link>
+      </div>
+    </main>
+  );
 }

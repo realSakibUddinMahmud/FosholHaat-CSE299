@@ -209,6 +209,42 @@ export class AuthService {
     return null;
   }
 
+  async getMe(authorization?: string) {
+    if (!this.prisma) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    const token = authorization?.replace(/^Bearer\s+/i, '');
+    if (!token) {
+      throw new UnauthorizedException('Not authenticated');
+    }
+
+    const session = await this.prisma.accountSession.findUnique({
+      where: { token },
+      include: {
+        user: {
+          include: { business: true },
+        },
+      },
+    });
+
+    if (!session || session.expiresAt < new Date()) {
+      throw new UnauthorizedException('Session expired');
+    }
+
+    const user = session.user;
+    return {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+      locale: user.locale,
+      businessName: user.business?.name,
+      corridor: user.business?.corridor,
+      district: user.business?.district,
+    };
+  }
+
   private toDbSignupRole(role: SignupRole): 'BUYER' | 'SELLER' {
     return role === 'seller' ? 'SELLER' : 'BUYER';
   }

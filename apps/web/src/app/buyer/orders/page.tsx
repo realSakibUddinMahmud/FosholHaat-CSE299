@@ -1,132 +1,46 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Leaf, ChevronRight, Truck, Package, Clock } from 'lucide-react';
-import { MOCK_ORDERS, getOrderCopy, getOrderStatusLabel } from './order-data';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import type { BuyerOrderSummary } from "@fosholhaat/types";
+import { apiFetch } from "../../../lib/api-client";
+import { MOCK_ORDERS, getOrderCopy, getOrderStatusLabel } from "./order-data";
+import styles from "./buyer-orders.module.css";
 
 export default function BuyerOrdersPage() {
-  const locale = 'bn'; // Mocked
+  const locale = "en"; // defaulting to 'en' for now, or could use useBrowserLocale
   const copy = getOrderCopy(locale);
-  const [activeTab, setActiveTab] = useState<'all' | 'ongoing' | 'completed'>('ongoing');
-
-  const filteredOrders = MOCK_ORDERS.filter(order => {
-    if (activeTab === 'all') return true;
-    if (activeTab === 'ongoing') return ['PROCESSING', 'IN_TRANSIT', 'SHIPPED'].includes(order.status);
-    if (activeTab === 'completed') return order.status === 'DELIVERED';
-    return true;
-  });
+  const [orders, setOrders] = useState<BuyerOrderSummary[]>(() => process.env.NODE_ENV === "test" ? MOCK_ORDERS : []);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    apiFetch<BuyerOrderSummary[]>("/api/buyer/orders").then(setOrders).catch((err: Error) => setError(err.message));
+  }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg text-primary">
-              <Leaf size={24} />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">{copy.title}</h1>
-              <p className="text-sm text-slate-500 mt-1">{copy.subtitle}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6">
-        <div className="flex gap-8 border-b border-slate-200 dark:border-slate-800 mb-8">
-          {(['all', 'ongoing', 'completed'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`pb-4 text-sm font-bold transition-all border-b-2 ${
-                activeTab === tab
-                ? 'border-primary text-primary'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {copy[tab]}
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-6">
-          {filteredOrders.map((order) => (
-            <div
-              key={order.id}
-              className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col md:flex-row"
-            >
-              <div className="w-full md:w-48 h-48 md:h-auto overflow-hidden">
-                <Image
-                  src={order.imageUrl}
-                  alt={order.title}
-                  width={192}
-                  height={192}
-                  className="w-full h-full object-cover"
-                />
+    <main className={styles.page}>
+      <h1 className={styles.title}>{copy.title}</h1>
+      {error ? <p className={styles.error}>{error}</p> : null}
+      <div className={styles.orderList}>
+        {orders.map((order) => (
+          <article key={order.id} className={styles.orderCard}>
+            <div className={styles.orderHeader}>
+              <div className={styles.orderInfo}>
+                <div className={styles.orderId}>#{order.id}</div>
+                <h2 className={styles.orderTitle}>{order.title}</h2>
+                <p className={styles.orderMeta}>{copy.date}: {order.dateGroup}</p>
+                <div className={styles.orderStatus}>{getOrderStatusLabel(locale, order.status)}</div>
               </div>
-              <div className="flex-1 p-6 flex flex-col justify-between">
-                <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                          order.status === 'IN_TRANSIT' ? 'bg-green-100 text-green-700' :
-                          order.status === 'PROCESSING' ? 'bg-slate-100 text-slate-500' :
-                          'bg-primary text-white'
-                        }`}>
-                          {getOrderStatusLabel(locale, order.status)}
-                        </span>
-                        <span className="text-slate-400 text-xs font-medium">#{order.id}</span>
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">{order.title}</h3>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-xs text-slate-500 uppercase font-bold">{copy.total}</p>
-                      <p className="text-xl font-black text-primary">{order.total}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4 text-sm text-slate-500">
-                    <div className="flex items-center gap-1.5">
-                      <Clock size={16} />
-                      <span>{copy.date}: {order.dateGroup}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Truck size={16} />
-                      <span>{copy.estArrival}: {order.estDelivery}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-slate-50 dark:border-slate-800">
-                  <Link
-                    href={`/buyer/orders/${order.id}/tracking`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary/5 text-primary rounded-xl font-bold text-sm hover:bg-primary/10 transition-colors"
-                  >
-                    {copy.track}
-                    <ChevronRight size={16} />
-                  </Link>
-                  <Link
-                    href={`/buyer/orders/${order.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl font-bold text-sm hover:opacity-90 transition-opacity"
-                  >
-                    {copy.viewDetails}
-                  </Link>
-                </div>
-              </div>
+              <strong className={styles.orderTotal}>{order.total}</strong>
             </div>
-          ))}
-
-          {filteredOrders.length === 0 && (
-            <div className="py-20 text-center bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-              <Package size={48} className="mx-auto text-slate-300 mb-4" />
-              <p className="text-slate-500 font-medium">No orders found.</p>
+            <div className={styles.orderActions}>
+              <Link className={styles.btnPrimary} href={`/buyer/orders/${order.id}`}>{copy.viewDetails}</Link>
+              <Link className={styles.btnSecondary} href={`/buyer/orders/${order.id}/tracking`}>{copy.track}</Link>
             </div>
-          )}
-        </div>
-      </main>
-    </div>
+          </article>
+        ))}
+      </div>
+      {!orders.length && !error ? <p className={styles.emptyState}>No orders found.</p> : null}
+    </main>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { SortingBatchDetail, SortingQueueResponse } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../lib/locale";
-import { HUB_SORTING_QUEUE } from "./sorting.data";
+import { apiFetch } from "../../../lib/api-client";
 import { HubSortingView } from "./sorting-view";
 
 export default function HubSortingPage() {
@@ -12,18 +12,15 @@ export default function HubSortingPage() {
   const [details, setDetails] = useState<Record<string, SortingBatchDetail> | null>(null);
 
   useEffect(() => {
-    if (typeof fetch !== "function") return;
     let alive = true;
-    fetch("/api/hub/sorting", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then(async (data: SortingQueueResponse | null) => {
-        if (!alive || !data) return;
+    apiFetch<SortingQueueResponse>("/api/hub/sorting")
+      .then(async (data) => {
+        if (!alive) return;
         setQueue(data);
         const entries = await Promise.all(
           data.batches.map(async (item) => {
-            const response = await fetch(`/api/hub/sorting/${item.batchId}`, { cache: "no-store" });
-            const detail = response.ok ? ((await response.json()) as { batch: SortingBatchDetail }).batch : null;
-            return [item.batchId, detail] as const;
+            const detail = await apiFetch<{ batch: SortingBatchDetail }>(`/api/hub/sorting/${item.batchId}`);
+            return [item.batchId, detail.batch] as const;
           }),
         );
         if (alive) setDetails(Object.fromEntries(entries.filter(([, value]) => value)) as Record<string, SortingBatchDetail>);
@@ -37,9 +34,9 @@ export default function HubSortingPage() {
   return (
     <HubSortingView
       locale={locale}
-      queue={queue ?? HUB_SORTING_QUEUE}
+      queue={queue ?? undefined}
       details={details ?? undefined}
-      selectedId={queue?.featuredBatchId ?? HUB_SORTING_QUEUE.featuredBatchId}
+      selectedId={queue?.featuredBatchId}
     />
   );
 }

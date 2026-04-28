@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { getBuyerCartCheckoutCopy, type Locale } from "@fosholhaat/types";
-import { BUYER_WEB_CART_TOTALS } from "./_data";
+import { getBuyerCartCheckoutCopy, type BuyerCartTotals, type Locale } from "@fosholhaat/types";
 import styles from "./buyer-checkout.module.css";
 
 const STEP_LABELS = ["cart", "fulfillment", "payment", "confirmation"] as const;
@@ -52,27 +51,28 @@ export function BuyerPageShell({
   );
 }
 
-export function BuyerOrderSummary({ locale }: { locale: Locale }) {
+export function BuyerOrderSummary({ locale, totals }: { locale: Locale; totals?: BuyerCartTotals }) {
   const copy = getBuyerCartCheckoutCopy(locale);
+  const safeTotals = totals ?? { subtotal: 0, deliveryFee: 0, serviceFee: 0, payableTotal: 0 };
   return (
     <>
       <h2 className={styles.summaryTitle}>{copy.summaryTitle}</h2>
       <div className={styles.row}>
         <span>{copy.labels.subtotal}</span>
-        <strong>{formatMoney(BUYER_WEB_CART_TOTALS.subtotal, locale)}</strong>
+        <strong>{formatMoney(safeTotals.subtotal, locale)}</strong>
       </div>
       <div className={styles.row}>
         <span>{copy.labels.deliveryFee}</span>
-        <strong>{formatMoney(BUYER_WEB_CART_TOTALS.deliveryFee, locale)}</strong>
+        <strong>{formatMoney(safeTotals.deliveryFee, locale)}</strong>
       </div>
       <div className={styles.row}>
         <span>{copy.labels.serviceFee}</span>
-        <strong>{formatMoney(BUYER_WEB_CART_TOTALS.serviceFee, locale)}</strong>
+        <strong>{formatMoney(safeTotals.serviceFee, locale)}</strong>
       </div>
       <div className={styles.divider} />
       <div className={styles.row}>
         <span>{copy.labels.payableTotal}</span>
-        <strong className={styles.value}>{formatMoney(BUYER_WEB_CART_TOTALS.payableTotal, locale)}</strong>
+        <strong className={styles.value}>{formatMoney(safeTotals.payableTotal, locale)}</strong>
       </div>
     </>
   );

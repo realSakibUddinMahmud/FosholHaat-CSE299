@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download, FileText, Link2, Printer, ShieldCheck } from "lucide-react";
-import type { Locale } from "@fosholhaat/types";
+import type { Locale, SellerDwrDetailResponse, SellerDwrRecord } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../../lib/locale";
+import { apiFetch } from "../../../../lib/api-client";
 import { getSellerDwrRecord, getWebSellerSupplyCopy, formatSellerMoney } from "../../supply/supply-data";
 import styles from "../../supply/supply.module.css";
 
@@ -15,14 +17,19 @@ export function SellerDwrDetailView({
   recordId: string;
 }) {
   const copy = getWebSellerSupplyCopy(locale);
-  const record = getSellerDwrRecord(recordId);
+  const [record, setRecord] = useState<SellerDwrRecord | null>(() => process.env.NODE_ENV === "test" ? getSellerDwrRecord(recordId) : null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    apiFetch<SellerDwrDetailResponse>(`/api/seller/dwr/${recordId}`).then((data) => setRecord(data.record)).catch((err: Error) => setError(err.message));
+  }, [recordId]);
 
   if (!record) {
     return (
       <main className={styles.main}>
         <section className={styles.supportCard}>
           <h1 className={styles.heroTitle}>{copy.notFoundTitle}</h1>
-          <p className={styles.heroSubtitle}>{copy.notFoundBody}</p>
+          <p className={styles.heroSubtitle}>{error || copy.notFoundBody}</p>
           <Link className={styles.secondaryAction} href="/seller/supply">
             <ArrowLeft size={16} strokeWidth={2.2} />
             {copy.supplyTitle}

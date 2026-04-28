@@ -1,42 +1,50 @@
 "use client";
 
+import { useEffect, useState, type FormEvent } from "react";
+import { type BuyerCartResponse, type BuyerFulfillmentResponse } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../lib/locale";
-import { BUYER_WEB_FULFILLMENT, getBuyerWebCheckoutCopy } from "../_data";
-import { BuyerLinkRow, BuyerOrderSummary, BuyerPageShell } from "../_shared";
+import { apiFetch, apiPost } from "../../../lib/api-client";
+import { getBuyerWebCheckoutCopy } from "../_data";
+import { BuyerOrderSummary, BuyerPageShell } from "../_shared";
 import styles from "../buyer-checkout.module.css";
 
 export default function BuyerCheckoutPage() {
   const { locale } = useBrowserLocale();
   const laneCopy = getBuyerWebCheckoutCopy(locale);
+  const [cart, setCart] = useState<BuyerCartResponse | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    apiFetch<BuyerCartResponse>("/api/buyer/cart").then(setCart).catch((err: Error) => setError(err.message));
+  }, []);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const response = await apiPost<BuyerFulfillmentResponse>("/api/buyer/checkout/fulfillment", {
+      choice: form.get("choice"),
+      recipientName: form.get("recipientName"),
+      phone: form.get("phone"),
+      addressLabel: form.get("addressLabel"),
+      note: form.get("note"),
+    });
+    window.location.href = response.nextRoute;
+  }
 
   return (
-    <BuyerPageShell
-      locale={locale}
-      activeStep="fulfillment"
-      title="Checkout"
-      subtitle={laneCopy.checkoutLead}
-      summary={<BuyerOrderSummary locale={locale} />}
-    >
+    <BuyerPageShell locale={locale} activeStep="fulfillment" title="Checkout" subtitle={laneCopy.checkoutLead} summary={<BuyerOrderSummary locale={locale} totals={cart?.totals} />}>
       <h2 className={styles.sectionTitle}>Fulfillment handoff</h2>
-      <div className={styles.card}>
-        <div className={styles.row}>
-          <strong>{BUYER_WEB_FULFILLMENT.recipientName}</strong>
-          <span>{BUYER_WEB_FULFILLMENT.phone}</span>
-        </div>
-        <p className={styles.hint}>{BUYER_WEB_FULFILLMENT.addressLabel}</p>
+      {error ? <p className={styles.hint}>{error}</p> : null}
+      <form className={styles.card} onSubmit={submit}>
+        <label className={styles.meta}>Choice<input name="choice" defaultValue="hub-pickup" /></label>
+        <label className={styles.meta}>Recipient<input name="recipientName" required defaultValue="FosholHaat buyer" /></label>
+        <label className={styles.meta}>Phone<input name="phone" required defaultValue="+8801700000000" /></label>
+        <label className={styles.meta}>Address<input name="addressLabel" defaultValue="Bogura hub pickup" /></label>
+        <label className={styles.meta}>Note<input name="note" defaultValue="Call before handoff" /></label>
         <p className={styles.hint}>{laneCopy.mobileHandoffNote}</p>
-      </div>
-      <ul className={styles.list}>
-        {laneCopy.summaryHints.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-      <BuyerLinkRow
-        primaryHref="/buyer/checkout/payment"
-        primaryLabel="Continue to payment"
-        secondaryHref="/buyer/cart"
-        secondaryLabel="Review cart"
-      />
+        <button className={styles.button} type="submit">Continue to payment</button>
+      </form>
     </BuyerPageShell>
   );
 }

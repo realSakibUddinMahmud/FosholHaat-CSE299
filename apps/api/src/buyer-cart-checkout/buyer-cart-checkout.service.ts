@@ -113,6 +113,47 @@ export class BuyerCartCheckoutService {
     return this.getBuyerCart();
   }
 
+  async addBuyerCartLine(
+    supplyLotId: string,
+    request: BuyerCartMutationPayload = {},
+  ): Promise<BuyerCartResponse> {
+    const quantity = request.quantity ?? 1;
+    this.assertQuantity(supplyLotId, quantity);
+    const buyer = await this.getBuyer();
+    const cart = await this.getOrCreateCart(buyer.id);
+    const lot = await this.prisma.supplyLot.findUnique({
+      where: { id: supplyLotId },
+    });
+    if (!lot || lot.availableQty < quantity) {
+      throw new BadRequestException(
+        this.createError(
+          'INVALID_QUANTITY',
+          'Supply lot is unavailable.',
+          supplyLotId,
+        ),
+      );
+    }
+    const existing = cart.lines.find(
+      (item: any) => item.supplyLotId === supplyLotId,
+    );
+    if (existing) {
+      await this.prisma.cartLine.update({
+        where: { id: existing.id },
+        data: { quantity: existing.quantity + quantity },
+      });
+    } else {
+      await this.prisma.cartLine.create({
+        data: {
+          cartId: cart.id,
+          supplyLotId,
+          quantity,
+          unitPrice: lot.askingPrice,
+        },
+      });
+    }
+    return this.getBuyerCart();
+  }
+
   async setCheckoutFulfillment(
     request: BuyerFulfillmentDetails,
   ): Promise<BuyerFulfillmentResponse> {

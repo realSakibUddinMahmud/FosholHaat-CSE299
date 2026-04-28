@@ -22,6 +22,7 @@ import {
   type Locale,
 } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../lib/locale";
+import { apiPost } from "../../../lib/api-client";
 import { HUB_INBOUND_DETAILS, HUB_INBOUND_QUEUE } from "./inbound.data";
 import styles from "./inbound.module.css";
 
@@ -214,11 +215,19 @@ function InboundDetail({
       </section>
 
       <div className={styles.actionRow}>
-        <button type="button" className={styles.primaryAction}>
+        <button
+          type="button"
+          className={styles.primaryAction}
+          onClick={() => apiPost(`/api/hub/inbound/${receipt.id}/receive`, { receiverName: "Hub manager" }).then(() => window.location.reload())}
+        >
           {copy.actions.receive}
           <ArrowRight size={16} strokeWidth={2.2} aria-hidden="true" />
         </button>
-        <button type="button" className={styles.secondaryAction}>
+        <button
+          type="button"
+          className={styles.secondaryAction}
+          onClick={() => apiPost(`/api/hub/inbound/${receipt.id}/discrepancies`, { actualQuantity: Math.max(0, receipt.expectedQuantity - 1), notes: "Checked from web workspace" }).then(() => window.location.reload())}
+        >
           {copy.actions.discrepancy}
         </button>
       </div>

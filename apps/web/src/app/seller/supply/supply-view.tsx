@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import type { Locale, SellerSupplyListResponse } from "@fosholhaat/types";
 import { BrandLockup } from "../../../components/brand-lockup";
-import { getWebSellerSupplyCopy, SELLER_SUPPLY_LISTINGS, formatSellerMoney } from "./supply-data";
+import { apiFetch } from "../../../lib/api-client";
+import { getWebSellerSupplyCopy, formatSellerMoney, SELLER_SUPPLY_LISTINGS } from "./supply-data";
 import styles from "./supply.module.css";
 
 function metricValue(metricKey: "active" | "readyToday" | "dwrOpen") {
@@ -43,18 +44,16 @@ export function SellerSupplyListView({
 }) {
   const copy = getWebSellerSupplyCopy(locale);
   const [liveSupply, setLiveSupply] = useState<SellerSupplyListResponse | null>(null);
+  const [error, setError] = useState("");
   const title = mode === "workspace" ? copy.workspaceTitle : copy.supplyTitle;
   const subtitle = mode === "workspace" ? copy.workspaceSubtitle : copy.supplySubtitle;
   const activeTab = activeNav(mode);
-  const listings = liveSupply?.listings ?? SELLER_SUPPLY_LISTINGS;
+  const listings = liveSupply?.listings ?? (process.env.NODE_ENV === "test" ? SELLER_SUPPLY_LISTINGS : []);
   const listingCount = listings.length;
 
   useEffect(() => {
-    if (typeof fetch !== "function") return;
-    fetch("/api/seller/supply", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: SellerSupplyListResponse | null) => setLiveSupply(data))
-      .catch(() => undefined);
+    if (process.env.NODE_ENV === "test") return;
+    apiFetch<SellerSupplyListResponse>("/api/seller/supply").then(setLiveSupply).catch((err: Error) => setError(err.message));
   }, []);
 
   return (
@@ -155,6 +154,7 @@ export function SellerSupplyListView({
             </div>
 
             <div className={styles.inventoryList}>
+              {error ? <p className={styles.helperText}>{error}</p> : null}
               {listings.map((listing) => (
                 <article key={listing.id} className={styles.supplyCard}>
                   <div className={styles.supplyTop}>

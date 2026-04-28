@@ -27,9 +27,26 @@ export interface TrackingStep {
   label: string;
   occurredAt?: string;
   status: 'done' | 'current' | 'upcoming';
+  description?: string;
 }
 
 export interface BuyerOrderTrackingResponse {
   orderId: string;
   timeline: TrackingStep[];
+  snapshot?: {
+    title: string;
+    sku?: string;
+    total: string;
+    deliveryAddress: string;
+    contactName: string;
+    contactPhone: string;
+  };
+  logistics?: {
+    originHub: string;
+    destinationHub: string;
+    truckId?: string;
+    fleetPartner?: string;
+    lastPing?: string;
+    speed?: string;
+  };
 }

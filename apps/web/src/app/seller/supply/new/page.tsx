@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Locale, SellerSupplyCommodity, SellerSupplyUnit } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../../lib/locale";
+import { apiPost } from "../../../../lib/api-client";
 import { getWebSellerSupplyCopy } from "../supply-data";
 import styles from "../supply.module.css";
 
@@ -37,13 +38,23 @@ export function SellerNewSupplyView({ locale }: { locale: Locale }) {
   const [errors, setErrors] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
 
-  function submit() {
+  async function submit() {
     const nextErrors: string[] = [];
     if (!form.gradeLabel.trim()) nextErrors.push(copy.errors.grade);
     if (!form.quantity || Number(form.quantity) <= 0) nextErrors.push(copy.errors.quantity);
     if (!form.askingPrice || Number(form.askingPrice) <= 0) nextErrors.push(copy.errors.price);
     setErrors(nextErrors);
-    setSubmitted(nextErrors.length === 0);
+    if (nextErrors.length) return;
+    await apiPost("/api/seller/supply", {
+      commodity: form.commodity,
+      quantity: Number(form.quantity),
+      unit: form.unit,
+      gradeLabel: form.gradeLabel,
+      askingPrice: Number(form.askingPrice),
+      availableFrom: form.availableFrom || undefined,
+    });
+    setSubmitted(true);
+    window.location.href = "/seller/supply";
   }
 
   return (

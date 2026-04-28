@@ -1,171 +1,248 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useParams } from 'next/navigation';
-import { ArrowLeft, Leaf, Truck, Building2, Headset, Radar, MapPin } from 'lucide-react';
-import { getOrderById, getOrderCopy, getOrderStatusLabel } from '../order-data';
+import Link from "next/link";
+import Image from "next/image";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Download,
+  MapPin,
+  Package,
+  Truck,
+} from "lucide-react";
+import type { BuyerOrderDetail } from "@fosholhaat/types";
+import { apiFetch } from "../../../../lib/api-client";
+import { getOrderCopy, getOrderStatusLabel } from "../order-data";
+import styles from "./order-detail.module.css";
 
-export function BuyerOrderDetailView({ orderId, locale }: { orderId: string; locale: 'bn' | 'en' }) {
-  const copy = getOrderCopy(locale);
-  const order = getOrderById(orderId);
+const CATEGORY_IMAGES: Record<string, string> = {
+  potato: "/images/potato.png",
+  onion: "/images/onion.png",
+  vegetables: "/images/vegetables.png",
+};
 
-  if (!order) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-slate-950 p-6">
-        <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{copy.notFoundTitle}</h1>
-          <p className="mt-2 text-sm text-slate-500">{copy.notFoundBody}</p>
-          <Link
-            href="/buyer/orders"
-            className="mt-6 inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white"
-          >
-            {copy.backToOrders}
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col min-h-screen bg-slate-50 dark:bg-slate-950">
-      <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/buyer/orders" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500">
-              <ArrowLeft size={20} />
-            </Link>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-none">
-              {copy.orderId}: #{order.id}
-            </h1>
-          </div>
-          <div className="text-primary p-2 bg-primary/10 rounded-lg">
-            <Leaf size={24} />
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
-          {/* Status Banner */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 flex items-center justify-between shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                <Truck size={32} />
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{copy.status}</p>
-                <h2 className="text-2xl font-black text-primary">
-                  {getOrderStatusLabel(locale, order.status)}
-                </h2>
-              </div>
-            </div>
-            <div className="text-right hidden sm:block">
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{copy.estArrival}</p>
-              <p className="text-lg font-bold text-slate-900 dark:text-white">{order.estDelivery}</p>
-            </div>
-          </div>
-
-          {/* Items Section */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-            <div className="p-6 border-b border-slate-50 dark:border-slate-800">
-              <h3 className="text-lg font-bold">{copy.items}</h3>
-            </div>
-            <div className="divide-y divide-slate-50 dark:divide-slate-800">
-              {order.items.map((item, index) => (
-                <div key={index} className="p-6 flex items-center gap-6">
-                  <div className="w-20 h-20 rounded-xl overflow-hidden bg-slate-100">
-                    <Image
-                      src={order.imageUrl}
-                      alt={item.name}
-                      width={80}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-slate-900 dark:text-white">{item.name}</h4>
-                    <p className="text-sm text-slate-500 mt-1">
-                      {copy.quantity}: {item.quantity}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-black text-slate-900 dark:text-white">{item.price}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="text-primary" size={20} />
-                <h3 className="text-xs text-slate-500 font-bold uppercase tracking-wider">{copy.deliveryAddress}</h3>
-              </div>
-              <p className="text-slate-900 dark:text-white font-bold leading-relaxed">{order.shippingAddress}</p>
-            </div>
-            <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Building2 className="text-primary" size={20} />
-                <h3 className="text-xs text-slate-500 font-bold uppercase tracking-wider">{copy.paymentMethod}</h3>
-              </div>
-              <p className="text-slate-900 dark:text-white font-bold">{order.paymentMethod}</p>
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 bg-green-100 text-green-700 rounded text-[10px] font-bold uppercase">
-                {copy.status}: {copy.verified}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <aside className="space-y-6">
-          {/* Pricing Panel */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <h3 className="text-lg font-bold mb-6">{copy.pricing}</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">{copy.subtotal}</span>
-                <span className="text-slate-900 dark:text-white font-medium">{order.subtotal}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-500">{copy.deliveryFee}</span>
-                <span className="text-slate-900 dark:text-white font-medium">{order.deliveryFee}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-primary font-bold">{copy.bulkSavings}</span>
-                <span className="text-primary font-black">-৳400</span>
-              </div>
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-between items-end">
-                <span className="text-slate-900 dark:text-white font-bold">{copy.totalAmount}</span>
-                <span className="text-3xl font-black text-primary leading-none">{order.total}</span>
-              </div>
-            </div>
-            <Link
-              href={`/buyer/orders/${order.id}/tracking`}
-              className="mt-8 w-full flex items-center justify-center gap-2 py-4 bg-primary text-white rounded-xl font-bold hover:opacity-90 shadow-lg shadow-primary/20 transition-all"
-            >
-              <Radar size={20} />
-              {copy.track}
-            </Link>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm">
-            <button className="w-full flex items-center justify-center gap-2 text-slate-500 font-bold hover:text-primary transition-colors">
-              <Headset size={20} />
-              {copy.needHelp}
-            </button>
-          </div>
-        </aside>
-      </main>
-    </div>
-  );
+function StatusIcon({ status }: { status: string }) {
+  if (status === "IN_TRANSIT") return <Truck size={24} />;
+  if (status === "DELIVERED") return <CheckCircle2 size={24} />;
+  if (status === "PROCESSING" || status === "CONFIRMED") return <Package size={24} />;
+  return <Clock size={24} />;
 }
 
 export default function BuyerOrderDetailPage() {
-  const params = useParams();
-  const orderId = params.orderId as string;
+  const params = useParams<{ orderId: string }>();
+  const orderId = params.orderId;
+  const copy = getOrderCopy("en");
+  const [order, setOrder] = useState<BuyerOrderDetail | null>(null);
+  const [error, setError] = useState("");
 
-  return <BuyerOrderDetailView orderId={orderId} locale="bn" />;
+  useEffect(() => {
+    apiFetch<BuyerOrderDetail>(`/api/buyer/orders/${orderId}`)
+      .then(setOrder)
+      .catch((err: Error) => setError(err.message));
+  }, [orderId]);
+
+  if (error) {
+    return (
+      <main className={styles.page}>
+        <div className={styles.errorState}>
+          <h1 className={styles.errorTitle}>{copy.notFoundTitle}</h1>
+          <p className={styles.errorDesc}>{error}</p>
+          <Link href="/buyer/orders" className={styles.backLink}>{copy.backToOrders}</Link>
+        </div>
+      </main>
+    );
+  }
+
+  if (!order) {
+    return (
+      <main className={styles.page}>
+        <p className={styles.loadingText}>Loading order details...</p>
+      </main>
+    );
+  }
+
+  const statusLabel = getOrderStatusLabel("en", order.status);
+
+  /* Simulated mini-timeline for the status card */
+  const miniSteps = [
+    { key: "confirmed", label: "Order Confirmed", done: true },
+    { key: "dispatched", label: "Dispatched from Hub", done: order.status !== "PROCESSING" && order.status !== "CONFIRMED" },
+    { key: "transit", label: "In Transit to Destination", active: order.status === "IN_TRANSIT" || order.status === "SHIPPED", done: order.status === "DELIVERED" },
+    { key: "delivery", label: "Out for Delivery", done: order.status === "DELIVERED" },
+  ];
+
+  return (
+    <main className={styles.page}>
+      {/* ─── Breadcrumb ─── */}
+      <nav className={styles.breadcrumb}>
+        <Link href="/buyer">Home</Link>
+        <span className={styles.breadSep}>›</span>
+        <Link href="/buyer/orders">Orders</Link>
+        <span className={styles.breadSep}>›</span>
+        <span className={styles.breadActive}>Order #{order.id}</span>
+      </nav>
+
+      {/* ─── Header ─── */}
+      <div className={styles.headerRow}>
+        <div>
+          <h1 className={styles.title}>Order #{order.id}</h1>
+          <p className={styles.headerMeta}>Placed on {order.dateGroup}</p>
+        </div>
+        <button type="button" className={styles.outlineBtn}>
+          <Download size={16} /> Download Invoice
+        </button>
+      </div>
+
+      {/* ─── Main Content Grid ─── */}
+      <div className={styles.contentGrid}>
+        {/* ── LEFT COLUMN ── */}
+        <div className={styles.leftCol}>
+          {/* Status + Mini Timeline Card */}
+          <section className={styles.card}>
+            <div className={styles.statusRow}>
+              <div className={styles.statusBadge}>
+                <StatusIcon status={order.status} />
+                <div>
+                  <span className={styles.statusLabel}>ORDER STATUS</span>
+                  <span className={styles.statusValue}>{statusLabel}</span>
+                </div>
+              </div>
+              <div className={styles.estDelivery}>
+                <span className={styles.estLabel}>EXPECTED DELIVERY</span>
+                <span className={styles.estValue}>{order.estDelivery || "TBD"}</span>
+              </div>
+            </div>
+
+            <hr className={styles.cardDivider} />
+
+            <ol className={styles.miniTimeline}>
+              {miniSteps.map((step) => (
+                <li key={step.key} className={styles.miniStep}>
+                  <span className={`${styles.miniStepDot} ${step.done ? styles.miniStepDotDone : step.active ? styles.miniStepDotActive : ""}`} />
+                  <div>
+                    <span className={`${styles.miniStepLabel} ${step.active ? styles.miniStepLabelActive : ""} ${!step.done && !step.active ? styles.miniStepLabelUpcoming : ""}`}>
+                      {step.label}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          {/* Order Items Card */}
+          <section className={styles.card}>
+            <h2 className={styles.cardTitle}>Order Items ({order.items.length})</h2>
+            <div className={styles.itemsList}>
+              {order.items.map((item) => {
+                const cat = item.name.toLowerCase().includes("potato") ? "potato"
+                  : item.name.toLowerCase().includes("onion") ? "onion" : "vegetables";
+                return (
+                  <div key={`${item.name}-${item.quantity}`} className={styles.itemRow}>
+                    <div className={styles.itemImageWrap}>
+                      <Image
+                        src={CATEGORY_IMAGES[cat] || "/images/vegetables.png"}
+                        alt={item.name}
+                        width={64}
+                        height={64}
+                        style={{ objectFit: "cover", borderRadius: "10px" }}
+                      />
+                    </div>
+                    <div className={styles.itemInfo}>
+                      <span className={styles.itemName}>{item.name}</span>
+                      <span className={styles.itemOrigin}>Origin: Bogura Region</span>
+                      <div className={styles.itemBadges}>
+                        <span className={styles.itemBadge}>{item.quantity}</span>
+                      </div>
+                    </div>
+                    <div className={styles.itemPrice}>
+                      <span className={styles.itemPriceValue}>{item.price}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Hub Info */}
+          <section className={styles.card}>
+            <div className={styles.hubRow}>
+              <div className={styles.hubInfo}>
+                <h3 className={styles.hubName}>🏢 Bogura Logistics Hub (BOG-04)</h3>
+                <p className={styles.hubDesc}>Primary sorting facility. Goods inspected for moisture and caliber before dispatch.</p>
+                <div className={styles.hubMeta}>
+                  <div>
+                    <span className={styles.hubMetaLabel}>HANDOFF TIME</span>
+                    <span className={styles.hubMetaValue}>{order.dateGroup}</span>
+                  </div>
+                  <div>
+                    <span className={styles.hubMetaLabel}>SEAL NUMBER</span>
+                    <span className={styles.hubMetaValue}>#FH-BOG-{order.id.slice(-4)}</span>
+                  </div>
+                </div>
+              </div>
+              <div className={styles.hubMap} />
+            </div>
+          </section>
+        </div>
+
+        {/* ── RIGHT COLUMN ── */}
+        <aside className={styles.rightCol}>
+          {/* Procurement Summary */}
+          <div className={styles.card}>
+            <div className={styles.summaryHeader}>
+              <h2 className={styles.cardTitle}>Procurement Summary</h2>
+              <span className={styles.tierBadge}>B2B TIER 1</span>
+            </div>
+
+            <div className={styles.summaryRows}>
+              <div className={styles.summaryRow}>
+                <span>Subtotal ({order.items.length} items)</span>
+                <span>{order.subtotal}</span>
+              </div>
+              <div className={styles.summaryRow}>
+                <span>Logistics & Handling</span>
+                <span>{order.deliveryFee}</span>
+              </div>
+            </div>
+
+            <div className={styles.summaryTotal}>
+              <span>Total Amount</span>
+              <div className={styles.totalRight}>
+                <span className={styles.totalValue}>{order.total}</span>
+              </div>
+            </div>
+
+            <div className={styles.paymentRow}>
+              <span className={styles.paymentIcon}>🏦</span>
+              <div>
+                <span className={styles.paymentLabel}>PAYMENT METHOD</span>
+                <span className={styles.paymentValue}>{order.paymentMethod}</span>
+              </div>
+            </div>
+
+            <Link href={`/buyer/orders/${order.id}/tracking`} className={styles.trackBtn}>
+              <Truck size={18} /> Track Shipment
+            </Link>
+
+            <button type="button" className={styles.reportLink}>
+              <AlertTriangle size={14} /> Report an Issue
+            </button>
+          </div>
+
+          {/* Delivery Address */}
+          <div className={styles.card}>
+            <h3 className={styles.addressLabel}>DELIVERY ADDRESS</h3>
+            <p className={styles.addressName}>Buyer Warehouse</p>
+            <p className={styles.addressText}>
+              <MapPin size={14} /> {order.shippingAddress}
+            </p>
+            <p className={styles.addressPhone}>+880 1712-XXXXXX</p>
+          </div>
+        </aside>
+      </div>
+    </main>
+  );
 }

@@ -1,11 +1,14 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  Headers,
   HttpCode,
   HttpStatus,
   Param,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
@@ -55,5 +58,10 @@ export class AuthController {
       throw new BadRequestException('Signup role must be buyer or seller.');
     }
     return await this.authService.signup({ ...request, role });
+  }
+
+  @Get('me')
+  async getMe(@Headers('authorization') authorization?: string) {
+    return await this.authService.getMe(authorization);
   }
 }
