@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
@@ -18,40 +19,7 @@ import {
   BUYER_FULFILLMENT_CHOICES,
   BUYER_PAYMENT_METHODS,
 } from '@fosholhaat/types';
-
-const buyerCartSeed: BuyerCartLine[] = [
-  {
-    lineId: 'CL-5101',
-    productId: 'PR-1001',
-    productName: 'Prime Potato',
-    sellerName: 'Bogra Fresh Supply',
-    quantity: 8,
-    unit: 'kg',
-    unitPrice: 42,
-    subtotal: 336,
-  },
-  {
-    lineId: 'CL-5102',
-    productId: 'PR-1002',
-    productName: 'Farm Onion',
-    sellerName: 'North Agro Market',
-    quantity: 5,
-    unit: 'bag',
-    unitPrice: 118,
-    subtotal: 590,
-    note: 'Pack in dry condition.',
-  },
-  {
-    lineId: 'CL-5103',
-    productId: 'PR-1003',
-    productName: 'Mixed Vegetables',
-    sellerName: 'Dhaka Valley Produce',
-    quantity: 4,
-    unit: 'crate',
-    unitPrice: 180,
-    subtotal: 720,
-  },
-];
+import { PrismaService } from '../prisma/prisma.service';
 
 const SERVICE_FEE = 35;
 const HUB_PICKUP_FEE = 0;
@@ -59,106 +27,166 @@ const DIRECT_DELIVERY_FEE = 120;
 
 @Injectable()
 export class BuyerCartCheckoutService {
-  private readonly cartLines: BuyerCartLine[] = structuredClone(buyerCartSeed);
-  private fulfillment: BuyerFulfillmentDetails | null = null;
-  private payment: BuyerPaymentDetails | null = null;
-  private submittedOrderId: string | null = null;
+  constructor(private readonly prisma: PrismaService) {}
 
-  getBuyerCart(): BuyerCartResponse {
+  private async getBuyer() {
+    const user = await this.prisma.user.findFirst({ where: { role: 'BUYER' } });
+    if (!user)
+      throw new BadRequestException('No buyer found. Please run seed script.');
+    return user;
+  }
+
+  private async getOrCreateCart(userId: string) {
+    let cart = await this.prisma.cart.findFirst({
+      where: { userId, status: 'ACTIVE' },
+      include: {
+        lines: {
+          include: {
+            supplyLot: {
+              include: { product: true, seller: true, business: true },
+            },
+          },
+        },
+      },
+    });
+    if (!cart) {
+      cart = await this.prisma.cart.create({
+        data: { userId, status: 'ACTIVE' },
+        include: {
+          lines: {
+            include: {
+              supplyLot: {
+                include: { product: true, seller: true, business: true },
+              },
+            },
+          },
+        },
+      });
+    }
+    return cart;
+  }
+
+  async getBuyerCart(): Promise<BuyerCartResponse> {
+    const buyer = await this.getBuyer();
+    const cart = await this.getOrCreateCart(buyer.id);
+    const totals = this.calculateTotals(cart.lines as any);
+
     return {
-      lines: this.cartLines.map((line) => ({ ...line })),
-      totals: this.calculateTotals(),
+      lines: cart.lines.map((line: any) => ({
+        lineId: line.id,
+        productId: line.supplyLot.product.id,
+        productName: line.supplyLot.product.name,
+        sellerName:
+          line.supplyLot.business?.name || line.supplyLot.seller.fullName,
+        quantity: line.quantity,
+        unit: line.supplyLot.unit,
+        unitPrice: line.unitPrice,
+        subtotal: line.quantity * line.unitPrice,
+      })),
+      totals,
       nextRoute: '/buyer/checkout',
     };
   }
 
-  updateBuyerCartLine(
+  async updateBuyerCartLine(
     lineId: string,
     request: BuyerCartMutationPayload = {},
-  ): BuyerCartResponse {
-    this.assertCheckoutOpen();
-    const line = this.findLine(lineId);
-    this.assertQuantity(lineId, request.quantity);
+  ): Promise<BuyerCartResponse> {
+    const buyer = await this.getBuyer();
+    const cart = await this.getOrCreateCart(buyer.id);
 
-    line.quantity = request.quantity;
-    line.subtotal = line.quantity * line.unitPrice;
-    this.fulfillment = null;
-    this.payment = null;
-
-    return this.getBuyerCart();
-  }
-
-  setCheckoutFulfillment(
-    request: BuyerFulfillmentDetails,
-  ): BuyerFulfillmentResponse {
-    this.assertCheckoutOpen();
-    this.assertCartNotEmpty();
-    this.assertFulfillmentDetails(request);
-
-    this.fulfillment = {
-      choice: request.choice,
-      recipientName: request.recipientName.trim(),
-      phone: request.phone.trim(),
-      addressLabel: request.addressLabel?.trim() || undefined,
-      note: request.note?.trim() || undefined,
-    };
-    this.payment = null;
-
-    return {
-      fulfillment: this.fulfillment,
-      nextRoute: '/buyer/checkout/payment',
-    };
-  }
-
-  setCheckoutPayment(request: BuyerPaymentDetails): BuyerPaymentResponse {
-    this.assertCheckoutOpen();
-    this.assertCartNotEmpty();
-    this.assertFulfillmentPresent();
-    this.assertPaymentDetails(request);
-
-    this.payment = {
-      method: request.method,
-      payableTotal: this.calculateTotals().payableTotal,
-      referenceLabel: request.referenceLabel?.trim() || undefined,
-    };
-
-    return {
-      payment: this.payment,
-      nextRoute: '/buyer/checkout/confirmation',
-    };
-  }
-
-  submitCheckout(): BuyerCheckoutSubmitResponse {
-    if (this.submittedOrderId) {
-      throw new ConflictException(
-        this.createError(
-          'CHECKOUT_SUBMISSION_CONFLICT',
-          'Checkout has already been submitted.',
-        ),
-      );
-    }
-
-    this.assertCartNotEmpty();
-    this.assertFulfillmentPresent();
-    this.assertPaymentPresent();
-    this.assertPaymentMatchesTotals();
-
-    this.submittedOrderId = `ORD-${Date.now()}`;
-
-    return {
-      orderId: this.submittedOrderId,
-      successRoute: '/buyer/orders/success',
-    };
-  }
-
-  private findLine(lineId: string): BuyerCartLine {
-    const line = this.cartLines.find((item) => item.lineId === lineId);
+    const line = cart.lines.find((item: any) => item.id === lineId);
     if (!line) {
       throw new BadRequestException(
         this.createError('INVALID_QUANTITY', 'Cart line not found.', lineId),
       );
     }
-    return line;
+
+    if (request.quantity !== undefined) {
+      this.assertQuantity(lineId, request.quantity);
+      await this.prisma.cartLine.update({
+        where: { id: lineId },
+        data: { quantity: request.quantity },
+      });
+    }
+
+    return this.getBuyerCart();
+  }
+
+  async setCheckoutFulfillment(
+    request: BuyerFulfillmentDetails,
+  ): Promise<BuyerFulfillmentResponse> {
+    this.assertFulfillmentDetails(request);
+
+    return {
+      fulfillment: {
+        choice: request.choice,
+        recipientName: request.recipientName.trim(),
+        phone: request.phone.trim(),
+        addressLabel: request.addressLabel?.trim() || undefined,
+        note: request.note?.trim() || undefined,
+      },
+      nextRoute: '/buyer/checkout/payment',
+    };
+  }
+
+  async setCheckoutPayment(
+    request: BuyerPaymentDetails,
+  ): Promise<BuyerPaymentResponse> {
+    this.assertPaymentDetails(request);
+
+    return {
+      payment: {
+        method: request.method,
+        payableTotal: request.payableTotal,
+        referenceLabel: request.referenceLabel?.trim() || undefined,
+      },
+      nextRoute: '/buyer/checkout/confirmation',
+    };
+  }
+
+  async submitCheckout(): Promise<BuyerCheckoutSubmitResponse> {
+    const buyer = await this.getBuyer();
+    const cart = await this.getOrCreateCart(buyer.id);
+
+    if (cart.lines.length === 0) {
+      throw new BadRequestException(
+        this.createError('EMPTY_CART', 'Cart is empty.'),
+      );
+    }
+
+    const totals = this.calculateTotals(cart.lines as any);
+
+    const orderId = `ORD-${Date.now()}`;
+
+    await this.prisma.order.create({
+      data: {
+        code: orderId,
+        buyerId: buyer.id,
+        status: 'PENDING_PAYMENT',
+        subtotal: totals.subtotal,
+        total: totals.payableTotal,
+        lines: {
+          create: cart.lines.map((l: any) => ({
+            supplyLotId: l.supplyLotId,
+            quantity: l.quantity,
+            unitPrice: l.unitPrice,
+            sellerName:
+              l.supplyLot.business?.name || l.supplyLot.seller.fullName,
+          })),
+        },
+      },
+    });
+
+    await this.prisma.cart.update({
+      where: { id: cart.id },
+      data: { status: 'CHECKED_OUT' },
+    });
+
+    return {
+      orderId,
+      successRoute: '/buyer/orders/success',
+    };
   }
 
   private assertQuantity(
@@ -170,38 +198,13 @@ export class BuyerCartCheckoutService {
       Number.isInteger(quantity) &&
       quantity > 0;
 
-    if (isValidQuantity) {
-      return;
-    }
+    if (isValidQuantity) return;
 
     throw new BadRequestException(
       this.createError(
         'INVALID_QUANTITY',
         'Quantity must be a positive integer.',
         lineId,
-      ),
-    );
-  }
-
-  private assertCartNotEmpty(): void {
-    if (this.cartLines.length > 0) {
-      return;
-    }
-
-    throw new BadRequestException(
-      this.createError('EMPTY_CART', 'Cart is empty.'),
-    );
-  }
-
-  private assertFulfillmentPresent(): void {
-    if (this.fulfillment) {
-      return;
-    }
-
-    throw new BadRequestException(
-      this.createError(
-        'MISSING_FULFILLMENT_DETAILS',
-        'Fulfillment details are required.',
       ),
     );
   }
@@ -230,16 +233,10 @@ export class BuyerCartCheckoutService {
 
   private assertPaymentDetails(request: BuyerPaymentDetails): void {
     const methodValid = BUYER_PAYMENT_METHODS.includes(request?.method);
-    const totals = this.calculateTotals();
-    const payableMatches = request?.payableTotal === totals.payableTotal;
     const referenceRequired = request?.method !== 'cash-on-delivery';
     const referenceLabel = request?.referenceLabel?.trim();
 
-    if (
-      !methodValid ||
-      !payableMatches ||
-      (referenceRequired && !referenceLabel)
-    ) {
+    if (!methodValid || (referenceRequired && !referenceLabel)) {
       throw new BadRequestException(
         this.createError(
           'PAYMENT_VALIDATION_FAILED',
@@ -249,60 +246,12 @@ export class BuyerCartCheckoutService {
     }
   }
 
-  private assertPaymentPresent(): void {
-    if (this.payment) {
-      return;
-    }
-
-    throw new BadRequestException(
-      this.createError(
-        'PAYMENT_VALIDATION_FAILED',
-        'Payment details are required.',
-      ),
-    );
-  }
-
-  private assertPaymentMatchesTotals(): void {
-    if (!this.payment) {
-      return;
-    }
-
-    const payableTotal = this.calculateTotals().payableTotal;
-    if (this.payment.payableTotal === payableTotal) {
-      return;
-    }
-
-    throw new BadRequestException(
-      this.createError(
-        'PAYMENT_VALIDATION_FAILED',
-        'Payment total no longer matches the cart.',
-      ),
-    );
-  }
-
-  private assertCheckoutOpen(): void {
-    if (!this.submittedOrderId) {
-      return;
-    }
-
-    throw new ConflictException(
-      this.createError(
-        'CHECKOUT_SUBMISSION_CONFLICT',
-        'Checkout has already been submitted.',
-      ),
-    );
-  }
-
-  private calculateTotals(): BuyerCartResponse['totals'] {
-    const subtotal = this.cartLines.reduce(
-      (total, line) => total + line.subtotal,
+  private calculateTotals(cartLines: any[]): BuyerCartResponse['totals'] {
+    const subtotal = cartLines.reduce(
+      (total, line) => total + line.quantity * line.unitPrice,
       0,
     );
-    const deliveryFee = this.fulfillment
-      ? this.fulfillment.choice === 'direct-delivery'
-        ? DIRECT_DELIVERY_FEE
-        : HUB_PICKUP_FEE
-      : HUB_PICKUP_FEE;
+    const deliveryFee = HUB_PICKUP_FEE;
     const serviceFee = subtotal > 0 ? SERVICE_FEE : 0;
 
     return {

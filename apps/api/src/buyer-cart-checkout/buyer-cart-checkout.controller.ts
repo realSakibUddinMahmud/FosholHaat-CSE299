@@ -17,34 +17,34 @@ export class BuyerCartCheckoutController {
   ) {}
 
   @Get('cart')
-  getBuyerCart(): BuyerCartResponse {
+  async getBuyerCart(): Promise<BuyerCartResponse> {
     return this.buyerCartCheckoutService.getBuyerCart();
   }
 
   @Patch('cart/items/:lineId')
-  updateBuyerCartLine(
+  async updateBuyerCartLine(
     @Param('lineId') lineId: string,
     @Body() body: BuyerCartMutationPayload = {},
-  ): BuyerCartResponse {
+  ): Promise<BuyerCartResponse> {
     return this.buyerCartCheckoutService.updateBuyerCartLine(lineId, body);
   }
 
   @Post('checkout/fulfillment')
-  setCheckoutFulfillment(
+  async setCheckoutFulfillment(
     @Body() body: BuyerFulfillmentDetails = {} as BuyerFulfillmentDetails,
-  ): BuyerFulfillmentResponse {
+  ): Promise<BuyerFulfillmentResponse> {
     return this.buyerCartCheckoutService.setCheckoutFulfillment(body);
   }
 
   @Post('checkout/payment')
-  setCheckoutPayment(
+  async setCheckoutPayment(
     @Body() body: BuyerPaymentDetails = {} as BuyerPaymentDetails,
-  ): BuyerPaymentResponse {
+  ): Promise<BuyerPaymentResponse> {
     return this.buyerCartCheckoutService.setCheckoutPayment(body);
   }
 
   @Post('checkout/submit')
-  submitCheckout(): BuyerCheckoutSubmitResponse {
+  async submitCheckout(): Promise<BuyerCheckoutSubmitResponse> {
     return this.buyerCartCheckoutService.submitCheckout();
   }
 }

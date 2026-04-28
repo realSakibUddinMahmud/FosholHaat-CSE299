@@ -13,14 +13,14 @@ export class HubCoordinationController {
   ) {}
 
   @Get()
-  getOverview(): HubCoordinationResponse {
+  async getOverview(): Promise<HubCoordinationResponse> {
     return this.hubCoordinationService.getOverview();
   }
 
   @Post('assignments')
-  assignLane(
+  async assignLane(
     @Body() payload: HubCoordinationAssignmentPayload,
-  ): HubCoordinationAssignmentResponse {
+  ): Promise<HubCoordinationAssignmentResponse> {
     return this.hubCoordinationService.assignLane(payload);
   }
 }

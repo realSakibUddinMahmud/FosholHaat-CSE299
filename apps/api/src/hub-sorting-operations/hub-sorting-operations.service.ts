@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-argument */
 import {
   BadRequestException,
   ConflictException,
@@ -15,6 +16,7 @@ import type {
   SortingQueueResponse,
 } from '@fosholhaat/types';
 import { SORTING_HOLD_REASONS, SortingBatchStatus } from '@fosholhaat/types';
+import { PrismaService } from '../prisma/prisma.service';
 
 const hubSortingBatchSeed: SortingBatchDetail[] = [
   {
@@ -101,13 +103,23 @@ const hubSortingBatchSeed: SortingBatchDetail[] = [
 
 @Injectable()
 export class HubSortingOperationsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   private readonly hubSortingBatches: SortingBatchDetail[] =
     structuredClone(hubSortingBatchSeed);
 
-  getSortingQueue(): SortingQueueResponse {
-    const summary = this.hubSortingBatches.reduce<
-      SortingQueueResponse['summary']
-    >(
+  async getSortingQueue(): Promise<SortingQueueResponse> {
+    const batches = await this.prisma.sortingBatch.findMany({
+      include: {
+        inboundReceipt: {
+          include: { supplyLot: { include: { product: true } } },
+        },
+        assignedTo: true,
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+    const mapped = batches.map((batch) => this.fromDbBatch(batch));
+    const summary = mapped.reduce<SortingQueueResponse['summary']>(
       (accumulator, batch) => {
         accumulator[batch.status] += 1;
         accumulator.total += 1;
@@ -125,77 +137,149 @@ export class HubSortingOperationsService {
     return {
       summary,
       activeTab: SortingBatchStatus.READY,
-      featuredBatchId: this.hubSortingBatches[0].batchId,
-      batches: this.hubSortingBatches.map((batch) => this.toSummary(batch)),
+      featuredBatchId: mapped[0]?.batchId ?? '',
+      batches: mapped.map((batch) => this.toSummary(batch)),
     };
   }
 
-  getSortingBatch(batchId: string): SortingBatchDetailResponse {
-    return { batch: this.findBatch(batchId) };
+  async getSortingBatch(batchId: string): Promise<SortingBatchDetailResponse> {
+    return { batch: this.fromDbBatch(await this.getDbBatch(batchId)) };
   }
 
-  startSortingBatch(
+  async startSortingBatch(
     batchId: string,
     request: SortingBatchTransitionPayload = {},
-  ): SortingBatchMutationResponse {
-    const batch = this.findBatch(batchId);
-    this.assertTransition(batch, SortingBatchStatus.READY, 'start');
-
-    batch.status = SortingBatchStatus.IN_PROGRESS;
-    batch.receiverLabel = request.operatorName?.trim() || 'Sorting lead';
-    batch.nextActionLabel = 'Review mix and count.';
-    batch.updatedAtLabel = 'Just now';
-    batch.holdRecord = null;
+  ): Promise<SortingBatchMutationResponse> {
+    const current = this.fromDbBatch(await this.getDbBatch(batchId));
+    this.assertTransition(current, SortingBatchStatus.READY, 'start');
+    const batch = await this.prisma.sortingBatch.update({
+      where: { id: batchId },
+      data: {
+        status: SortingBatchStatus.IN_PROGRESS,
+        notes: request.operatorName?.trim()
+          ? `Operator: ${request.operatorName.trim()}`
+          : 'Sorting started.',
+      },
+      include: this.batchInclude(),
+    });
 
     return {
-      batch,
+      batch: this.fromDbBatch(batch),
       feedbackMessage: 'Batch started.',
     };
   }
 
-  holdSortingBatch(
+  async holdSortingBatch(
     batchId: string,
     request: SortingBatchHoldPayload,
-  ): SortingBatchMutationResponse {
-    const batch = this.findBatch(batchId);
-    this.assertTransition(batch, SortingBatchStatus.IN_PROGRESS, 'hold');
+  ): Promise<SortingBatchMutationResponse> {
+    const current = this.fromDbBatch(await this.getDbBatch(batchId));
+    this.assertTransition(current, SortingBatchStatus.IN_PROGRESS, 'hold');
     this.assertHoldPayload(batchId, request);
-
-    batch.status = SortingBatchStatus.HOLD;
-    batch.nextActionLabel = 'Resolve hold and recheck batch.';
-    batch.updatedAtLabel = 'Just now';
-    batch.holdRecord = {
-      reason: request.reason,
-      reasonLabel: this.toHoldReasonLabel(request.reason),
-      note: request.note.trim(),
-      reportedAt: new Date().toISOString(),
-    };
+    const batch = await this.prisma.sortingBatch.update({
+      where: { id: batchId },
+      data: {
+        status: SortingBatchStatus.HOLD,
+        notes: `${request.reason}: ${request.note.trim()}`,
+      },
+      include: this.batchInclude(),
+    });
 
     return {
-      batch,
+      batch: this.fromDbBatch(batch),
       feedbackMessage: 'Batch moved to hold.',
     };
   }
 
-  completeSortingBatch(
+  async completeSortingBatch(
     batchId: string,
     request: SortingBatchTransitionPayload = {},
-  ): SortingBatchMutationResponse {
-    const batch = this.findBatch(batchId);
+  ): Promise<SortingBatchMutationResponse> {
+    const current = this.fromDbBatch(await this.getDbBatch(batchId));
     this.assertTransition(
-      batch,
+      current,
       [SortingBatchStatus.IN_PROGRESS, SortingBatchStatus.HOLD],
       'complete',
     );
-
-    batch.status = SortingBatchStatus.COMPLETE;
-    batch.receiverLabel = request.operatorName?.trim() || batch.receiverLabel;
-    batch.nextActionLabel = 'Move to dispatch intake.';
-    batch.updatedAtLabel = 'Just now';
+    const batch = await this.prisma.sortingBatch.update({
+      where: { id: batchId },
+      data: {
+        status: SortingBatchStatus.COMPLETE,
+        notes: request.operatorName?.trim()
+          ? `Completed by ${request.operatorName.trim()}`
+          : 'Sorting complete.',
+      },
+      include: this.batchInclude(),
+    });
+    await this.prisma.supplyLot.update({
+      where: { id: batch.inboundReceipt.supplyLotId },
+      data: { status: 'SORTED' },
+    });
 
     return {
-      batch,
+      batch: this.fromDbBatch(batch),
       feedbackMessage: 'Batch completed.',
+    };
+  }
+
+  private batchInclude() {
+    return {
+      inboundReceipt: {
+        include: { supplyLot: { include: { product: true } } },
+      },
+      assignedTo: true,
+    };
+  }
+
+  private async getDbBatch(batchId: string) {
+    const batch = await this.prisma.sortingBatch.findUnique({
+      where: { id: batchId },
+      include: this.batchInclude(),
+    });
+    if (!batch) {
+      throw new NotFoundException(
+        this.createError('BATCH_NOT_FOUND', batchId, 'Batch not found'),
+      );
+    }
+    return batch;
+  }
+
+  private fromDbBatch(batch: any): SortingBatchDetail {
+    const holdMatch = /^([^:]+):\s*(.+)$/.exec(batch.notes);
+    const holdReason = holdMatch?.[1];
+    return {
+      batchId: batch.id,
+      commodityLabel: batch.inboundReceipt.supplyLot.product.name,
+      expectedQuantityLabel: `${batch.quantity} ${batch.inboundReceipt.supplyLot.unit}`,
+      laneLabel: batch.laneLabel,
+      status: batch.status,
+      nextActionLabel:
+        batch.status === SortingBatchStatus.READY
+          ? 'Start sorting batch.'
+          : batch.status === SortingBatchStatus.IN_PROGRESS
+            ? 'Review mix and count.'
+            : batch.status === SortingBatchStatus.HOLD
+              ? 'Resolve hold and recheck batch.'
+              : 'Move to dispatch intake.',
+      updatedAtLabel: batch.updatedAt.toISOString(),
+      receiverLabel: batch.assignedTo?.fullName ?? 'Unassigned',
+      itemGroups: [
+        {
+          label: batch.inboundReceipt.supplyLot.gradeLabel,
+          quantityLabel: `${batch.quantity} ${batch.inboundReceipt.supplyLot.unit}`,
+        },
+      ],
+      holdRecord:
+        batch.status === SortingBatchStatus.HOLD &&
+        holdReason &&
+        SORTING_HOLD_REASONS.includes(holdReason as any)
+          ? {
+              reason: holdReason as any,
+              reasonLabel: this.toHoldReasonLabel(holdReason as any),
+              note: holdMatch?.[2] ?? batch.notes,
+              reportedAt: batch.updatedAt.toISOString(),
+            }
+          : null,
     };
   }
 

@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useBrowserLocale } from "../../../lib/locale";
-import { getBuyerCartCheckoutCopy } from "@fosholhaat/types";
+import { getBuyerCartCheckoutCopy, type BuyerCartResponse } from "@fosholhaat/types";
 import { BUYER_WEB_CART_LINES, getBuyerWebCheckoutCopy } from "../_data";
 import { BuyerLinkRow, BuyerOrderSummary, BuyerPageShell, formatMoney } from "../_shared";
 import styles from "../buyer-checkout.module.css";
@@ -10,6 +11,17 @@ export default function BuyerCartPage() {
   const { locale } = useBrowserLocale();
   const copy = getBuyerCartCheckoutCopy(locale);
   const laneCopy = getBuyerWebCheckoutCopy(locale);
+  const [cart, setCart] = useState<BuyerCartResponse | null>(null);
+
+  useEffect(() => {
+    if (typeof fetch !== "function") return;
+    fetch("/api/buyer/cart", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: BuyerCartResponse | null) => setCart(data))
+      .catch(() => undefined);
+  }, []);
+
+  const lines = cart?.lines ?? BUYER_WEB_CART_LINES;
 
   return (
     <BuyerPageShell
@@ -20,7 +32,7 @@ export default function BuyerCartPage() {
       summary={<BuyerOrderSummary locale={locale} />}
     >
       <h2 className={styles.sectionTitle}>{copy.cartTitle}</h2>
-      {BUYER_WEB_CART_LINES.map((line) => (
+      {lines.map((line) => (
         <article key={line.lineId} className={styles.card}>
           <div className={styles.row}>
             <div>

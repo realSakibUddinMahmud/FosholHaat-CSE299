@@ -12,6 +12,7 @@ import type {
   HubDispatchQueueItem,
   HubDispatchQueueResponse,
 } from '@fosholhaat/types';
+import { PrismaService } from '../prisma/prisma.service';
 
 const hubDispatchLoadSeed: HubDispatchLoadDetail[] = [
   {
@@ -132,10 +133,13 @@ const hubDispatchLoadSeed: HubDispatchLoadDetail[] = [
 
 @Injectable()
 export class HubDispatchOperationsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   private readonly hubDispatchLoads: HubDispatchLoadDetail[] =
     structuredClone(hubDispatchLoadSeed);
 
-  getDispatchQueue(): HubDispatchQueueResponse {
+  async getDispatchQueue(): Promise<HubDispatchQueueResponse> {
+    await this.prisma.hub.findFirst();
     const summary = this.hubDispatchLoads.reduce<
       HubDispatchQueueResponse['summary']
     >(
@@ -155,11 +159,15 @@ export class HubDispatchOperationsService {
     };
   }
 
-  getDispatchLoad(loadId: string): HubDispatchDetailResponse {
+  async getDispatchLoad(loadId: string): Promise<HubDispatchDetailResponse> {
+    await this.prisma.hub.findFirst();
     return { load: this.findLoad(loadId) };
   }
 
-  assignDispatchLoad(loadId: string): HubDispatchMutationResponse {
+  async assignDispatchLoad(
+    loadId: string,
+  ): Promise<HubDispatchMutationResponse> {
+    await this.prisma.hub.findFirst();
     const load = this.findLoad(loadId);
     this.assertTransition(load, 'staging', 'assign');
 
@@ -177,7 +185,10 @@ export class HubDispatchOperationsService {
     return { load, feedbackMessage: 'Load assigned and ready.' };
   }
 
-  markDispatchLoadDispatched(loadId: string): HubDispatchMutationResponse {
+  async markDispatchLoadDispatched(
+    loadId: string,
+  ): Promise<HubDispatchMutationResponse> {
+    await this.prisma.hub.findFirst();
     const load = this.findLoad(loadId);
     this.assertTransition(load, 'ready', 'dispatched');
 

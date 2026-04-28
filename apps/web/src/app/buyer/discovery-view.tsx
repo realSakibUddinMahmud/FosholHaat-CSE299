@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, BadgeCheck, MapPin, Search, Sparkles, Store, Truck } from "lucide-react";
-import type { Locale } from "@fosholhaat/types";
+import type { BuyerCatalogResponse, Locale } from "@fosholhaat/types";
 import { BrandLockup } from "../../components/brand-lockup";
 import {
   BUYER_DISCOVERY_CATEGORIES,
@@ -44,21 +44,62 @@ function matches(product: BuyerDiscoveryProduct, locale: Locale, query: string) 
   return haystack.includes(query.toLowerCase());
 }
 
+function firstNumber(value: string) {
+  return Number(value.replace(/[^\d]/g, "")) || 0;
+}
+
+function mapCatalog(catalog: BuyerCatalogResponse): BuyerDiscoveryProduct[] {
+  return catalog.highlights.map((item) => ({
+    productId: item.productId,
+    categorySlug: item.commodity,
+    name: { en: item.title, bn: item.title },
+    sellerName: item.sellerLabel,
+    corridor: "Bogura -> Dhaka",
+    location: "Bogura hub",
+    packSize: { en: item.packageLabel, bn: item.packageLabel },
+    pricePerPack: firstNumber(item.priceLabel),
+    availablePacks: firstNumber(item.stockLabel),
+    minOrder: { en: "1 lot", bn: "1 lot" },
+    trustTags: {
+      en: [item.verificationLabel ?? "Verified seller"],
+      bn: [item.verificationLabel ?? "Verified seller"],
+    },
+    summary: { en: item.stockLabel, bn: item.stockLabel },
+  }));
+}
+
 export function BuyerDiscoveryView({ locale }: { locale: Locale }) {
   const copy = getBuyerDiscoveryCopy(locale);
   const [category, setCategory] = useState<BuyerDiscoveryCategorySlug | "all">("all");
   const [query, setQuery] = useState("");
+  const [liveProducts, setLiveProducts] = useState<BuyerDiscoveryProduct[] | null>(null);
+
+  useEffect(() => {
+    if (typeof fetch !== "function") return;
+    let alive = true;
+    fetch(`/api/buyer/catalog?locale=${locale}`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: BuyerCatalogResponse | null) => {
+        if (alive && data) setLiveProducts(mapCatalog(data));
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [locale]);
+
+  const products = liveProducts ?? BUYER_DISCOVERY_PRODUCTS;
 
   const filtered = useMemo(
     () =>
-      BUYER_DISCOVERY_PRODUCTS.filter((product) => {
+      products.filter((product) => {
         const categoryMatch = category === "all" || product.categorySlug === category;
         return categoryMatch && matches(product, locale, query);
       }),
-    [category, locale, query]
+    [category, locale, products, query]
   );
 
-  const totalAvailable = BUYER_DISCOVERY_PRODUCTS.reduce((sum, product) => sum + product.availablePacks, 0);
+  const totalAvailable = products.reduce((sum, product) => sum + product.availablePacks, 0);
   const activeCategory = BUYER_DISCOVERY_CATEGORIES.find((item) => item.slug === category);
 
   return (
@@ -80,7 +121,7 @@ export function BuyerDiscoveryView({ locale }: { locale: Locale }) {
             <article className={styles.statCard}>
               <Store size={16} strokeWidth={2.2} aria-hidden="true" />
               <div>
-                <div className={styles.statValue}>{count(locale, BUYER_DISCOVERY_PRODUCTS.length)}</div>
+                <div className={styles.statValue}>{count(locale, products.length)}</div>
                 <div className={styles.statLabel}>{copy.resultsLabel}</div>
               </div>
             </article>

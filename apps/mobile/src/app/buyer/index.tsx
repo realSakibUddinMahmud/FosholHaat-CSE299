@@ -1,11 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useStoredLocale } from "../../lib/locale";
-import { getBuyerDiscoveryCopy } from "@fosholhaat/types";
+import { getBuyerDiscoveryCopy, type BuyerCatalogResponse } from "@fosholhaat/types";
 import { MOCK_GROUP_BUYS, getGroupBuyCopy } from "./group-buy-data";
 import { getBuyerCatalogFixture } from "./discovery-data";
+import { getApiUrl } from "../../api-config";
 import {
   BuyerDiscoveryShell,
   ProductCard,
@@ -89,7 +90,15 @@ export default function BuyerDiscoveryHomeScreen() {
   const router = useRouter();
   const { locale } = useStoredLocale();
   const copy = getBuyerDiscoveryCopy(locale);
-  const catalog = getBuyerCatalogFixture(locale);
+  const [liveCatalog, setLiveCatalog] = useState<BuyerCatalogResponse | null>(null);
+  const catalog = liveCatalog ?? getBuyerCatalogFixture(locale);
+
+  useEffect(() => {
+    fetch(`${getApiUrl()}/buyer/catalog?locale=${locale}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: BuyerCatalogResponse | null) => setLiveCatalog(data))
+      .catch(() => undefined);
+  }, [locale]);
 
   return (
       <BuyerDiscoveryShell locale={locale} title={copy.browseTitle} subtitle={copy.browseLead}>

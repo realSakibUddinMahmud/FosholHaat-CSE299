@@ -1,5 +1,10 @@
 import { Controller, Get, Param, Post } from '@nestjs/common';
 import { HubDispatchOperationsService } from './hub-dispatch-operations.service';
+import type {
+  HubDispatchDetailResponse,
+  HubDispatchMutationResponse,
+  HubDispatchQueueResponse,
+} from '@fosholhaat/types';
 
 @Controller('hub/dispatch')
 export class HubDispatchOperationsController {
@@ -8,22 +13,28 @@ export class HubDispatchOperationsController {
   ) {}
 
   @Get()
-  getDispatchQueue() {
+  async getDispatchQueue(): Promise<HubDispatchQueueResponse> {
     return this.hubDispatchOperationsService.getDispatchQueue();
   }
 
   @Get(':loadId')
-  getDispatchLoad(@Param('loadId') loadId: string) {
+  async getDispatchLoad(
+    @Param('loadId') loadId: string,
+  ): Promise<HubDispatchDetailResponse> {
     return this.hubDispatchOperationsService.getDispatchLoad(loadId);
   }
 
   @Post(':loadId/assign')
-  assignDispatchLoad(@Param('loadId') loadId: string) {
+  async assignDispatchLoad(
+    @Param('loadId') loadId: string,
+  ): Promise<HubDispatchMutationResponse> {
     return this.hubDispatchOperationsService.assignDispatchLoad(loadId);
   }
 
   @Post(':loadId/dispatched')
-  markDispatchLoadDispatched(@Param('loadId') loadId: string) {
+  async markDispatchLoadDispatched(
+    @Param('loadId') loadId: string,
+  ): Promise<HubDispatchMutationResponse> {
     return this.hubDispatchOperationsService.markDispatchLoadDispatched(loadId);
   }
 }

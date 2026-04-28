@@ -1,9 +1,10 @@
 import { IsIn, IsOptional, IsString, MinLength } from 'class-validator';
-import type { Locale, SignupRequest, SignupRole } from '@fosholhaat/types';
+import type { Locale, SignupRole } from '@fosholhaat/types';
 
-export class SignupRequestDto implements SignupRequest {
+export class SignupRequestDto {
+  @IsOptional()
   @IsIn(['buyer', 'seller'])
-  role!: SignupRole;
+  role?: SignupRole;
 
   @IsString()
   @MinLength(2)

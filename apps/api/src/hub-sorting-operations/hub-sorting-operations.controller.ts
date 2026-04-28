@@ -15,38 +15,38 @@ export class HubSortingOperationsController {
   ) {}
 
   @Get()
-  getSortingQueue(): SortingQueueResponse {
+  async getSortingQueue(): Promise<SortingQueueResponse> {
     return this.hubSortingOperationsService.getSortingQueue();
   }
 
   @Get(':batchId')
-  getSortingBatch(
+  async getSortingBatch(
     @Param('batchId') batchId: string,
-  ): SortingBatchDetailResponse {
+  ): Promise<SortingBatchDetailResponse> {
     return this.hubSortingOperationsService.getSortingBatch(batchId);
   }
 
   @Post(':batchId/start')
-  startSortingBatch(
+  async startSortingBatch(
     @Param('batchId') batchId: string,
     @Body() body: SortingBatchTransitionPayload = {},
-  ): SortingBatchMutationResponse {
+  ): Promise<SortingBatchMutationResponse> {
     return this.hubSortingOperationsService.startSortingBatch(batchId, body);
   }
 
   @Post(':batchId/hold')
-  holdSortingBatch(
+  async holdSortingBatch(
     @Param('batchId') batchId: string,
     @Body() body: SortingBatchHoldPayload,
-  ): SortingBatchMutationResponse {
+  ): Promise<SortingBatchMutationResponse> {
     return this.hubSortingOperationsService.holdSortingBatch(batchId, body);
   }
 
   @Post(':batchId/complete')
-  completeSortingBatch(
+  async completeSortingBatch(
     @Param('batchId') batchId: string,
     @Body() body: SortingBatchTransitionPayload = {},
-  ): SortingBatchMutationResponse {
+  ): Promise<SortingBatchMutationResponse> {
     return this.hubSortingOperationsService.completeSortingBatch(batchId, body);
   }
 }

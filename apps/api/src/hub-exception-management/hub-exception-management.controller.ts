@@ -14,22 +14,22 @@ export class HubExceptionManagementController {
   ) {}
 
   @Get()
-  getExceptions(): HubExceptionListResponse {
+  async getExceptions(): Promise<HubExceptionListResponse> {
     return this.hubExceptionManagementService.getExceptions();
   }
 
   @Get(':exceptionId')
-  getException(
+  async getException(
     @Param('exceptionId') exceptionId: string,
-  ): HubExceptionDetailResponse {
+  ): Promise<HubExceptionDetailResponse> {
     return this.hubExceptionManagementService.getException(exceptionId);
   }
 
   @Post(':exceptionId/resolve')
-  resolveException(
+  async resolveException(
     @Param('exceptionId') exceptionId: string,
     @Body() body: HubExceptionMutationRequest = {},
-  ): HubExceptionMutationResponse {
+  ): Promise<HubExceptionMutationResponse> {
     return this.hubExceptionManagementService.resolveException(
       exceptionId,
       body,
@@ -37,10 +37,10 @@ export class HubExceptionManagementController {
   }
 
   @Post(':exceptionId/escalate')
-  escalateException(
+  async escalateException(
     @Param('exceptionId') exceptionId: string,
     @Body() body: HubExceptionMutationRequest = {},
-  ): HubExceptionMutationResponse {
+  ): Promise<HubExceptionMutationResponse> {
     return this.hubExceptionManagementService.escalateException(
       exceptionId,
       body,

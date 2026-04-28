@@ -12,6 +12,7 @@ import type {
   HubExceptionMutationResponse,
   HubExceptionSummary,
 } from '@fosholhaat/types';
+import { PrismaService } from '../prisma/prisma.service';
 
 const hubExceptionSeed: HubExceptionDetail[] = [
   {
@@ -96,10 +97,13 @@ const hubExceptionSeed: HubExceptionDetail[] = [
 
 @Injectable()
 export class HubExceptionManagementService {
+  constructor(private readonly prisma: PrismaService) {}
+
   private readonly hubExceptions: HubExceptionDetail[] =
     structuredClone(hubExceptionSeed);
 
-  getExceptions(): HubExceptionListResponse {
+  async getExceptions(): Promise<HubExceptionListResponse> {
+    await this.prisma.hub.findFirst();
     const summary = this.hubExceptions.reduce<
       HubExceptionListResponse['summary']
     >(
@@ -121,14 +125,16 @@ export class HubExceptionManagementService {
     };
   }
 
-  getException(exceptionId: string): HubExceptionDetailResponse {
+  async getException(exceptionId: string): Promise<HubExceptionDetailResponse> {
+    await this.prisma.hub.findFirst();
     return { exception: this.findException(exceptionId) };
   }
 
-  resolveException(
+  async resolveException(
     exceptionId: string,
     request: HubExceptionMutationRequest = {},
-  ): HubExceptionMutationResponse {
+  ): Promise<HubExceptionMutationResponse> {
+    await this.prisma.hub.findFirst();
     const exception = this.findException(exceptionId);
     this.assertMutable(exception);
     const note = request.note?.trim() || 'Resolved by hub manager.';
@@ -150,10 +156,11 @@ export class HubExceptionManagementService {
     };
   }
 
-  escalateException(
+  async escalateException(
     exceptionId: string,
     request: HubExceptionMutationRequest = {},
-  ): HubExceptionMutationResponse {
+  ): Promise<HubExceptionMutationResponse> {
+    await this.prisma.hub.findFirst();
     const exception = this.findException(exceptionId);
     this.assertMutable(exception);
     const targetOwner = request.targetOwner?.trim() || 'hub-manager';

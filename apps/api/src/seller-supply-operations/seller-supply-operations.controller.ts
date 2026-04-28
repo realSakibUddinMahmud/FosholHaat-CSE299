@@ -15,22 +15,22 @@ export class SellerSupplyOperationsController {
   ) {}
 
   @Get('seller/supply')
-  getSellerSupply(): SellerSupplyListResponse {
+  async getSellerSupply(): Promise<SellerSupplyListResponse> {
     return this.sellerSupplyOperationsService.getSellerSupply();
   }
 
   @Post('seller/supply')
-  createSellerSupply(
+  async createSellerSupply(
     @Body() body: CreateSellerSupplyInput,
-  ): SellerSupplyMutationResponse {
+  ): Promise<SellerSupplyMutationResponse> {
     return this.sellerSupplyOperationsService.createSellerSupply(body);
   }
 
   @Patch('seller/supply/:listingId')
-  updateSellerSupply(
+  async updateSellerSupply(
     @Param('listingId') listingId: string,
     @Body() body: UpdateSellerSupplyInput,
-  ): SellerSupplyMutationResponse {
+  ): Promise<SellerSupplyMutationResponse> {
     return this.sellerSupplyOperationsService.updateSellerSupply(
       listingId,
       body,
@@ -38,9 +38,9 @@ export class SellerSupplyOperationsController {
   }
 
   @Get('seller/dwr/:recordId')
-  getSellerDwrRecord(
+  async getSellerDwrRecord(
     @Param('recordId') recordId: string,
-  ): SellerDwrDetailResponse {
+  ): Promise<SellerDwrDetailResponse> {
     return this.sellerSupplyOperationsService.getSellerDwrRecord(recordId);
   }
 }

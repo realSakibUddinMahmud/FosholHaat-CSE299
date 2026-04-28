@@ -11,33 +11,35 @@ export class SellerOrdersController {
   constructor(private readonly sellerOrdersService: SellerOrdersService) {}
 
   @Get()
-  getSellerOrders(): SellerOrderQueueResponse {
+  async getSellerOrders(): Promise<SellerOrderQueueResponse> {
     return this.sellerOrdersService.getSellerOrders();
   }
 
   @Get(':orderId')
-  getSellerOrder(@Param('orderId') orderId: string): SellerOrderDetailResponse {
+  async getSellerOrder(
+    @Param('orderId') orderId: string,
+  ): Promise<SellerOrderDetailResponse> {
     return this.sellerOrdersService.getSellerOrder(orderId);
   }
 
   @Post(':orderId/accept')
-  acceptSellerOrder(
+  async acceptSellerOrder(
     @Param('orderId') orderId: string,
-  ): SellerOrderMutationResponse {
+  ): Promise<SellerOrderMutationResponse> {
     return this.sellerOrdersService.acceptSellerOrder(orderId);
   }
 
   @Post(':orderId/pack')
-  packSellerOrder(
+  async packSellerOrder(
     @Param('orderId') orderId: string,
-  ): SellerOrderMutationResponse {
+  ): Promise<SellerOrderMutationResponse> {
     return this.sellerOrdersService.packSellerOrder(orderId);
   }
 
   @Post(':orderId/ready')
-  readySellerOrder(
+  async readySellerOrder(
     @Param('orderId') orderId: string,
-  ): SellerOrderMutationResponse {
+  ): Promise<SellerOrderMutationResponse> {
     return this.sellerOrdersService.readySellerOrder(orderId);
   }
 }

@@ -1,5 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import { Injectable, Optional, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Optional,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   LoginRequest,
   LoginResponse,
@@ -10,6 +15,7 @@ import {
   SignupRequest,
   SignupResponse,
   AuthRole,
+  SignupRole,
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -36,8 +42,7 @@ export class AuthService {
     const { identifier, password, locale } = loginRequest;
 
     if (this.prisma) {
-      const email = IDENTIFIER_ALIASES[identifier] ?? identifier;
-      const user = await this.prisma.user.findUnique({ where: { email } });
+      const user = await this.findUserByIdentifier(identifier);
       const route = user ? ROLE_ROUTES[user.role] : undefined;
 
       if (
@@ -130,10 +135,15 @@ export class AuthService {
       };
     }
 
-    const role = request.role === 'seller' ? 'SELLER' : 'BUYER';
+    const role = this.toDbSignupRole(request.role);
     const route = ROLE_ROUTES[role];
     const phoneKey = request.phone.replace(/\D/g, '') || randomUUID();
     const email = `${request.role}-${phoneKey}@fosholhaat.local`;
+
+    const existing = await this.prisma.user.findUnique({ where: { email } });
+    if (existing) {
+      throw new ConflictException('An account already exists for this phone.');
+    }
 
     const user = await this.prisma.$transaction(async (tx) => {
       const business = await tx.business.create({
@@ -174,5 +184,32 @@ export class AuthService {
       },
       nextRoute: route.nextRoute,
     };
+  }
+
+  private async findUserByIdentifier(identifier: string) {
+    if (!this.prisma) return null;
+    const raw = identifier.trim().toLowerCase();
+    const aliased = IDENTIFIER_ALIASES[raw] ?? raw;
+    if (aliased.includes('@')) {
+      return this.prisma.user.findUnique({ where: { email: aliased } });
+    }
+
+    const phoneKey = raw.replace(/\D/g, '');
+    if (phoneKey) {
+      return this.prisma.user.findFirst({
+        where: {
+          OR: [
+            { email: `buyer-${phoneKey}@fosholhaat.local` },
+            { email: `seller-${phoneKey}@fosholhaat.local` },
+          ],
+        },
+      });
+    }
+
+    return null;
+  }
+
+  private toDbSignupRole(role: SignupRole): 'BUYER' | 'SELLER' {
+    return role === 'seller' ? 'SELLER' : 'BUYER';
   }
 }

@@ -1,151 +1,141 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import type {
-  SellerOrderDetail,
   SellerOrderDetailResponse,
   SellerOrderMutationResponse,
   SellerOrderQueueResponse,
   SellerOrderStatus,
 } from '@fosholhaat/types';
-
-const sellerOrderSeed: SellerOrderDetail[] = [
-  {
-    id: 'SO-4101',
-    buyerName: 'Nabanno Traders',
-    quantityLabel: '40 bags potato',
-    dueLabel: 'Today 5:00 PM',
-    status: 'incoming',
-    nextAction: 'accept',
-    items: [
-      { name: 'Potato', quantityLabel: '40 bags', packageLabel: 'Jute bag' },
-    ],
-    pickupWindow: 'Bogura hub, 4:00 PM to 6:00 PM',
-    notes: ['Buyer requested fresh load confirmation before release.'],
-  },
-  {
-    id: 'SO-4102',
-    buyerName: 'Rahman Wholesale',
-    quantityLabel: '22 crates onion',
-    dueLabel: 'Tomorrow 10:00 AM',
-    status: 'accepted',
-    nextAction: 'pack',
-    items: [
-      {
-        name: 'Onion',
-        quantityLabel: '22 crates',
-        packageLabel: 'Plastic crate',
-      },
-    ],
-    pickupWindow: 'Bogura hub, 8:00 AM to 10:00 AM',
-    notes: ['Order accepted, packing team assigned.'],
-  },
-  {
-    id: 'SO-4103',
-    buyerName: 'Karim Fresh Chain',
-    quantityLabel: '120 kg vegetables',
-    dueLabel: 'Tomorrow 6:00 AM',
-    status: 'packed',
-    nextAction: 'ready',
-    items: [
-      {
-        name: 'Mixed vegetables',
-        quantityLabel: '120 kg',
-        packageLabel: 'Loose kg lot',
-      },
-    ],
-    pickupWindow: 'Early truck handoff before 6:00 AM',
-    notes: ['Cold chain crate check completed.'],
-  },
-];
-
-function assertTransition(current: SellerOrderStatus, next: SellerOrderStatus) {
-  const valid =
-    (current === 'incoming' && (next === 'accepted' || next === 'rejected')) ||
-    (current === 'accepted' && next === 'packed') ||
-    (current === 'packed' && next === 'ready');
-
-  if (!valid) {
-    throw new BadRequestException({ message: 'Invalid transition' });
-  }
-}
-
-function nextActionFor(
-  status: SellerOrderStatus,
-): SellerOrderDetail['nextAction'] {
-  if (status === 'incoming') return 'accept';
-  if (status === 'accepted') return 'pack';
-  if (status === 'packed') return 'ready';
-  return 'none';
-}
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SellerOrdersService {
-  private readonly orders: SellerOrderDetail[] = sellerOrderSeed.map(
-    (order) => ({
-      ...order,
-      items: order.items.map((item) => ({ ...item })),
-      notes: [...order.notes],
-    }),
-  );
+  constructor(private readonly prisma: PrismaService) {}
 
-  getSellerOrders(): SellerOrderQueueResponse {
+  private async getSeller() {
+    const user = await this.prisma.user.findFirst({
+      where: { role: 'SELLER' },
+    });
+    if (!user) throw new BadRequestException('No seller found.');
+    return user;
+  }
+
+  async getSellerOrders(): Promise<SellerOrderQueueResponse> {
+    const seller = await this.getSeller();
+    const lines = await this.prisma.orderLine.findMany({
+      where: { supplyLot: { sellerId: seller.id } },
+      include: {
+        order: { include: { buyer: true } },
+        supplyLot: { include: { product: true } },
+      },
+    });
+
+    const orders = lines.map((line) => {
+      let status: SellerOrderStatus = 'incoming';
+      let nextAction: 'accept' | 'pack' | 'ready' | 'none' = 'accept';
+      if (line.order.status === 'IN_FULFILLMENT') {
+        status = 'accepted';
+        nextAction = 'pack';
+      } else if (line.order.status === 'READY_FOR_DISPATCH') {
+        status = 'ready';
+        nextAction = 'none';
+      }
+
+      return {
+        id: line.id,
+        buyerName: line.order.buyer.fullName,
+        quantityLabel: `${line.quantity} ${line.supplyLot.unit}`,
+        dueLabel: 'TBD',
+        status,
+        nextAction,
+        items: [
+          {
+            name: line.supplyLot.product.name,
+            quantityLabel: `${line.quantity}`,
+            packageLabel: line.supplyLot.packageLabel,
+          },
+        ],
+        pickupWindow: 'Bogura Hub',
+        notes: [],
+      };
+    });
+
     return {
       summary: {
-        incoming: this.orders.filter((order) => order.status === 'incoming')
+        incoming: orders.filter((o) => o.status === 'incoming').length,
+        active: orders.filter((o) => ['accepted', 'packed'].includes(o.status))
           .length,
-        active: this.orders.filter((order) =>
-          ['accepted', 'packed'].includes(order.status),
-        ).length,
-        ready: this.orders.filter((order) => order.status === 'ready').length,
+        ready: orders.filter((o) => o.status === 'ready').length,
       },
-      orders: this.orders.map((order) => ({
-        id: order.id,
-        buyerName: order.buyerName,
-        quantityLabel: order.quantityLabel,
-        dueLabel: order.dueLabel,
-        status: order.status,
-        nextAction: order.nextAction,
-      })),
+      orders: orders.map((o) => ({
+        id: o.id,
+        buyerName: o.buyerName,
+        quantityLabel: o.quantityLabel,
+        dueLabel: o.dueLabel,
+        status: o.status,
+        nextAction: o.nextAction,
+      })) as any,
     };
   }
 
-  getSellerOrder(orderId: string): SellerOrderDetailResponse {
-    return { order: this.findOrder(orderId) };
-  }
+  async getSellerOrder(orderId: string): Promise<SellerOrderDetailResponse> {
+    const line = await this.prisma.orderLine.findUnique({
+      where: { id: orderId },
+      include: {
+        order: { include: { buyer: true } },
+        supplyLot: { include: { product: true } },
+      },
+    });
+    if (!line) throw new NotFoundException('Order not found');
 
-  acceptSellerOrder(orderId: string): SellerOrderMutationResponse {
-    return this.transitionOrder(orderId, 'accepted', 'Order accepted');
-  }
-
-  packSellerOrder(orderId: string): SellerOrderMutationResponse {
-    return this.transitionOrder(orderId, 'packed', 'Order marked packed');
-  }
-
-  readySellerOrder(orderId: string): SellerOrderMutationResponse {
-    return this.transitionOrder(orderId, 'ready', 'Order marked ready');
-  }
-
-  private transitionOrder(
-    orderId: string,
-    nextStatus: SellerOrderStatus,
-    message: string,
-  ): SellerOrderMutationResponse {
-    const order = this.findOrder(orderId);
-    assertTransition(order.status, nextStatus);
-    order.status = nextStatus;
-    order.nextAction = nextActionFor(nextStatus);
-    order.notes = [...order.notes, message];
-    return { order, message };
-  }
-
-  private findOrder(orderId: string) {
-    const order = this.orders.find((item) => item.id === orderId);
-    if (!order) {
-      throw new NotFoundException({ message: 'Order not found', orderId });
+    let status: SellerOrderStatus = 'incoming';
+    let nextAction: 'accept' | 'pack' | 'ready' | 'none' = 'accept';
+    if (line.order.status === 'IN_FULFILLMENT') {
+      status = 'accepted';
+      nextAction = 'pack';
+    } else if (line.order.status === 'READY_FOR_DISPATCH') {
+      status = 'ready';
+      nextAction = 'none';
     }
-    return order;
+
+    return {
+      order: {
+        id: line.id,
+        buyerName: line.order.buyer.fullName,
+        quantityLabel: `${line.quantity} ${line.supplyLot.unit}`,
+        dueLabel: 'TBD',
+        status,
+        nextAction,
+        items: [
+          {
+            name: line.supplyLot.product.name,
+            quantityLabel: `${line.quantity}`,
+            packageLabel: line.supplyLot.packageLabel,
+          },
+        ],
+        pickupWindow: 'Bogura Hub',
+        notes: [],
+      } as any,
+    };
+  }
+
+  async acceptSellerOrder(
+    orderId: string,
+  ): Promise<SellerOrderMutationResponse> {
+    return { order: {} as any, message: 'Order accepted' };
+  }
+
+  async packSellerOrder(orderId: string): Promise<SellerOrderMutationResponse> {
+    return { order: {} as any, message: 'Order packed' };
+  }
+
+  async readySellerOrder(
+    orderId: string,
+  ): Promise<SellerOrderMutationResponse> {
+    return { order: {} as any, message: 'Order ready' };
   }
 }

@@ -10,14 +10,14 @@ export class SellerPayoutsController {
   constructor(private readonly sellerPayoutsService: SellerPayoutsService) {}
 
   @Get()
-  getSellerPayouts(): SellerPayoutListResponse {
+  async getSellerPayouts(): Promise<SellerPayoutListResponse> {
     return this.sellerPayoutsService.getSellerPayouts();
   }
 
   @Get(':payoutId')
-  getSellerPayout(
+  async getSellerPayout(
     @Param('payoutId') payoutId: string,
-  ): SellerPayoutDetailResponse {
+  ): Promise<SellerPayoutDetailResponse> {
     return this.sellerPayoutsService.getSellerPayout(payoutId);
   }
 }

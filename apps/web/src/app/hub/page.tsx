@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { type Locale, getHubCoordinationCopy } from "@fosholhaat/types";
+import { useEffect, useState } from "react";
+import { type HubCoordinationResponse, type Locale, getHubCoordinationCopy } from "@fosholhaat/types";
 import { BrandLockup } from "../../components/brand-lockup";
 import { useBrowserLocale } from "../../lib/locale";
 import { HUB_OVERVIEW, getHubLaneHref } from "./hub.data";
@@ -9,8 +10,18 @@ import styles from "./hub.module.css";
 
 export function HubWorkspaceView({ locale }: { locale: Locale }) {
   const copy = getHubCoordinationCopy(locale);
-  const activeCount = HUB_OVERVIEW.lanes.reduce((sum, lane) => sum + lane.count, 0);
-  const urgentCount = HUB_OVERVIEW.alerts.filter((alert) => alert.severity === "high").length;
+  const [liveOverview, setLiveOverview] = useState<HubCoordinationResponse | null>(null);
+  const overview = liveOverview ?? HUB_OVERVIEW;
+  const activeCount = overview.lanes.reduce((sum, lane) => sum + lane.count, 0);
+  const urgentCount = overview.alerts.filter((alert) => alert.severity === "high").length;
+
+  useEffect(() => {
+    if (typeof fetch !== "function") return;
+    fetch("/api/hub/coordination", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: HubCoordinationResponse | null) => setLiveOverview(data))
+      .catch(() => undefined);
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -34,7 +45,7 @@ export function HubWorkspaceView({ locale }: { locale: Locale }) {
       </header>
 
       <section className={styles.metricStrip}>
-        {HUB_OVERVIEW.lanes.map((lane) => (
+        {overview.lanes.map((lane) => (
           <article key={lane.key} className={styles.metricCard}>
             <p className={styles.metricLabel}>{copy.lanes[lane.key]}</p>
             <div className={styles.metricValueRow}>
@@ -47,7 +58,7 @@ export function HubWorkspaceView({ locale }: { locale: Locale }) {
 
       <section className={styles.board}>
         <div className={styles.laneColumn}>
-          {HUB_OVERVIEW.lanes.map((lane) => {
+          {overview.lanes.map((lane) => {
             const href = getHubLaneHref(lane.key);
 
             return href ? (
@@ -81,7 +92,7 @@ export function HubWorkspaceView({ locale }: { locale: Locale }) {
         <aside className={styles.alertRail}>
           <h2 className={styles.sectionTitle}>{copy.labels.alerts}</h2>
           <div className={styles.alertList}>
-            {HUB_OVERVIEW.alerts.map((alert) => (
+            {overview.alerts.map((alert) => (
               <article
                 key={alert.id}
                 className={alert.severity === "high" ? styles.alertHigh : styles.alertMedium}

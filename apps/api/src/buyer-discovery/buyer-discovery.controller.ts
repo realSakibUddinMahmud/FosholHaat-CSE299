@@ -15,28 +15,32 @@ export class BuyerDiscoveryController {
   constructor(private readonly buyerDiscoveryService: BuyerDiscoveryService) {}
 
   @Get()
-  getCatalog(@Query() query: BuyerCatalogQuery): BuyerCatalogResponse {
+  async getCatalog(
+    @Query() query: BuyerCatalogQuery,
+  ): Promise<BuyerCatalogResponse> {
     return this.buyerDiscoveryService.getCatalog(query);
   }
 
   @Get('categories/:categorySlug')
-  getCategoryBrowse(
+  async getCategoryBrowse(
     @Param('categorySlug') categorySlug: string,
     @Query() query: BuyerCategoryBrowseQuery,
-  ): BuyerCategoryBrowseResponse {
+  ): Promise<BuyerCategoryBrowseResponse> {
     return this.buyerDiscoveryService.getCategoryBrowse(categorySlug, query);
   }
 
   @Get('search')
-  searchCatalog(@Query() query: BuyerSearchQuery): BuyerSearchResponse {
+  async searchCatalog(
+    @Query() query: BuyerSearchQuery,
+  ): Promise<BuyerSearchResponse> {
     return this.buyerDiscoveryService.searchCatalog(query);
   }
 
   @Get('products/:productId')
-  getProductDetail(
+  async getProductDetail(
     @Param('productId') productId: string,
     @Query('locale') locale?: 'bn' | 'en',
-  ): BuyerProductDetailResponse {
+  ): Promise<BuyerProductDetailResponse> {
     return this.buyerDiscoveryService.getProductDetail(productId, locale);
   }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
 import {
   BadRequestException,
   ConflictException,
@@ -15,6 +16,7 @@ import type {
   ReportDiscrepancyPayload,
 } from '@fosholhaat/types';
 import { InboundReceiptStatus } from '@fosholhaat/types';
+import { PrismaService } from '../prisma/prisma.service';
 
 const inboundReceiptSeed: InboundReceiptDetail[] = [
   {
@@ -97,13 +99,20 @@ const inboundReceiptSeed: InboundReceiptDetail[] = [
 
 @Injectable()
 export class HubInboundOperationsService {
+  constructor(private readonly prisma: PrismaService) {}
+
   private readonly inboundReceipts: InboundReceiptDetail[] =
     structuredClone(inboundReceiptSeed);
 
-  getInboundQueue(): InboundReceiptQueueResponse {
-    const summary = this.inboundReceipts.reduce<
-      InboundReceiptQueueResponse['summary']
-    >(
+  async getInboundQueue(): Promise<InboundReceiptQueueResponse> {
+    const receipts = await this.prisma.inboundReceipt.findMany({
+      include: {
+        supplyLot: { include: { product: true, business: true, seller: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    const mapped = receipts.map((receipt) => this.fromDbReceipt(receipt));
+    const summary = mapped.reduce<InboundReceiptQueueResponse['summary']>(
       (accumulator, receipt) => {
         accumulator[receipt.status] += 1;
         accumulator.total += 1;
@@ -115,59 +124,129 @@ export class HubInboundOperationsService {
     return {
       summary,
       activeTab: InboundReceiptStatus.PENDING,
-      featuredReceiptId: this.inboundReceipts[0].id,
-      receipts: this.inboundReceipts.map((receipt) => this.toSummary(receipt)),
+      featuredReceiptId: mapped[0]?.id ?? '',
+      receipts: mapped.map((receipt) => this.toSummary(receipt)),
     };
   }
 
-  getInboundReceipt(receiptId: string): InboundReceiptDetailResponse {
-    return { receipt: this.findReceipt(receiptId) };
+  async getInboundReceipt(
+    receiptId: string,
+  ): Promise<InboundReceiptDetailResponse> {
+    const receipt = await this.getDbReceipt(receiptId);
+    return { receipt: this.fromDbReceipt(receipt) };
   }
 
-  receiveInboundReceipt(
+  async receiveInboundReceipt(
     receiptId: string,
     request: ReceiveReceiptPayload = {},
-  ): InboundReceiptMutationResponse {
-    const receipt = this.findReceipt(receiptId);
-    this.assertPending(receipt);
-
-    const receivedAt = new Date().toISOString();
-    receipt.status = InboundReceiptStatus.RECEIVED;
-    receipt.receivedAt = receivedAt;
-    receipt.receiverName = request.receiverName?.trim() || 'Hub receiver';
-    receipt.actualGradeLabel = receipt.expectedGradeLabel;
-    receipt.discrepancy = null;
-    receipt.nextStepLabel = 'Move to sorting intake.';
+  ): Promise<InboundReceiptMutationResponse> {
+    const current = this.fromDbReceipt(await this.getDbReceipt(receiptId));
+    this.assertPending(current);
+    const receipt = await this.prisma.inboundReceipt.update({
+      where: { id: receiptId },
+      data: {
+        status: InboundReceiptStatus.RECEIVED,
+        actualQty: current.expectedQuantity,
+        discrepancyNotes: null,
+        notes: request.receiverName?.trim()
+          ? `${current.note} Receiver: ${request.receiverName.trim()}`
+          : current.note,
+      },
+      include: {
+        supplyLot: { include: { product: true, business: true, seller: true } },
+        receiver: true,
+      },
+    });
+    await this.prisma.supplyLot.update({
+      where: { id: receipt.supplyLotId },
+      data: { status: 'RECEIVED' },
+    });
 
     return {
-      receipt,
+      receipt: this.fromDbReceipt(receipt),
       feedbackMessage: 'Receipt confirmed.',
     };
   }
 
-  reportInboundReceiptDiscrepancy(
+  async reportInboundReceiptDiscrepancy(
     receiptId: string,
     request: ReportDiscrepancyPayload,
-  ): InboundReceiptMutationResponse {
-    const receipt = this.findReceipt(receiptId);
-    this.assertPending(receipt);
+  ): Promise<InboundReceiptMutationResponse> {
+    const current = this.fromDbReceipt(await this.getDbReceipt(receiptId));
+    this.assertPending(current);
     this.assertDiscrepancyPayload(receiptId, request);
-
-    const reportedAt = new Date().toISOString();
-    receipt.status = InboundReceiptStatus.DISCREPANCY;
-    receipt.receivedAt = reportedAt;
-    receipt.receiverName = 'Hub receiver';
-    receipt.actualGradeLabel = receipt.expectedGradeLabel;
-    receipt.discrepancy = {
-      reportedAt,
-      actualQuantity: request.actualQuantity,
-      notes: request.notes.trim(),
-    };
-    receipt.nextStepLabel = 'Hold for discrepancy review.';
+    const receipt = await this.prisma.inboundReceipt.update({
+      where: { id: receiptId },
+      data: {
+        status: InboundReceiptStatus.DISCREPANCY,
+        actualQty: request.actualQuantity,
+        discrepancyNotes: request.notes.trim(),
+      },
+      include: {
+        supplyLot: { include: { product: true, business: true, seller: true } },
+        receiver: true,
+      },
+    });
 
     return {
-      receipt,
+      receipt: this.fromDbReceipt(receipt),
       feedbackMessage: 'Discrepancy logged.',
+    };
+  }
+
+  private async getDbReceipt(receiptId: string) {
+    const receipt = await this.prisma.inboundReceipt.findUnique({
+      where: { id: receiptId },
+      include: {
+        supplyLot: { include: { product: true, business: true, seller: true } },
+        receiver: true,
+      },
+    });
+    if (!receipt) {
+      throw new NotFoundException(
+        this.createError('RECEIPT_NOT_FOUND', receiptId, 'Receipt not found'),
+      );
+    }
+    return receipt;
+  }
+
+  private fromDbReceipt(receipt: any): InboundReceiptDetail {
+    const supplierName =
+      receipt.supplyLot.business?.name || receipt.supplyLot.seller.fullName;
+    return {
+      id: receipt.id,
+      supplierName,
+      commodity: receipt.supplyLot.product.name,
+      expectedQuantity: receipt.expectedQty,
+      unit: receipt.supplyLot.unit,
+      status: receipt.status,
+      arrivalDate: receipt.createdAt.toISOString(),
+      arrivalWindowLabel: 'Today',
+      laneLabel: receipt.hub?.name ?? 'Inbound bay',
+      note: receipt.notes,
+      receivedAt:
+        receipt.status === InboundReceiptStatus.PENDING
+          ? null
+          : receipt.updatedAt.toISOString(),
+      expectedGradeLabel: receipt.supplyLot.gradeLabel,
+      actualGradeLabel:
+        receipt.status === InboundReceiptStatus.PENDING
+          ? null
+          : receipt.supplyLot.gradeLabel,
+      receiverName: receipt.receiver?.fullName ?? null,
+      discrepancy: receipt.discrepancyNotes
+        ? {
+            reportedAt: receipt.updatedAt.toISOString(),
+            actualQuantity: receipt.actualQty ?? 0,
+            notes: receipt.discrepancyNotes,
+          }
+        : null,
+      nextStepLabel:
+        receipt.status === InboundReceiptStatus.RECEIVED
+          ? 'Move to sorting intake.'
+          : receipt.status === InboundReceiptStatus.DISCREPANCY
+            ? 'Hold for discrepancy review.'
+            : 'Confirm receipt before sorting.',
     };
   }
 

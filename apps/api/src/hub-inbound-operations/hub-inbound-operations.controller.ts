@@ -15,22 +15,22 @@ export class HubInboundOperationsController {
   ) {}
 
   @Get()
-  getInboundQueue(): InboundReceiptQueueResponse {
+  async getInboundQueue(): Promise<InboundReceiptQueueResponse> {
     return this.hubInboundOperationsService.getInboundQueue();
   }
 
   @Get(':receiptId')
-  getInboundReceipt(
+  async getInboundReceipt(
     @Param('receiptId') receiptId: string,
-  ): InboundReceiptDetailResponse {
+  ): Promise<InboundReceiptDetailResponse> {
     return this.hubInboundOperationsService.getInboundReceipt(receiptId);
   }
 
   @Post(':receiptId/receive')
-  receiveInboundReceipt(
+  async receiveInboundReceipt(
     @Param('receiptId') receiptId: string,
     @Body() body: ReceiveReceiptPayload = {},
-  ): InboundReceiptMutationResponse {
+  ): Promise<InboundReceiptMutationResponse> {
     return this.hubInboundOperationsService.receiveInboundReceipt(
       receiptId,
       body,
@@ -38,10 +38,10 @@ export class HubInboundOperationsController {
   }
 
   @Post(':receiptId/discrepancies')
-  reportInboundReceiptDiscrepancy(
+  async reportInboundReceiptDiscrepancy(
     @Param('receiptId') receiptId: string,
     @Body() body: ReportDiscrepancyPayload,
-  ): InboundReceiptMutationResponse {
+  ): Promise<InboundReceiptMutationResponse> {
     return this.hubInboundOperationsService.reportInboundReceiptDiscrepancy(
       receiptId,
       body,

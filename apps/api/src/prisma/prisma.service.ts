@@ -13,9 +13,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       throw new Error('DATABASE_URL is required to initialize PrismaService.');
     }
 
-    // Load Supabase CA cert if available
-    const caCertPath = path.resolve(process.cwd(), 'prod-ca-2021.crt');
-    const sslConfig = fs.existsSync(caCertPath)
+    // Try to find the Supabase CA cert in a few possible locations
+    const possiblePaths = [
+      path.resolve(process.cwd(), 'prod-ca-2021.crt'),
+      path.resolve(process.cwd(), '../../prod-ca-2021.crt'),
+      path.resolve(__dirname, '../../../../prod-ca-2021.crt'), // from dist/src/prisma
+    ];
+
+    const caCertPath = possiblePaths.find((p) => fs.existsSync(p));
+
+    const sslConfig = caCertPath
       ? { ca: fs.readFileSync(caCertPath, 'utf-8'), rejectUnauthorized: true }
       : { rejectUnauthorized: false };
 

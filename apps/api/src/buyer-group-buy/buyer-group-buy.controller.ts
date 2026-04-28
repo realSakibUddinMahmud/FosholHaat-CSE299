@@ -21,13 +21,15 @@ export class BuyerGroupBuyController {
   constructor(private readonly service: BuyerGroupBuyService) {}
 
   @Get()
-  getGroupBuys(): GroupBuySummary[] {
+  async getGroupBuys(): Promise<GroupBuySummary[]> {
     return this.service.getGroupBuys();
   }
 
   @Get(':groupBuyId')
-  getGroupBuyDetail(@Param('groupBuyId') groupBuyId: string): GroupBuyDetail {
-    const detail = this.service.getGroupBuyDetail(groupBuyId);
+  async getGroupBuyDetail(
+    @Param('groupBuyId') groupBuyId: string,
+  ): Promise<GroupBuyDetail> {
+    const detail = await this.service.getGroupBuyDetail(groupBuyId);
     if (!detail) {
       throw new NotFoundException(`Group buy with ID ${groupBuyId} not found`);
     }
@@ -36,10 +38,10 @@ export class BuyerGroupBuyController {
 
   @Post(':groupBuyId/join')
   @HttpCode(HttpStatus.OK)
-  joinGroupBuy(
+  async joinGroupBuy(
     @Param('groupBuyId') groupBuyId: string,
     @Body() request: JoinGroupBuyDto,
-  ): JoinGroupBuyResponse {
+  ): Promise<JoinGroupBuyResponse> {
     return this.service.joinGroupBuy(groupBuyId, request);
   }
 }

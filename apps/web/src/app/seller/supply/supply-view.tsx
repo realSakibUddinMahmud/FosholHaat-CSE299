@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   Bell,
   Clock3,
@@ -11,7 +12,7 @@ import {
   Truck,
   Warehouse,
 } from "lucide-react";
-import type { Locale } from "@fosholhaat/types";
+import type { Locale, SellerSupplyListResponse } from "@fosholhaat/types";
 import { BrandLockup } from "../../../components/brand-lockup";
 import { getWebSellerSupplyCopy, SELLER_SUPPLY_LISTINGS, formatSellerMoney } from "./supply-data";
 import styles from "./supply.module.css";
@@ -41,10 +42,20 @@ export function SellerSupplyListView({
   mode?: "workspace" | "supply";
 }) {
   const copy = getWebSellerSupplyCopy(locale);
+  const [liveSupply, setLiveSupply] = useState<SellerSupplyListResponse | null>(null);
   const title = mode === "workspace" ? copy.workspaceTitle : copy.supplyTitle;
   const subtitle = mode === "workspace" ? copy.workspaceSubtitle : copy.supplySubtitle;
   const activeTab = activeNav(mode);
-  const listingCount = SELLER_SUPPLY_LISTINGS.length;
+  const listings = liveSupply?.listings ?? SELLER_SUPPLY_LISTINGS;
+  const listingCount = listings.length;
+
+  useEffect(() => {
+    if (typeof fetch !== "function") return;
+    fetch("/api/seller/supply", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: SellerSupplyListResponse | null) => setLiveSupply(data))
+      .catch(() => undefined);
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -119,7 +130,9 @@ export function SellerSupplyListView({
             {(["active", "readyToday", "dwrOpen"] as const).map((metric) => (
               <article key={metric} className={styles.summaryStat}>
                 <p className={styles.summaryStatLabel}>{copy.metrics[metric]}</p>
-                <strong className={styles.summaryStatValue}>{metricValue(metric)}</strong>
+                <strong className={styles.summaryStatValue}>
+                  {liveSupply?.workspace.metrics.find((item) => item.key === metric)?.value ?? metricValue(metric)}
+                </strong>
                 <p className={styles.summaryStatHint}>
                   {metric === "active" ? "Open lots" : metric === "readyToday" ? "Can move today" : "Linked records"}
                 </p>
@@ -142,7 +155,7 @@ export function SellerSupplyListView({
             </div>
 
             <div className={styles.inventoryList}>
-              {SELLER_SUPPLY_LISTINGS.map((listing) => (
+              {listings.map((listing) => (
                 <article key={listing.id} className={styles.supplyCard}>
                   <div className={styles.supplyTop}>
                     <div className={styles.supplyMedia} aria-hidden="true">
@@ -210,7 +223,7 @@ export function SellerSupplyListView({
                 <Clock3 size={17} strokeWidth={2.2} className={styles.railIcon} />
               </div>
               <div className={styles.supportList}>
-                {SELLER_SUPPLY_LISTINGS.slice(0, 2).map((listing) => (
+                {listings.slice(0, 2).map((listing) => (
                   <article key={listing.id} className={styles.supportItem}>
                     <div>
                       <p className={styles.supportItemTitle}>{listing.commodityLabel}</p>

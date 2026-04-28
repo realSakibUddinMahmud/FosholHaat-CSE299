@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import type {
   SellerPayoutDetail,
   SellerPayoutDetailResponse,
   SellerPayoutListResponse,
 } from '@fosholhaat/types';
+import { PrismaService } from '../prisma/prisma.service';
 
 const sellerPayouts: SellerPayoutDetail[] = [
   {
@@ -43,30 +49,16 @@ const sellerPayouts: SellerPayoutDetail[] = [
     ],
     documents: [],
   },
-  {
-    id: 'payout-2026-10-26',
-    referenceCode: '#TR-10482',
-    orderRef: '#FH-8472',
-    method: 'Bank transfer',
-    status: 'settled',
-    amount: 23830,
-    createdAt: '2026-10-26',
-    periodLabel: '26 Oct 2026',
-    businessName: 'GreenLeaf Wholesalers Ltd.',
-    payoutAccountLabel: 'Chase **** 8291',
-    breakdown: [
-      { label: 'Orders settled', amount: 24620 },
-      { label: 'Service fee', amount: -790 },
-    ],
-    documents: [
-      { id: 'csv-oct-26', title: 'CSV statement (26 Oct)', format: 'csv' },
-    ],
-  },
 ];
 
 @Injectable()
 export class SellerPayoutsService {
-  getSellerPayouts(): SellerPayoutListResponse {
+  constructor(private readonly prisma: PrismaService) {}
+
+  async getSellerPayouts(): Promise<SellerPayoutListResponse> {
+    const user = await this.prisma.user.findFirst({
+      where: { role: 'SELLER' },
+    });
     const pendingAmount = sellerPayouts
       .filter((payout) => payout.status !== 'settled')
       .reduce((total, payout) => total + payout.amount, 0);
@@ -96,7 +88,10 @@ export class SellerPayoutsService {
     };
   }
 
-  getSellerPayout(payoutId: string): SellerPayoutDetailResponse {
+  async getSellerPayout(payoutId: string): Promise<SellerPayoutDetailResponse> {
+    const user = await this.prisma.user.findFirst({
+      where: { role: 'SELLER' },
+    });
     const payout = sellerPayouts.find((item) => item.id === payoutId);
 
     if (!payout) {

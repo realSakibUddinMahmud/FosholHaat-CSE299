@@ -1,4 +1,12 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Param,
+  BadRequestException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   LoginResponse,
@@ -39,7 +47,13 @@ export class AuthController {
 
   @Post('signup/:role')
   @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() request: SignupRequestDto): Promise<SignupResponse> {
-    return await this.authService.signup(request);
+  async signup(
+    @Param('role') role: 'buyer' | 'seller',
+    @Body() request: SignupRequestDto,
+  ): Promise<SignupResponse> {
+    if (role !== 'buyer' && role !== 'seller') {
+      throw new BadRequestException('Signup role must be buyer or seller.');
+    }
+    return await this.authService.signup({ ...request, role });
   }
 }

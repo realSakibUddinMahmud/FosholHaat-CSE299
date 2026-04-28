@@ -11,17 +11,19 @@ export class BuyerOrdersController {
   constructor(private readonly buyerOrdersService: BuyerOrdersService) {}
 
   @Get()
-  getOrders(): BuyerOrderSummary[] {
+  async getOrders(): Promise<BuyerOrderSummary[]> {
     return this.buyerOrdersService.getOrders();
   }
 
   @Get(':id')
-  getOrderDetail(@Param('id') id: string): BuyerOrderDetail {
+  async getOrderDetail(@Param('id') id: string): Promise<BuyerOrderDetail> {
     return this.buyerOrdersService.getOrderDetail(id);
   }
 
   @Get(':id/tracking')
-  getOrderTracking(@Param('id') id: string): BuyerOrderTrackingResponse {
+  async getOrderTracking(
+    @Param('id') id: string,
+  ): Promise<BuyerOrderTrackingResponse> {
     return this.buyerOrdersService.getOrderTracking(id);
   }
 }
