@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import { IsString, IsNotEmpty, IsIn } from 'class-validator';
 import type { LoginRequest, Locale } from '@fosholhaat/types';
 
 export class LoginRequestDto implements LoginRequest {
@@ -10,6 +10,6 @@ export class LoginRequestDto implements LoginRequest {
   @IsNotEmpty()
   password!: string;
 
-  @IsEnum(['bn', 'en'])
+  @IsIn(['bn', 'en'])
   locale!: Locale;
 }

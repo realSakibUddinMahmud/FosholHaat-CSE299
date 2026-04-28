@@ -1,0 +1,477 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, var(--color-primary-tint), transparent 28%),
+    radial-gradient(circle at top right, var(--color-success-soft), transparent 24%),
+    var(--color-canvas);
+  color: var(--color-text-primary);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  backdrop-filter: blur(var(--blur-glass));
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.headerInner,
+.main {
+  width: min(1440px, calc(100% - 2rem));
+  margin: 0 auto;
+}
+
+.headerInner {
+  min-height: 4.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.brandMark {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--brand-primary);
+  color: var(--color-surface);
+}
+
+.brandTitle {
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.brandSub,
+.headerCopy,
+.heroBadge,
+.summaryStatus,
+.lineItemMeta,
+.summaryRow dt,
+.inlineNote,
+.successMeta {
+  color: var(--color-text-secondary);
+}
+
+.brandSub,
+.heroBadge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.headerCopy {
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.main {
+  padding: 1.5rem 0 4rem;
+}
+
+.hero {
+  margin-bottom: 1.25rem;
+  max-width: 54rem;
+}
+
+.heroTitle {
+  margin-top: 0.55rem;
+  font-size: clamp(2rem, 2.9vw, 3.35rem);
+  line-height: 1.06;
+  letter-spacing: -0.05em;
+  font-weight: 950;
+  color: var(--color-text-strong);
+}
+
+.heroLead {
+  margin-top: 0.65rem;
+  max-width: 46rem;
+  font-size: 1.02rem;
+  line-height: 1.65;
+  color: var(--color-text-secondary);
+}
+
+.stepper {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.stepPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.5rem 0.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.stepPillActive {
+  background: var(--color-success-soft);
+  color: var(--brand-primary);
+  border-color: transparent;
+}
+
+.stepIndex {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(20rem, 24rem);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.primaryColumn,
+.summaryColumn {
+  min-width: 0;
+}
+
+.card,
+.summaryRail {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 1.25rem;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-shell);
+}
+
+.card {
+  padding: 1.15rem;
+}
+
+.cardTop,
+.summaryRailTop,
+.successTop,
+.optionCardTop,
+.reviewTitle,
+.noticeTitle,
+.lineItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.cardTitle {
+  font-size: 1.2rem;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  font-weight: 950;
+  color: var(--color-text-strong);
+}
+
+.cardLead,
+.summaryLead,
+.noticeBody,
+.lineItemNote,
+.reviewCard p,
+.receiptRow strong {
+  color: var(--color-text-body);
+}
+
+.cardLead,
+.summaryLead {
+  margin-top: 0.35rem;
+  line-height: 1.6;
+}
+
+.cardTag,
+.summaryBadge,
+.successBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  background: var(--color-success-soft);
+  color: var(--brand-primary);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lineList,
+.checklist,
+.reviewStack,
+.summaryList,
+.summaryHints,
+.optionGrid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lineList {
+  margin-top: 1rem;
+}
+
+.lineItem,
+.reviewCard,
+.noticeCard,
+.receiptCard,
+.optionCard {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 1rem;
+  background: var(--color-surface-muted);
+}
+
+.lineItem,
+.reviewCard,
+.noticeCard,
+.receiptCard {
+  padding: 0.95rem;
+}
+
+.lineItemGrid {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.lineItemName {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: var(--color-text-strong);
+}
+
+.lineItemPrice {
+  font-weight: 900;
+  color: var(--color-text-strong);
+}
+
+.summaryRail {
+  padding: 1rem;
+  position: sticky;
+  top: 5.5rem;
+}
+
+.summaryTitle {
+  margin-top: 0.85rem;
+  font-size: 1.05rem;
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  color: var(--color-text-strong);
+}
+
+.summaryList {
+  margin-top: 1rem;
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 0;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.summaryRow:last-child {
+  border-bottom: 0;
+}
+
+.summaryRow dd {
+  font-weight: 900;
+  color: var(--color-text-strong);
+  text-align: right;
+}
+
+.summaryHints {
+  margin-top: 1rem;
+}
+
+.summaryHint,
+.inlineNote {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.7rem;
+  background: var(--color-primary-tint);
+  color: var(--brand-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.checklist {
+  margin-top: 1rem;
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-text-body);
+  font-weight: 700;
+}
+
+.noticeCard {
+  margin-top: 1rem;
+}
+
+.noticeBody {
+  margin-top: 0.6rem;
+  line-height: 1.6;
+}
+
+.optionGrid {
+  margin-top: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.optionCard {
+  padding: 0.95rem;
+}
+
+.optionCardActive {
+  background: var(--color-success-soft);
+  border-color: transparent;
+}
+
+.optionCardBody {
+  margin-top: 0.65rem;
+  color: var(--color-text-body);
+  line-height: 1.5;
+}
+
+.reviewStack {
+  margin-top: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.reviewTitle {
+  justify-content: flex-start;
+  font-weight: 900;
+  color: var(--color-text-strong);
+}
+
+.reviewCard p + p {
+  margin-top: 0.5rem;
+}
+
+.reviewTotal {
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-soft);
+  font-weight: 900;
+}
+
+.receiptCard {
+  margin-top: 1rem;
+}
+
+.receiptRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--color-border-soft);
+}
+
+.receiptRow:last-child {
+  border-bottom: 0;
+}
+
+.receiptRow span {
+  color: var(--color-text-secondary);
+  font-size: 0.92rem;
+}
+
+.actionBar {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.primaryAction {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  padding: 0.8rem 1rem;
+  background: var(--brand-primary);
+  color: var(--color-surface);
+  text-decoration: none;
+  font-weight: 900;
+  box-shadow: var(--shadow-cta);
+}
+
+.successMeta {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .summaryRail {
+    position: static;
+  }
+
+  .optionGrid,
+  .reviewStack {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .headerInner,
+  .main {
+    width: min(100% - 1rem, 100%);
+  }
+
+  .headerInner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.9rem 0;
+    min-height: auto;
+  }
+
+  .headerCopy {
+    text-align: left;
+  }
+
+  .heroTitle {
+    font-size: 1.9rem;
+  }
+
+  .lineItemGrid {
+    grid-template-columns: 1fr;
+  }
+}

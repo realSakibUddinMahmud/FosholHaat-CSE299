@@ -1,7 +1,7 @@
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 import type { LocalePreferenceRequest, Locale } from '@fosholhaat/types';
 
 export class LocalePreferenceRequestDto implements LocalePreferenceRequest {
-  @IsEnum(['bn', 'en'])
+  @IsIn(['bn', 'en'])
   locale!: Locale;
 }

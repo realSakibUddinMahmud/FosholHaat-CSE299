@@ -1,13 +1,26 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Param,
+  BadRequestException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {
   LoginResponse,
   LocalePreferenceResponse,
   RoleSelectionResponse,
+  SignupResponse,
 } from '@fosholhaat/types';
 import { LoginRequestDto } from './dto/login-request.dto';
 import { LocalePreferenceRequestDto } from './dto/locale-preference-request.dto';
 import { RoleSelectionRequestDto } from './dto/role-selection-request.dto';
+import { SignupRequestDto } from './dto/signup-request.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -33,5 +46,22 @@ export class AuthController {
     @Body() roleRequest: RoleSelectionRequestDto,
   ): Promise<RoleSelectionResponse> {
     return await this.authService.selectRole(roleRequest);
+  }
+
+  @Post('signup/:role')
+  @HttpCode(HttpStatus.CREATED)
+  async signup(
+    @Param('role') role: 'buyer' | 'seller',
+    @Body() request: SignupRequestDto,
+  ): Promise<SignupResponse> {
+    if (role !== 'buyer' && role !== 'seller') {
+      throw new BadRequestException('Signup role must be buyer or seller.');
+    }
+    return await this.authService.signup({ ...request, role });
+  }
+
+  @Get('me')
+  async getMe(@Headers('authorization') authorization?: string) {
+    return await this.authService.getMe(authorization);
   }
 }

@@ -1,0 +1,523 @@
+/* ═════════════════════════════════════════════════════════
+   Order Tracking — tracking.module.css
+   Matches approved design: 023_buyer_web_buyer-order-tracking
+   ═════════════════════════════════════════════════════════ */
+
+.page {
+  padding: clamp(20px, 3vw, 40px);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.breadcrumb a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+.breadcrumb a:hover { color: var(--brand-strong); }
+.breadSep { color: var(--color-text-tertiary); }
+.breadActive {
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ─── Header ─── */
+.headerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.title {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 900;
+  color: var(--color-text-strong);
+  margin: 0 0 4px;
+}
+.headerMeta {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+.headerActions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border-soft);
+  margin: 0 0 24px;
+}
+
+.errorBanner {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* ─── Buttons ─── */
+.outlineBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1.5px solid var(--color-border-soft);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-family-sans);
+  white-space: nowrap;
+}
+.outlineBtn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-strong);
+}
+.solidBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 10px;
+  background: var(--brand-strong);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font-family-sans);
+  white-space: nowrap;
+}
+.solidBtn:hover {
+  background: var(--brand-hover, #15532b);
+}
+.dangerOutlineBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1.5px solid #fca5a5;
+  border-radius: 10px;
+  background: transparent;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: var(--font-family-sans);
+  white-space: nowrap;
+  width: 100%;
+  justify-content: center;
+}
+.dangerOutlineBtn:hover {
+  background: #fef2f2;
+}
+
+/* ─── Two-Column Grid ─── */
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.card {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface);
+  padding: 24px;
+}
+.cardTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+  margin: 0 0 24px;
+}
+
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ─── Timeline ─── */
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.timelineItem {
+  display: flex;
+  gap: 16px;
+  min-height: 80px;
+}
+
+.timelineTrack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+}
+
+.stepIconDone,
+.stepIconCurrent,
+.stepIconUpcoming {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stepIconDone {
+  background: var(--brand-strong);
+  color: #fff;
+}
+.stepIconCurrent {
+  background: var(--color-primary-tint, #e8f5e9);
+  color: var(--brand-strong);
+  border: 2px solid var(--brand-strong);
+}
+.stepIconUpcoming {
+  background: var(--color-canvas, #f8fafc);
+  color: var(--color-text-tertiary);
+  border: 2px solid var(--color-border-soft);
+}
+
+.timelineLine {
+  width: 2px;
+  flex: 1;
+  min-height: 32px;
+  background: var(--color-border-soft);
+  margin: 4px 0;
+}
+.timelineLineDone {
+  background: var(--brand-strong);
+}
+
+.timelineContent {
+  flex: 1;
+  padding-bottom: 24px;
+  min-width: 0;
+}
+
+.activeBadge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: var(--brand-strong);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.stepLabel {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 2px;
+}
+.stepLabelActive {
+  color: var(--brand-strong);
+  font-size: 16px;
+}
+.stepLabelUpcoming {
+  color: var(--color-text-tertiary);
+}
+
+.stepDate {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0 0 4px;
+}
+.stepDesc {
+  font-size: 13px;
+  color: var(--color-text-body);
+  margin: 0;
+}
+
+/* GPS Ping card */
+.gpsPing {
+  display: flex;
+  gap: 24px;
+  margin-top: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 10px;
+  background: var(--color-canvas, #f8fafc);
+}
+.gpsPingLabel {
+  display: block;
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.gpsPingValue {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.loadingText {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  text-align: center;
+  padding: 24px 0;
+}
+
+/* ─── Shipment Snapshot ─── */
+.snapshotItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+.snapshotIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--color-primary-tint, #e8f5e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brand-strong);
+  flex-shrink: 0;
+}
+.snapshotName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+.snapshotSku {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+.snapshotPrice {
+  font-size: 16px;
+  font-weight: 800;
+  color: #dc2626;
+}
+
+.snapshotSection {
+  margin-bottom: 16px;
+}
+.snapshotSectionTitle {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 6px;
+}
+.snapshotText {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-body);
+  margin: 0;
+  line-height: 1.5;
+}
+.snapshotContactName {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+.snapshotContactPhone {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 2px 0 0;
+}
+
+.actionBtns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+.actionBtns .outlineBtn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ─── Quality Assurance Card ─── */
+.qaCard {
+  border-radius: 20px;
+  background: var(--brand-strong);
+  color: #fff;
+  padding: 24px;
+}
+.qaTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0 0 10px;
+}
+.qaDesc {
+  font-size: 13px;
+  line-height: 1.5;
+  opacity: 0.9;
+  margin: 0 0 12px;
+}
+.qaLink {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.qaLink:hover { opacity: 0.8; }
+
+/* ─── Logistics Intelligence Panel ─── */
+.logisticsPanel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.logisticsInfo {
+  padding: 24px;
+}
+.logisticsTitle {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+  margin: 0 0 8px;
+}
+
+.liveBadge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--brand-primary);
+  background: var(--color-primary-tint, #e8f5e9);
+  color: var(--brand-strong);
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.logisticsMeta {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 20px;
+}
+.logisticsLabel {
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--color-text-tertiary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.logisticsValue {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.logisticsActions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Map placeholder */
+.mapPlaceholder {
+  background: linear-gradient(145deg, #4a7c59 0%, #2d5a3e 50%, #1a472a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 200px;
+  position: relative;
+}
+.mapIcon {
+  color: rgba(255, 255, 255, 0.5);
+}
+.mapLabel {
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
+/* ─── Back Link ─── */
+.backRow {
+  padding-top: 8px;
+}
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--brand-strong);
+  text-decoration: none;
+}
+.backLink:hover { text-decoration: underline; }
+
+/* ─── Responsive ─── */
+@media (max-width: 900px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+  .logisticsPanel {
+    grid-template-columns: 1fr;
+  }
+  .mapPlaceholder {
+    min-height: 160px;
+  }
+  .headerRow {
+    flex-direction: column;
+    gap: 12px;
+  }
+}

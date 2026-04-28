@@ -21,6 +21,7 @@ jest.mock('react-native/Libraries/Components/Keyboard/Keyboard', () => {
 
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+  useLocalSearchParams: () => ({}),
   Link: ({ children }: any) => children,
 }));
 

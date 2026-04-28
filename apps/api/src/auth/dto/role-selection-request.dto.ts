@@ -1,4 +1,4 @@
-import { IsEnum } from 'class-validator';
+import { IsIn } from 'class-validator';
 import type {
   RoleSelectionRequest,
   Locale,
@@ -6,9 +6,9 @@ import type {
 } from '@fosholhaat/types';
 
 export class RoleSelectionRequestDto implements RoleSelectionRequest {
-  @IsEnum(['buyer', 'seller'])
+  @IsIn(['buyer', 'seller'])
   role!: SignupRole;
 
-  @IsEnum(['bn', 'en'])
+  @IsIn(['bn', 'en'])
   locale!: Locale;
 }

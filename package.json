@@ -7,7 +7,12 @@
     "doc": "docs"
   },
   "scripts": {
-    "orchestration:generate-ready": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-generation-ready.mjs')).href)\"",
+    "db:generate": "npm -w apps/api run prisma:generate",
+    "db:push": "npm -w apps/api run prisma:push",
+    "db:migrate": "npm -w apps/api run prisma:migrate:dev",
+    "db:seed": "npm -w apps/api run prisma:seed",
+    "orchestration:skills-ready": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-skill-surface.mjs')).href)\"",
+    "orchestration:generate-ready": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); const root=path.dirname(process.env.npm_package_json); const load=(file)=>import(pathToFileURL(path.join(root,file)).href); load('scripts/orchestration/check-skill-surface.mjs').then(()=>load('scripts/orchestration/check-generation-ready.mjs'))\"",
     "orchestration:preflight": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); process.env.ORCHESTRATION_WORKSPACES='apps/api,apps/web,apps/mobile'; import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/preflight-check.mjs')).href)\"",
     "orchestration:shared-auth:acceptance": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-shared-auth-acceptance.mjs')).href)\"",
     "tokens:audit": "node -e \"const path=require('node:path'); const { pathToFileURL }=require('node:url'); import(pathToFileURL(path.join(path.dirname(process.env.npm_package_json),'scripts/orchestration/check-design-token-discipline.mjs')).href)\"",

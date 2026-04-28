@@ -10,7 +10,10 @@ coverage/
 .agents/
 .claude/
 .codex_tmp/
-.github/
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml
+!.github/workflows/*.yaml
 Ai Studio Outputs/
 docs/
 sitemap/
@@ -20,6 +23,10 @@ home/
 *.log
 *.tsbuildinfo
 *.docx
+.env
+.env.*
+!.env.example
+!.env*.example
 
 AGENTS.md
 CLAUDE.md
@@ -39,3 +46,14 @@ wsl.localhost*
 **/README.md
 **/AGENTS.md
 **/CLAUDE.md
+
+# Sensitive / scratch files
+scratch/
+test-db*.js
+test-db*.cjs
+*.crt
+*.crt:*
+lint_output.txt
+schema_clean.sql
+.antigravity/
+.codex/

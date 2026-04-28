@@ -18,6 +18,7 @@ import { sharedAuthStyles } from "../shared-auth-styles";
 import { TOKENS } from "../../styles/tokens";
 import { getApiUrl } from "../../api-config";
 import { useStoredLocale } from "../../lib/locale";
+import { saveSession } from "../../lib/session";
 
 export default function LoginScreen() {
   const [form, setForm] = useState({ identifier: "", password: "" });
@@ -61,6 +62,12 @@ export default function LoginScreen() {
 
       const data: LoginResponse = await res.json();
       if (data.nextRoute) {
+        await saveSession({
+          sessionToken: data.sessionToken,
+          role: data.user.role,
+          locale: data.user.locale,
+          nextRoute: data.nextRoute,
+        });
         router.push(data.nextRoute as any);
       } else {
         setError(copy.login.missingDestination);

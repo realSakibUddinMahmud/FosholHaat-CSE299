@@ -1,0 +1,280 @@
+/* ═════════════════════════════════════════════════════════
+   Group Buy Page — group-buy.module.css
+   Matches approved design: 007_buyer_mobile_buyer-group-buy-list
+   ═════════════════════════════════════════════════════════ */
+
+.page {
+  padding: clamp(20px, 4vw, 40px);
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.header { margin-bottom: 24px; }
+.title {
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 900;
+  color: var(--color-text-strong);
+  margin: 0 0 8px;
+}
+.subtitle {
+  font-size: 15px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  max-width: 600px;
+}
+
+.searchSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.searchBar {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  height: 42px;
+  border: 1.5px solid var(--color-border-soft);
+  border-radius: 10px;
+  background: var(--color-surface);
+  color: var(--color-text-tertiary);
+}
+.searchBar:focus-within {
+  border-color: var(--brand-primary);
+}
+.searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+}
+.searchInput::placeholder { color: var(--color-text-tertiary); }
+
+.filterBtns {
+  display: flex;
+  gap: 8px;
+}
+.filterBtn,
+.filterBtnActive {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  border: 1.5px solid transparent;
+}
+.filterBtn {
+  border-color: var(--color-border-soft);
+  background: var(--color-surface);
+  color: var(--color-text-body);
+}
+.filterBtnActive {
+  background: var(--brand-strong);
+  color: #fff;
+}
+
+.error {
+  padding: 12px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 10px;
+  margin-bottom: 16px;
+}
+
+.joinBanner {
+  padding: 12px;
+  background: var(--color-primary-tint, #e8f5e9);
+  border: 1px solid var(--brand-primary);
+  color: var(--brand-strong);
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: box-shadow 0.2s;
+}
+.card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.cardImageWrap {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.liveBadge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 2;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.timeBadge {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.cardBody {
+  padding: 20px;
+}
+
+.cardTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.cardTitle {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+  margin: 0;
+}
+.cardPricing {
+  text-align: right;
+  flex-shrink: 0;
+}
+.groupPrice {
+  display: block;
+  font-size: 18px;
+  font-weight: 900;
+  color: var(--brand-strong);
+}
+.savingsBadge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 800;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.progressSection {
+  margin-bottom: 16px;
+}
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.progressLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-body);
+}
+.progressTarget {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+.progressBar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-progress-track, #e2e8f0);
+  overflow: hidden;
+}
+.progressFill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--brand-primary) 0%, var(--brand-strong) 100%);
+  transition: width 0.6s ease;
+}
+
+.joinBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 14px;
+  background: var(--brand-strong);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-family: var(--font-family-sans);
+  text-decoration: none;
+}
+.joinBtn:hover {
+  background: var(--brand-hover, #15532b);
+}
+.joinBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.emptyState {
+  padding: 60px 20px;
+  text-align: center;
+  border: 2px dashed var(--color-border-soft);
+  border-radius: 16px;
+  margin-top: 16px;
+}
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+  margin: 0 0 8px;
+}
+.emptyDesc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 24px;
+}
+.emptyBtn {
+  display: inline-flex;
+  padding: 10px 24px;
+  background: var(--brand-strong);
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+}

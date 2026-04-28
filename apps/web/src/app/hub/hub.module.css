@@ -1,0 +1,227 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+  background:
+    radial-gradient(circle at top left, var(--color-primary-tint), transparent 26%),
+    radial-gradient(circle at top right, var(--color-success-soft), transparent 24%),
+    linear-gradient(180deg, var(--color-canvas) 0%, var(--color-surface) 100%);
+  color: var(--color-text-primary);
+}
+
+.hero,
+.metricCard,
+.laneCard,
+.laneCardStatic,
+.alertRail,
+.alertHigh,
+.alertMedium {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface);
+}
+
+.hero,
+.metricCard,
+.laneCard,
+.laneCardStatic,
+.alertRail {
+  padding: 20px;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.heroMeta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.heroChip {
+  min-width: 132px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+  display: grid;
+  gap: 4px;
+}
+
+.heroChipValue {
+  color: var(--color-text-strong);
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.heroChipLabel {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.title,
+.sectionTitle,
+.laneTitle {
+  margin: 0;
+}
+
+.subtitle,
+.metaText,
+.alertText {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.metricStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metricCard {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.metricLabel {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.metricValueRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.metricValue {
+  color: var(--color-text-strong);
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.metricBadge {
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  background: var(--color-error-surface);
+  color: var(--color-alert-live);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.board {
+  display: grid;
+  gap: 20px;
+}
+
+.laneColumn,
+.alertList {
+  display: grid;
+  gap: 12px;
+}
+
+.laneCard,
+.laneCardStatic {
+  text-decoration: none;
+  color: inherit;
+  display: grid;
+  gap: 10px;
+  box-shadow: var(--shadow-soft-lift);
+}
+
+.laneHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.urgentBadge,
+.mobileOnlyBadge {
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.urgentBadge {
+  background: var(--color-error-surface);
+  color: var(--color-alert-live);
+}
+
+.mobileOnlyBadge {
+  background: var(--color-soft);
+  color: var(--brand-primary);
+}
+
+.laneCount {
+  margin: 0;
+  color: var(--color-text-strong);
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.05em;
+}
+
+.alertRail {
+  display: grid;
+  gap: 12px;
+}
+
+.alertHigh,
+.alertMedium {
+  padding: 14px;
+}
+
+.alertHigh {
+  background: var(--color-error-surface);
+  border-color: var(--color-error-border);
+}
+
+.alertMedium {
+  background: var(--color-surface-muted);
+}
+
+@media (min-width: 960px) {
+  .metricStrip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .board {
+    grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.8fr);
+    align-items: start;
+  }
+}
+
+@media (max-width: 960px) {
+  .metricStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

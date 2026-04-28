@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Flow Mapper"
+  short_description: "Convert FosholHaat workflows into routes, contracts, and states"

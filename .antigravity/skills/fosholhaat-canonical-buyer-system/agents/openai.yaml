@@ -1,0 +1,3 @@
+interface:
+  display_name: "FosholHaat Canonical Buyer System"
+  short_description: "Lock Buyer-side Stitch generation to the approved canonical home-screen system"
