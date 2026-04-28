@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, MapPin, ShoppingCart, UserRound } from "lucide-react";
-import { getSharedAuthCopy } from "@fosholhaat/types";
+import { getSharedAuthCopy, type SignupResponse } from "@fosholhaat/types";
 import { LanguageSwitch } from "../../../components/language-switch";
 import { SharedAuthShell } from "../../../components/shared-auth-shell";
 import { useBrowserLocale } from "../../../lib/locale";
@@ -13,6 +14,44 @@ export default function BuyerSignupPage() {
   const { locale, setLocale } = useBrowserLocale();
   const copy = getSharedAuthCopy(locale);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/signup/buyer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessName: form.get("businessName"),
+          focus: form.get("businessType"),
+          contactName: form.get("contactName"),
+          phone: form.get("phone"),
+          district: form.get("district"),
+          password: form.get("password"),
+          locale,
+        }),
+      });
+
+      if (!response.ok) {
+        setError(copy.login.invalidCredentials);
+        return;
+      }
+
+      const data: SignupResponse = await response.json();
+      router.push(data.nextRoute);
+    } catch {
+      setError(copy.login.connectionFailed);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SharedAuthShell
@@ -61,8 +100,9 @@ export default function BuyerSignupPage() {
         </div>
       }
       panel={
-        <div className={styles.signupCard}>
+        <form className={styles.signupCard} onSubmit={handleSubmit}>
           <div className={styles.signupCardInner}>
+            {error ? <div className={styles.loginError}>{error}</div> : null}
             <div className={styles.signupSection}>
               <div className={styles.signupGrid}>
                 <div className={styles.signupField}>
@@ -71,6 +111,7 @@ export default function BuyerSignupPage() {
                   </label>
                   <input
                     id="buyer-business-name"
+                    name="businessName"
                     className={styles.signupInput}
                     placeholder={copy.buyerSignup.businessNamePlaceholder}
                   />
@@ -81,6 +122,7 @@ export default function BuyerSignupPage() {
                   </label>
                   <input
                     id="buyer-business-type"
+                    name="businessType"
                     className={styles.signupInput}
                     placeholder={copy.buyerSignup.businessTypePlaceholder}
                   />
@@ -100,6 +142,7 @@ export default function BuyerSignupPage() {
                     </span>
                     <input
                       id="buyer-contact-name"
+                      name="contactName"
                       className={styles.signupPhoneInput}
                       placeholder={copy.buyerSignup.contactPersonPlaceholder}
                     />
@@ -113,6 +156,7 @@ export default function BuyerSignupPage() {
                     <span className={styles.signupPhonePrefix}>+880</span>
                     <input
                       id="buyer-phone"
+                      name="phone"
                       className={styles.signupPhoneInput}
                       placeholder="1XXX XXXXXX"
                     />
@@ -133,6 +177,7 @@ export default function BuyerSignupPage() {
                     </span>
                     <input
                       id="buyer-location"
+                      name="district"
                       className={styles.signupPhoneInput}
                       placeholder={copy.buyerSignup.locationPlaceholder}
                     />
@@ -145,6 +190,7 @@ export default function BuyerSignupPage() {
                   <div className={styles.signupPassword}>
                     <input
                       id="buyer-password"
+                      name="password"
                       type={showPassword ? "text" : "password"}
                       className={styles.signupPasswordInput}
                       placeholder={copy.buyerSignup.passwordPlaceholder}
@@ -167,8 +213,8 @@ export default function BuyerSignupPage() {
             </div>
 
             <div className={styles.signupCtaRow}>
-              <button type="button" className={styles.signupPrimaryButton}>
-                {copy.buyerSignup.submit}
+              <button type="submit" className={styles.signupPrimaryButton} disabled={loading}>
+                {loading ? copy.login.submitLoading : copy.buyerSignup.submit}
                 <ShoppingCart size={18} strokeWidth={2.2} aria-hidden="true" />
               </button>
               <p className={styles.signupFooterText}>
@@ -179,7 +225,7 @@ export default function BuyerSignupPage() {
               </p>
             </div>
           </div>
-        </div>
+        </form>
       }
       footer={copy.common.copyright}
       footerLinks={

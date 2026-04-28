@@ -7,6 +7,8 @@ import {
   LocalePreferenceResponse,
   RoleSelectionRequest,
   RoleSelectionResponse,
+  SignupRequest,
+  SignupResponse,
   AuthRole,
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -112,5 +114,65 @@ export class AuthService {
       role: role,
       nextRoute: nextRoute,
     });
+  }
+
+  async signup(request: SignupRequest): Promise<SignupResponse> {
+    if (!this.prisma) {
+      const route = request.role === 'seller' ? '/seller' : '/buyer';
+      return {
+        sessionToken: `valid-session-token-${request.role}`,
+        user: {
+          id: `user-${request.phone}`,
+          role: request.role,
+          locale: request.locale,
+        },
+        nextRoute: route,
+      };
+    }
+
+    const role = request.role === 'seller' ? 'SELLER' : 'BUYER';
+    const route = ROLE_ROUTES[role];
+    const phoneKey = request.phone.replace(/\D/g, '') || randomUUID();
+    const email = `${request.role}-${phoneKey}@fosholhaat.local`;
+
+    const user = await this.prisma.$transaction(async (tx) => {
+      const business = await tx.business.create({
+        data: {
+          name: request.businessName.trim(),
+          role,
+          district: request.district?.trim() || 'Dhaka',
+        },
+      });
+
+      return tx.user.create({
+        data: {
+          email,
+          passwordHash: request.password,
+          fullName: request.contactName.trim(),
+          role,
+          locale: request.locale,
+          businessId: business.id,
+        },
+      });
+    });
+
+    const session = await this.prisma.accountSession.create({
+      data: {
+        token: `session-${randomUUID()}`,
+        userId: user.id,
+        activeRole: user.role,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30),
+      },
+    });
+
+    return {
+      sessionToken: session.token,
+      user: {
+        id: user.id,
+        role: route.role,
+        locale: request.locale,
+      },
+      nextRoute: route.nextRoute,
+    };
   }
 }

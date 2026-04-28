@@ -50,3 +50,16 @@ export interface RoleSelectionResponse {
   role: SignupRole;
   nextRoute: string; // e.g., /signup/buyer or /signup/seller
 }
+
+export interface SignupRequest {
+  role: SignupRole;
+  businessName: string;
+  contactName: string;
+  phone: string;
+  password: string;
+  locale: Locale;
+  district?: string;
+  focus?: string;
+}
+
+export type SignupResponse = LoginResponse;

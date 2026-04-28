@@ -4,10 +4,12 @@ import {
   LoginResponse,
   LocalePreferenceResponse,
   RoleSelectionResponse,
+  SignupResponse,
 } from '@fosholhaat/types';
 import { LoginRequestDto } from './dto/login-request.dto';
 import { LocalePreferenceRequestDto } from './dto/locale-preference-request.dto';
 import { RoleSelectionRequestDto } from './dto/role-selection-request.dto';
+import { SignupRequestDto } from './dto/signup-request.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -33,5 +35,11 @@ export class AuthController {
     @Body() roleRequest: RoleSelectionRequestDto,
   ): Promise<RoleSelectionResponse> {
     return await this.authService.selectRole(roleRequest);
+  }
+
+  @Post('signup/:role')
+  @HttpCode(HttpStatus.CREATED)
+  async signup(@Body() request: SignupRequestDto): Promise<SignupResponse> {
+    return await this.authService.signup(request);
   }
 }
