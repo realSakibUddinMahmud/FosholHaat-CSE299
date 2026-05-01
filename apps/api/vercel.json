@@ -1,8 +1,8 @@
 {
-  "installCommand": "npm ci",
-  "buildCommand": "npm run prisma:generate && npm run build",
+  "installCommand": "cd ../.. && npm ci",
+  "buildCommand": "cd ../.. && npm -w apps/api run prisma:generate && npm -w apps/api run build",
   "framework": null,
-  "outputDirectory": "apps/api",
+  "outputDirectory": ".",
   "functions": {
     "api/index.js": {
       "includeFiles": "dist/**",
