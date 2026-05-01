@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_TOKEN_COOKIE } from '../../../lib/session';
 
-const BACKEND_URL = process.env.API_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://fosholhaat-api.vercel.app';
 
 async function proxy(
   request: NextRequest,
