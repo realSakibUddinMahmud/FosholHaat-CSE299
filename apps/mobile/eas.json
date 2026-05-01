@@ -7,13 +7,13 @@
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.example.com"
+        "EXPO_PUBLIC_API_URL": "https://fosholhaat-api.vercel.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.example.com"
+        "EXPO_PUBLIC_API_URL": "https://fosholhaat-api.vercel.app"
       }
     }
   },
