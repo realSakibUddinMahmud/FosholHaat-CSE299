@@ -1,6 +1,6 @@
 {
   "installCommand": "cd ../.. && npm ci",
-  "buildCommand": "cd ../.. && npm -w apps/api run prisma:generate && npm -w apps/api run build",
+  "buildCommand": "cd ../.. && npm -w packages/types run build && npm -w apps/api run prisma:generate && npm -w apps/api run build",
   "framework": null,
   "outputDirectory": ".",
   "functions": {
