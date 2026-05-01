@@ -1,14 +1,17 @@
 {
-  "name": "@fosholhaat/types",
-  "version": "0.1.0",
-  "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": "./dist/index.js",
-    "./roles": "./dist/roles.js",
-    "./routes": "./dist/routes.js",
-    "./workflows": "./dist/workflows.js",
-    "./enums": "./dist/enums.js"
-  }
+    "name":  "@fosholhaat/types",
+    "version":  "0.1.0",
+    "private":  true,
+    "main":  "./dist/index.js",
+    "types":  "./dist/index.d.ts",
+    "exports":  {
+                    ".":  "./dist/index.js",
+                    "./roles":  "./dist/roles.js",
+                    "./routes":  "./dist/routes.js",
+                    "./workflows":  "./dist/workflows.js",
+                    "./enums":  "./dist/enums.js"
+                },
+    "scripts":  {
+                    "build":  "tsc"
+                }
 }

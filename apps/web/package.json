@@ -1,41 +1,42 @@
 {
-  "name": "web",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "test": "jest",
-    "typecheck": "rm -f .next/cache/.tsbuildinfo tsconfig.tsbuildinfo && mkdir -p .next/types && touch .next/types/cache-life.d.ts && next typegen && tsc --noEmit"
-  },
-  "dependencies": {
-    "@fosholhaat/tokens": "^0.1.0",
-    "@fosholhaat/types": "^0.1.0",
-    "@radix-ui/react-slot": "^1.2.4",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "lucide-react": "^1.7.0",
-    "next": "16.2.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "tailwind-merge": "^3.5.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.1",
-    "jest": "^30.3.0",
-    "jest-environment-jsdom": "^30.3.0",
-    "tailwindcss": "^4",
-    "ts-jest": "^29.4.6",
-    "typescript": "^5"
-  }
+    "name":  "web",
+    "version":  "0.1.0",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "next dev",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "eslint",
+                    "test":  "jest",
+                    "typecheck":  "rm -f .next/cache/.tsbuildinfo tsconfig.tsbuildinfo \u0026\u0026 mkdir -p .next/types \u0026\u0026 touch .next/types/cache-life.d.ts \u0026\u0026 next typegen \u0026\u0026 tsc --noEmit",
+                    "prebuild":  "npx tsc -p ../../packages/types/tsconfig.json"
+                },
+    "dependencies":  {
+                         "@fosholhaat/tokens":  "^0.1.0",
+                         "@fosholhaat/types":  "^0.1.0",
+                         "@radix-ui/react-slot":  "^1.2.4",
+                         "class-variance-authority":  "^0.7.1",
+                         "clsx":  "^2.1.1",
+                         "lucide-react":  "^1.7.0",
+                         "next":  "16.2.1",
+                         "react":  "19.2.4",
+                         "react-dom":  "19.2.4",
+                         "tailwind-merge":  "^3.5.0"
+                     },
+    "devDependencies":  {
+                            "@tailwindcss/postcss":  "^4",
+                            "@testing-library/dom":  "^10.4.1",
+                            "@testing-library/jest-dom":  "^6.9.1",
+                            "@testing-library/react":  "^16.3.2",
+                            "@types/node":  "^20",
+                            "@types/react":  "^19",
+                            "@types/react-dom":  "^19",
+                            "eslint":  "^9",
+                            "eslint-config-next":  "16.2.1",
+                            "jest":  "^30.3.0",
+                            "jest-environment-jsdom":  "^30.3.0",
+                            "tailwindcss":  "^4",
+                            "ts-jest":  "^29.4.6",
+                            "typescript":  "^5"
+                        }
 }
