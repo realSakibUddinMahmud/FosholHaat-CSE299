@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.API_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://fosholhaat-api.vercel.app';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -14,3 +14,4 @@ export async function POST(request: NextRequest) {
   const data = await backendResponse.json();
   return NextResponse.json(data, { status: backendResponse.status });
 }
+

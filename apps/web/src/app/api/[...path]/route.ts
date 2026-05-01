@@ -15,7 +15,7 @@ async function proxy(
   const headers: HeadersInit = { 'Content-Type': 'application/json' };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const response = await fetch(target, {
+  console.log('PROXY TARGET:', target.href); const response = await fetch(target, {
     method: request.method,
     headers,
     body: ['GET', 'HEAD'].includes(request.method)
@@ -24,7 +24,7 @@ async function proxy(
     cache: 'no-store',
   });
 
-  const text = await response.text();
+  const text = await response.text(); console.log('RESPONSE STATUS:', response.status); console.log('RESPONSE TEXT HEAD:', text.substring(0, 100));
   return new NextResponse(text, {
     status: response.status,
     headers: { 'Content-Type': response.headers.get('Content-Type') ?? 'application/json' },
@@ -35,3 +35,4 @@ export const GET = proxy;
 export const POST = proxy;
 export const PATCH = proxy;
 export const DELETE = proxy;
+

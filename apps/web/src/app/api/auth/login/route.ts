@@ -13,7 +13,7 @@ import {
  * in development. The frontend fetches /api/auth/login which hits this handler,
  * which forwards to http://localhost:3000/auth/login.
  */
-const BACKEND_URL = process.env.API_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://fosholhaat-api.vercel.app';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -45,3 +45,4 @@ export async function POST(request: NextRequest) {
 
   return response;
 }
+
