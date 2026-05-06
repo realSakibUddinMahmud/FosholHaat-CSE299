@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { useStoredLocale } from "../../../../lib/locale";
 import {
-  BUYER_CART_FIXTURE,
-  BUYER_FULFILLMENT_FIXTURE,
   getBuyerCheckoutCopy,
   getBuyerFlowCopy,
 } from "../../_data";
+import type { BuyerCartResponse, BuyerFulfillmentChoice } from "@fosholhaat/types";
+import { apiFetch, apiPost } from "../../../../lib/api-client";
 import {
   BuyerActionButton,
+  BuyerBanner,
   BuyerChoiceCard,
   BuyerField,
   BuyerShell,
@@ -20,10 +21,25 @@ export default function BuyerFulfillmentScreen() {
   const { locale } = useStoredLocale();
   const copy = getBuyerCheckoutCopy(locale);
   const flowCopy = getBuyerFlowCopy(locale);
-  const [choice, setChoice] = useState(BUYER_FULFILLMENT_FIXTURE.choice);
-  const [name, setName] = useState(BUYER_FULFILLMENT_FIXTURE.recipientName);
-  const [phone, setPhone] = useState(BUYER_FULFILLMENT_FIXTURE.phone);
-  const [address, setAddress] = useState(BUYER_FULFILLMENT_FIXTURE.addressLabel ?? "");
+  const [choice, setChoice] = useState<BuyerFulfillmentChoice>("hub-pickup");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [cart, setCart] = useState<BuyerCartResponse | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    apiFetch<BuyerCartResponse>("/buyer/cart").then(setCart).catch((err: Error) => setError(err.message));
+  }, []);
+  async function submit() {
+    try {
+      await apiPost("/buyer/checkout/fulfillment", { choice, recipientName: name, phone, addressLabel: address });
+      router.push("/buyer/checkout/payment");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : flowCopy.validationFulfillment);
+    }
+  }
+  const lines = cart?.lines ?? [];
+  const totals = cart?.totals ?? { subtotal: 0, deliveryFee: 0, serviceFee: 0, payableTotal: 0 };
 
   return (
     <BuyerShell
@@ -34,7 +50,7 @@ export default function BuyerFulfillmentScreen() {
       footer={
         <BuyerActionButton
           label={flowCopy.continueToPayment}
-          onPress={() => router.push("/buyer/checkout/payment")}
+          onPress={submit}
         />
       }
     >
@@ -53,13 +69,14 @@ export default function BuyerFulfillmentScreen() {
       <BuyerField label={flowCopy.recipientLabel} value={name} onChangeText={setName} placeholder={flowCopy.recipientLabel} />
       <BuyerField label={flowCopy.phoneLabel} value={phone} onChangeText={setPhone} placeholder={flowCopy.phoneLabel} keyboardType="phone-pad" />
       <BuyerField label={flowCopy.addressLabel} value={address} onChangeText={setAddress} placeholder={flowCopy.addressLabel} multiline />
+      {error ? <BuyerBanner tone="error" title="Check details" body={error} /> : null}
       <BuyerSummaryCard
         locale={locale}
-        lines={BUYER_CART_FIXTURE.lines.map((line) => ({
+        lines={lines.map((line) => ({
           label: line.productName,
           value: `${line.quantity} ${line.unit}`,
         }))}
-        totals={BUYER_CART_FIXTURE.totals}
+        totals={totals}
       />
     </BuyerShell>
   );

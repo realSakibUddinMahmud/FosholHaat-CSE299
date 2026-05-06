@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { BuyerOrderSummary } from "@fosholhaat/types";
 import { apiFetch } from "../../../lib/api-client";
-import { MOCK_ORDERS, getOrderCopy, getOrderStatusLabel } from "./order-data";
+import { getOrderCopy, getOrderStatusLabel } from "./order-data";
 import styles from "./buyer-orders.module.css";
 
 export default function BuyerOrdersPage() {
   const locale = "en"; // defaulting to 'en' for now, or could use useBrowserLocale
   const copy = getOrderCopy(locale);
-  const [orders, setOrders] = useState<BuyerOrderSummary[]>(() => process.env.NODE_ENV === "test" ? MOCK_ORDERS : []);
+  const [orders, setOrders] = useState<BuyerOrderSummary[]>([]);
   const [error, setError] = useState("");
   useEffect(() => {
-    if (process.env.NODE_ENV === "test") return;
     apiFetch<BuyerOrderSummary[]>("/api/buyer/orders").then(setOrders).catch((err: Error) => setError(err.message));
   }, []);
 

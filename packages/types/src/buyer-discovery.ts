@@ -63,6 +63,9 @@ export interface BuyerCatalogHighlight {
   sellerLabel: string;
   verificationLabel?: string;
   imageUrl?: string;
+  groupBuyId?: string;
+  singleMinQty?: number;
+  singleMaxQty?: number;
 }
 
 export interface BuyerCatalogResponse {
@@ -106,6 +109,8 @@ export interface BuyerProductDetailResponse {
     verificationLabel?: string;
     sellerLabel: string;
     imageUrls?: string[];
+    singleMinQty?: number;
+    singleMaxQty?: number;
   };
   purchaseOptions: {
     canAddToCart: boolean;
@@ -180,30 +185,40 @@ export type BuyerDiscoveryCopy = {
 export const BUYER_DISCOVERY_COPY: Record<Locale, BuyerDiscoveryCopy> = {
   en: {
     shellTitle: "Buyer workspace",
-    shellHint: "Browse produce fast, compare trust cues, then continue only when the lot looks right.",
+    shellHint:
+      "Browse produce fast, compare trust cues, then continue only when the lot looks right.",
     searchPlaceholder: "Search potato, onion, or vegetables",
     browseTitle: "Browse produce",
-    browseLead: "Start from the corridor-safe lots and keep price, stock, and seller cues in view.",
+    browseLead:
+      "Start from the corridor-safe lots and keep price, stock, and seller cues in view.",
     browseEmptyTitle: "No products match these filters",
-    browseEmptyBody: "Clear the filters and check the active produce list again.",
+    browseEmptyBody:
+      "Clear the filters and check the active produce list again.",
     categoryTitlePrefix: "Category",
-    categoryLead: "Compare similar lots first so the next product step stays simple.",
+    categoryLead:
+      "Compare similar lots first so the next product step stays simple.",
     categoryEmptyTitle: "No lots in this category right now",
     categoryEmptyBody: "Return to browse and check another produce line.",
     categoryMissingTitle: "Category not found",
-    categoryMissingBody: "This produce line is not available in the current corridor list.",
+    categoryMissingBody:
+      "This produce line is not available in the current corridor list.",
     searchTitle: "Search results",
-    searchLead: "Keep the active query visible so buyers know why each result appears.",
+    searchLead:
+      "Keep the active query visible so buyers know why each result appears.",
     searchEmptyTitle: "No results found",
-    searchEmptyBody: "Try a shorter produce name or return to the main browse list.",
+    searchEmptyBody:
+      "Try a shorter produce name or return to the main browse list.",
     invalidQueryTitle: "Add a search term first",
-    invalidQueryBody: "Type a produce name before opening the search results page.",
+    invalidQueryBody:
+      "Type a produce name before opening the search results page.",
     productMissingTitle: "Product not found",
     productMissingBody: "This lot is not in the current buyer discovery list.",
-    detailLead: "Review the lot before you move toward cart or group-buy handoff.",
+    detailLead:
+      "Review the lot before you move toward cart or group-buy handoff.",
     detailDescriptionTitle: "Lot details",
     detailTrustTitle: "Trust and handoff",
-    detailRouteHint: "Cart continues in the checkout slice. Group-buy stays downstream.",
+    detailRouteHint:
+      "Cart continues in the checkout slice. Group-buy stays downstream.",
     labels: {
       categories: "Categories",
       highlights: "Active lots",
@@ -224,10 +239,12 @@ export const BUYER_DISCOVERY_COPY: Record<Locale, BuyerDiscoveryCopy> = {
   },
   bn: {
     shellTitle: "বায়ার কর্মক্ষেত্র",
-    shellHint: "দ্রুত পণ্য দেখুন, ভরসার সংকেত মিলিয়ে নিন, তারপর ঠিক হলে পরের ধাপে যান।",
+    shellHint:
+      "দ্রুত পণ্য দেখুন, ভরসার সংকেত মিলিয়ে নিন, তারপর ঠিক হলে পরের ধাপে যান।",
     searchPlaceholder: "আলু, পেঁয়াজ, বা সবজি খুঁজুন",
     browseTitle: "পণ্য দেখুন",
-    browseLead: "করিডরের তালিকা থেকে শুরু করুন, আর দাম, স্টক, আর বিক্রেতার সংকেত চোখে রাখুন।",
+    browseLead:
+      "করিডরের তালিকা থেকে শুরু করুন, আর দাম, স্টক, আর বিক্রেতার সংকেত চোখে রাখুন।",
     browseEmptyTitle: "এই ফিল্টারে কোনো পণ্য নেই",
     browseEmptyBody: "ফিল্টার সরিয়ে আবার সক্রিয় পণ্যের তালিকা দেখুন।",
     categoryTitlePrefix: "ক্যাটাগরি",

@@ -1,6 +1,7 @@
 import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import type { BuyerCatalogHighlight, BuyerDiscoveryCategorySummary, Locale } from "@fosholhaat/types";
 import { getBuyerDiscoveryCopy } from "@fosholhaat/types";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -19,6 +20,7 @@ export function BuyerDiscoveryShell({
   children: React.ReactNode;
 }) {
   const copy = getBuyerDiscoveryCopy(locale);
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -32,9 +34,9 @@ export function BuyerDiscoveryShell({
               <View style={styles.iconPill}>
                 <MaterialIcons name="notifications-none" size={18} color={TOKENS.color.textSecondary} />
               </View>
-              <View style={styles.iconPill}>
+              <Pressable style={styles.iconPill} accessibilityRole="button" onPress={() => router.push("/buyer/profile")}>
                 <MaterialIcons name="account-circle" size={18} color={TOKENS.color.textSecondary} />
-              </View>
+              </Pressable>
             </View>
           </View>
           <View style={styles.hero}>
@@ -116,10 +118,11 @@ export function ProductCard({
   return (
     <Pressable style={styles.card} onPress={onPress}>
       <View style={styles.imageStub}>
+        {item.imageUrl ? <Image source={{ uri: item.imageUrl }} style={styles.productImage} /> : null}
         <View style={styles.imageBadge}>
           <Text style={styles.imageBadgeText}>{item.verificationLabel ?? "Live"}</Text>
         </View>
-        <Text style={styles.imageText}>{item.imageUrl}</Text>
+        {!item.imageUrl ? <Text style={styles.imageText}>{item.commodity.slice(0, 1).toUpperCase()}</Text> : null}
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardTitleRow}>
@@ -222,7 +225,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   heroEyebrow: { color: TOKENS.brand.primary, fontSize: 11, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
-  heroTitle: { color: TOKENS.color.textStrong, fontSize: 24, fontWeight: "900", letterSpacing: -0.7, lineHeight: 30 },
+  heroTitle: { color: TOKENS.color.textStrong, fontSize: 24, fontWeight: "900", letterSpacing: 0, lineHeight: 30 },
   heroSubtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20 },
   searchPlate: {
     minHeight: 54,
@@ -277,6 +280,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 12,
   },
+  productImage: { width: "100%", height: 170 },
   imageBadge: {
     position: "absolute",
     top: 12,

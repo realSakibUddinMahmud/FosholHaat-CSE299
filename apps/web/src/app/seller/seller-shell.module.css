@@ -99,6 +99,7 @@
   margin-top: 12px;
   border-radius: 12px;
   background: var(--color-surface-muted, #f8f8f8);
+  text-decoration: none;
 }
 .userAvatar {
   width: 36px;
@@ -111,7 +112,7 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.userInfo { flex: 1; min-width: 0; }
+.userInfo { flex: 1; min-width: 0; text-decoration: none; }
 .userName {
   font-size: 13px;
   font-weight: 700;
@@ -198,6 +199,7 @@
 .searchInput::placeholder { color: var(--color-text-tertiary); }
 
 .iconBtn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,9 +211,26 @@
   color: var(--color-text-body);
   cursor: pointer;
   transition: background 0.15s;
+  text-decoration: none;
 }
 .iconBtn:hover {
   background: var(--color-primary-tint-soft, #f0f7f4);
+}
+
+.notifBadge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-primary, #00543a);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 17px;
+  text-align: center;
 }
 
 /* ─── Content ─── */

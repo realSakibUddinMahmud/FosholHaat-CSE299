@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://fosholhaat-api.vercel.app';
+import { getBackendUrl } from '../../_backend';
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
 
-  const backendResponse = await fetch(`${BACKEND_URL}/auth/role-selection`, {
+  const backendResponse = await fetch(`${getBackendUrl()}/auth/role-selection`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

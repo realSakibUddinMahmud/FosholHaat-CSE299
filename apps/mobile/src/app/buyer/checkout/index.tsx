@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { useStoredLocale } from "../../../lib/locale";
 import {
-  BUYER_CART_FIXTURE,
-  BUYER_FULFILLMENT_FIXTURE,
   getBuyerCheckoutCopy,
   getBuyerFlowCopy,
 } from "../_data";
+import type { BuyerCartResponse } from "@fosholhaat/types";
+import { apiFetch } from "../../../lib/api-client";
 import {
   BuyerActionButton,
   BuyerBanner,
@@ -19,6 +19,12 @@ export default function BuyerCheckoutScreen() {
   const { locale } = useStoredLocale();
   const copy = getBuyerCheckoutCopy(locale);
   const flowCopy = getBuyerFlowCopy(locale);
+  const [cart, setCart] = useState<BuyerCartResponse | null>(null);
+  useEffect(() => {
+    apiFetch<BuyerCartResponse>("/buyer/cart").then(setCart).catch(() => setCart(null));
+  }, []);
+  const lines = cart?.lines ?? [];
+  const totals = cart?.totals ?? { subtotal: 0, deliveryFee: 0, serviceFee: 0, payableTotal: 0 };
 
   return (
     <BuyerShell
@@ -35,15 +41,15 @@ export default function BuyerCheckoutScreen() {
     >
       <BuyerBanner
         title={copy.fulfillmentTitle}
-        body={`${flowCopy.recipientLabel}: ${BUYER_FULFILLMENT_FIXTURE.recipientName}`}
+        body={lines.length ? flowCopy.checkoutHint : copy.emptyCartBody}
       />
       <BuyerSummaryCard
         locale={locale}
-        lines={BUYER_CART_FIXTURE.lines.map((line) => ({
+        lines={lines.map((line) => ({
           label: line.productName,
           value: `${line.quantity} ${line.unit}`,
         }))}
-        totals={BUYER_CART_FIXTURE.totals}
+        totals={totals}
       />
     </BuyerShell>
   );

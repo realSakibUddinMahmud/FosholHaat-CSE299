@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import {
   HubExceptionDetailResponse,
   HubExceptionListResponse,
@@ -14,23 +14,31 @@ export class HubExceptionManagementController {
   ) {}
 
   @Get()
-  async getExceptions(): Promise<HubExceptionListResponse> {
-    return this.hubExceptionManagementService.getExceptions();
+  async getExceptions(
+    @Headers('authorization') authorization?: string,
+  ): Promise<HubExceptionListResponse> {
+    return this.hubExceptionManagementService.getExceptions(authorization);
   }
 
   @Get(':exceptionId')
   async getException(
+    @Headers('authorization') authorization: string | undefined,
     @Param('exceptionId') exceptionId: string,
   ): Promise<HubExceptionDetailResponse> {
-    return this.hubExceptionManagementService.getException(exceptionId);
+    return this.hubExceptionManagementService.getException(
+      authorization,
+      exceptionId,
+    );
   }
 
   @Post(':exceptionId/resolve')
   async resolveException(
+    @Headers('authorization') authorization: string | undefined,
     @Param('exceptionId') exceptionId: string,
     @Body() body: HubExceptionMutationRequest = {},
   ): Promise<HubExceptionMutationResponse> {
     return this.hubExceptionManagementService.resolveException(
+      authorization,
       exceptionId,
       body,
     );
@@ -38,10 +46,12 @@ export class HubExceptionManagementController {
 
   @Post(':exceptionId/escalate')
   async escalateException(
+    @Headers('authorization') authorization: string | undefined,
     @Param('exceptionId') exceptionId: string,
     @Body() body: HubExceptionMutationRequest = {},
   ): Promise<HubExceptionMutationResponse> {
     return this.hubExceptionManagementService.escalateException(
+      authorization,
       exceptionId,
       body,
     );

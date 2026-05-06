@@ -1,18 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle } from "lucide-react";
-import { getHubExceptionCopy, type HubExceptionDetail, type HubExceptionListResponse, type HubExceptionStatusTab } from "@fosholhaat/types";
-import { useBrowserLocale } from "../../../lib/locale";
+import { AlertTriangle, CheckCircle2, ShieldAlert } from "lucide-react";
+import { getHubExceptionCopy, HUB_EXCEPTION_STATUS_TABS, type HubExceptionDetail, type HubExceptionListResponse, type HubExceptionStatusTab } from "@fosholhaat/types";
 import { apiFetch, apiPost } from "../../../lib/api-client";
+import { useBrowserLocale } from "../../../lib/locale";
+import styles from "../ops.module.css";
+
+const EMPTY: HubExceptionListResponse = { summary: { active: 0, "waiting-review": 0, resolved: 0, total: 0 }, featuredExceptionId: "", activeTab: "active", exceptions: [] };
 
 export default function HubExceptionManagementWeb() {
   const { locale } = useBrowserLocale();
   const copy = getHubExceptionCopy(locale);
-  const [list, setList] = useState<HubExceptionListResponse | null>(null);
+  const [list, setList] = useState<HubExceptionListResponse>(EMPTY);
   const [details, setDetails] = useState<Record<string, HubExceptionDetail>>({});
   const [activeTab, setActiveTab] = useState<HubExceptionStatusTab>("active");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState("");
+
   const load = () => apiFetch<HubExceptionListResponse>("/api/hub/exceptions").then(async (data) => {
     setList(data);
     setActiveTab(data.activeTab);
@@ -23,34 +27,59 @@ export default function HubExceptionManagementWeb() {
     }));
     setDetails(Object.fromEntries(entries));
   });
-  useEffect(() => {
-    load().catch(() => undefined);
-  }, []);
-  const items = useMemo(() => (list?.exceptions ?? []).filter((item) => item.statusTab === activeTab), [activeTab, list]);
+  useEffect(() => { load().catch(() => undefined); }, []);
+  const items = useMemo(() => list.exceptions.filter((item) => item.statusTab === activeTab), [activeTab, list.exceptions]);
   const selected = selectedId ? details[selectedId] : null;
   const mutate = async (action: "resolve" | "escalate") => {
     if (!selectedId) return;
-    await apiPost(`/api/hub/exceptions/${selectedId}/${action}`, action === "resolve" ? { note: "Resolved from web workspace" } : { targetOwner: "hub-manager" });
+    await apiPost(`/api/hub/exceptions/${selectedId}/${action}`, action === "resolve" ? { note: "Resolved from hub workspace" } : { targetOwner: "hub-manager" });
     await load();
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 text-gray-900 overflow-hidden font-sans">
-      <aside className="w-1/3 flex flex-col border-r border-gray-200 bg-white shadow-sm z-10">
-        <header className="p-6 border-b border-gray-100 shrink-0">
-          <h1 className="text-2xl font-extrabold tracking-tight text-gray-900">{copy.screenTitle}</h1>
-          <div className="flex gap-2 mt-6 p-1 bg-gray-100 rounded-xl">
-            {(["active", "waiting-review", "resolved"] as HubExceptionStatusTab[]).map((tab) => <button key={tab} onClick={() => setActiveTab(tab)} className={`flex-1 py-2 px-3 text-sm font-bold rounded-lg ${activeTab === tab ? "bg-white text-green-700 shadow-sm" : "text-gray-500"}`}>{copy.tabs[tab]}</button>)}
-          </div>
-        </header>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {items.map((item) => <button key={item.exceptionId} onClick={() => setSelectedId(item.exceptionId)} className={`w-full text-left p-4 rounded-xl border ${selectedId === item.exceptionId ? "border-green-600 bg-green-50/50" : "border-gray-200 bg-white"}`}><div className="flex gap-2"><AlertCircle size={14} /><span className="text-xs font-bold uppercase">{copy.severityLabels[item.severity]}</span></div><h3 className="text-base font-bold">{item.title}</h3><p className="text-sm text-gray-500">{item.lotLabel} - {item.laneLabel}</p></button>)}
-          {!items.length ? <p className="p-8 text-center bg-gray-50 border rounded-xl">{copy.listEmptyBody}</p> : null}
+    <main className={styles.page}>
+      <section className={styles.hero}>
+        <div>
+          <div className={styles.kicker}>Exception control</div>
+          <h1 className={styles.title}>{copy.screenTitle}</h1>
+          <p className={styles.subtitle}>Track discrepancy source, buyer impact, and resolution ownership.</p>
         </div>
-      </aside>
-      <main className="flex-1 overflow-y-auto bg-gray-50 p-8">
-        {selected ? <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border p-8"><div className="mb-4 text-xs font-bold">{selected.exceptionId}</div><h2 className="text-3xl font-extrabold mb-2">{selected.title}</h2><p className="text-gray-600">{selected.description}</p><div className="mt-8 flex gap-3"><button onClick={() => mutate("resolve")} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-green-600 text-white">{copy.actionLabels.resolve}</button><button onClick={() => mutate("escalate")} className="px-6 py-2.5 rounded-xl text-sm font-bold bg-white border">{copy.actionLabels.escalate}</button></div></div> : <p>Select an exception</p>}
-      </main>
-    </div>
+        <span className={styles.chip}>{list.summary.total} total</span>
+      </section>
+
+      <section className={styles.stats}>
+        {HUB_EXCEPTION_STATUS_TABS.map((tab) => <article key={tab} className={styles.stat}><span className={styles.label}>{copy.tabs[tab]}</span><strong>{list.summary[tab]}</strong></article>)}
+      </section>
+
+      <section className={styles.grid}>
+        <aside>
+          <div className={styles.tabs}>{HUB_EXCEPTION_STATUS_TABS.map((tab) => <button key={tab} type="button" onClick={() => setActiveTab(tab)} className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}>{copy.tabs[tab]}</button>)}</div>
+          <div className={styles.list}>
+            {items.map((item) => <button key={item.exceptionId} type="button" onClick={() => setSelectedId(item.exceptionId)} className={`${styles.card} ${styles.buttonCard} ${selectedId === item.exceptionId ? styles.selected : ""}`}><div className={styles.cardTop}><span className={styles.meta}>{item.exceptionId}</span><span className={styles.pill}>{copy.severityLabels[item.severity]}</span></div><div className={styles.cardTitle}>{item.title}</div><p className={styles.muted}>{item.lotLabel} · {item.laneLabel}</p></button>)}
+            {!items.length ? <div className={styles.empty}><div><CheckCircle2 size={28} /><h3>{copy.listEmptyTitle}</h3><p>{copy.listEmptyBody}</p></div></div> : null}
+          </div>
+        </aside>
+
+        <section className={styles.detail}>
+          {selected ? (
+            <>
+              <div className={styles.detailHead}><div><h2 className={styles.detailTitle}>{selected.title}</h2><p className={styles.detailSub}>{selected.description}</p></div><ShieldAlert /></div>
+              <div className={styles.fieldGrid}>
+                <div className={styles.field}><span className={styles.label}>{copy.source}</span><div className={styles.value}>{selected.sourceLabel}</div></div>
+                <div className={styles.field}><span className={styles.label}>{copy.buyerVisibility}</span><div className={styles.value}>{selected.buyerVisibilityLabel}</div></div>
+                <div className={styles.field}><span className={styles.label}>Next action</span><div className={styles.value}>{selected.nextActionLabel}</div></div>
+              </div>
+              <div className={styles.timeline}>{selected.timeline.map((event) => <div key={event.id} className={styles.event}><strong>{event.label}</strong><p className={styles.muted}>{event.timeLabel}</p></div>)}</div>
+              <div className={styles.actions}>
+                <button type="button" className={styles.primary} onClick={() => mutate("resolve")}>{copy.actionLabels.resolve}</button>
+                <button type="button" className={styles.secondary} onClick={() => mutate("escalate")}>{copy.actionLabels.escalate}</button>
+              </div>
+            </>
+          ) : (
+            <div className={styles.empty}><div><AlertTriangle size={28} /><h3>{copy.detailNotFoundTitle}</h3><p>{copy.detailNotFoundBody}</p></div></div>
+          )}
+        </section>
+      </section>
+    </main>
   );
 }

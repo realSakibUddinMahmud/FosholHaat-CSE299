@@ -1,29 +1,34 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
-import {
+import { Injectable, NotFoundException } from '@nestjs/common';
+import type {
   BuyerOrderSummary,
   BuyerOrderDetail,
   BuyerOrderTrackingResponse,
   TrackingStep,
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveCurrentBuyer } from '../auth/current-user';
+
+type OrderForTimeline = {
+  orderType: string;
+  status: string;
+  paymentStatus: string;
+  createdAt: Date;
+  updatedAt: Date;
+  events?: Array<{
+    id: string;
+    eventType: string;
+    message: string;
+    createdAt: Date;
+  }>;
+  buyer?: { business?: { name?: string | null } | null } | null;
+};
 
 @Injectable()
 export class BuyerOrdersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyer() {
-    const user = await this.prisma.user.findFirst({ where: { role: 'BUYER' } });
-    if (!user) throw new BadRequestException('No buyer found.');
-    return user;
-  }
-
-  async getOrders(): Promise<BuyerOrderSummary[]> {
-    const buyer = await this.getBuyer();
+  async getOrders(authorization?: string): Promise<BuyerOrderSummary[]> {
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const orders = await this.prisma.order.findMany({
       where: { buyerId: buyer.id },
       include: {
@@ -38,135 +43,264 @@ export class BuyerOrdersService {
         .join(', ');
       return {
         id: order.code,
-        status: order.status as any,
+        status: order.status,
         title: `${order.lines.length} Items: ${itemsText}`.substring(0, 50),
-        total: `৳${order.total}`,
-        estDelivery: 'TBD', // Delivery calculation omitted for MVP
+        total: this.formatBdt(order.total),
+        estDelivery: 'TBD',
         imageUrl: order.lines[0]?.supplyLot?.product?.imageUrl || '',
         dateGroup: order.createdAt.toLocaleDateString(),
+        orderType: order.orderType,
+        paymentStatus: order.paymentStatus,
       };
     });
   }
 
-  async getOrderDetail(id: string): Promise<BuyerOrderDetail> {
+  async getOrderDetail(
+    authorization: string | undefined,
+    id: string,
+  ): Promise<BuyerOrderDetail> {
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const order = await this.prisma.order.findUnique({
       where: { code: id },
       include: {
-        lines: { include: { supplyLot: { include: { product: true } } } },
+        buyer: { include: { business: true } },
+        events: { orderBy: { createdAt: 'asc' } },
+        lines: {
+          include: {
+            supplyLot: {
+              include: { product: true, seller: true, business: true },
+            },
+          },
+        },
       },
     });
-    if (!order) throw new NotFoundException('Order not found');
+    if (!order || order.buyerId !== buyer.id)
+      throw new NotFoundException('Order not found');
 
     const itemsText = order.lines
       .map((l) => l.supplyLot.product.name)
       .join(', ');
-
     return {
       id: order.code,
-      status: order.status as any,
+      status: order.status,
       title: `${order.lines.length} Items: ${itemsText}`.substring(0, 50),
-      total: `৳${order.total}`,
+      total: this.formatBdt(order.total),
       estDelivery: 'TBD',
       imageUrl: order.lines[0]?.supplyLot?.product?.imageUrl || '',
       dateGroup: order.createdAt.toLocaleDateString(),
+      orderType: order.orderType,
+      paymentStatus: order.paymentStatus,
       items: order.lines.map((l) => ({
         name: l.supplyLot.product.name,
         quantity: `${l.quantity} ${l.supplyLot.unit}`,
-        price: `৳${l.quantity * l.unitPrice}`,
+        price: this.formatBdt(l.quantity * l.unitPrice),
+        imageUrl: l.supplyLot.product.imageUrl || undefined,
+        sellerName: l.sellerName,
+        packageLabel: l.supplyLot.packageLabel,
+        mode: l.mode,
       })),
-      shippingAddress: 'Set in fulfillment step',
+      shippingAddress: order.buyer.business?.district ?? 'Not recorded',
       paymentMethod:
-        order.paymentStatus === 'PENDING' ? 'Cash on Delivery' : 'Paid',
-      subtotal: `৳${order.subtotal}`,
-      deliveryFee: `৳${order.total - order.subtotal}`,
+        order.paymentStatus === 'AUTHORIZED'
+          ? 'Authorized for group buy'
+          : order.paymentStatus === 'PAID'
+            ? 'Paid'
+            : 'Cash on Delivery',
+      subtotal: this.formatBdt(order.subtotal),
+      deliveryFee: this.formatBdt(order.total - order.subtotal),
+      workflow: this.buildTimeline(order),
     };
   }
 
-  async getOrderTracking(id: string): Promise<BuyerOrderTrackingResponse> {
+  async getOrderTracking(
+    authorization: string | undefined,
+    id: string,
+  ): Promise<BuyerOrderTrackingResponse> {
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const order = await this.prisma.order.findUnique({
       where: { code: id },
       include: {
         lines: { include: { supplyLot: { include: { product: true } } } },
         buyer: { include: { business: true } },
+        events: { orderBy: { createdAt: 'asc' } },
       },
     });
-    if (!order) throw new NotFoundException('Order not found');
+    if (!order || order.buyerId !== buyer.id)
+      throw new NotFoundException('Order not found');
 
-    /* ── Build timeline steps ── */
-    const timeline: TrackingStep[] = [
-      {
-        key: 'ORDER_CONFIRMED',
-        label: 'Order Confirmed',
-        occurredAt: order.createdAt.toISOString(),
-        status: 'done',
-        description:
-          'Payment verified and order transmitted to supplier hub.',
-      },
-    ];
-
-    const isShipped =
-      order.status !== 'PENDING_PAYMENT' && order.status !== 'CONFIRMED';
-
-    timeline.push({
-      key: 'PACKED_AT_HUB',
-      label: 'Packed at Bogura Hub',
-      occurredAt: isShipped ? order.updatedAt.toISOString() : undefined,
-      status: isShipped ? 'done' : 'upcoming',
-      description: isShipped
-        ? 'Quality inspection complete. Bags secured for transit.'
-        : undefined,
-    });
-
-    timeline.push({
-      key: 'IN_TRANSIT',
-      label: 'In Transit to Dhaka Central',
-      occurredAt: isShipped ? undefined : undefined,
-      status: isShipped ? 'current' : 'upcoming',
-      description: isShipped
-        ? 'Estimated Arrival: Today, 07:45 PM (ETA 2h 15m)'
-        : undefined,
-    });
-
-    const estimatedDelivery = new Date(
-      order.createdAt.getTime() + 2 * 24 * 60 * 60 * 1000,
-    );
-    timeline.push({
-      key: 'SCHEDULED_DELIVERY',
-      label: 'Scheduled for Delivery',
-      occurredAt: undefined,
-      status: 'upcoming',
-      description: `Doorstep delivery at ${order.buyer?.business?.name ?? 'your warehouse'}. Expected ${estimatedDelivery.toLocaleDateString('en-BD', { month: 'short', day: 'numeric', year: 'numeric' })}.`,
-    });
-
-    /* ── Build snapshot ── */
     const firstLine = order.lines[0];
     const itemsText = order.lines
       .map(
         (l) => `${l.quantity} ${l.supplyLot.unit}: ${l.supplyLot.product.name}`,
       )
       .join(', ');
-    const snapshot = {
-      title: itemsText.substring(0, 60),
-      sku: firstLine
-        ? `FH-${firstLine.supplyLot.product.category?.substring(0, 3).toUpperCase()}-${firstLine.supplyLotId.substring(0, 4)}`
-        : 'N/A',
-      total: order.total.toLocaleString('en-BD'),
-      deliveryAddress:
-        'Standard Agro Warehouse, Plot 14, Sector 7, Uttara, Dhaka 1230',
-      contactName: order.buyer?.fullName ?? 'Buyer',
-      contactPhone: '+880 1712-XXXXXX',
+    return {
+      orderId: id,
+      timeline: this.buildTimeline(order),
+      snapshot: {
+        title: itemsText.substring(0, 60),
+        sku: firstLine
+          ? `FH-${firstLine.supplyLot.product.category?.substring(0, 3).toUpperCase()}-${firstLine.supplyLotId.substring(0, 4)}`
+          : 'N/A',
+        total: order.total.toLocaleString('en-BD'),
+        deliveryAddress: order.buyer?.business?.district ?? 'Not recorded',
+        contactName: order.buyer?.fullName ?? 'Not recorded',
+        contactPhone: 'Not recorded',
+      },
+      logistics: {
+        originHub: 'Not assigned',
+        destinationHub: order.buyer?.business?.district ?? 'Not assigned',
+        truckId: 'Not assigned',
+        fleetPartner: 'Not assigned',
+        lastPing: 'Not available',
+        speed: 'Not available',
+      },
     };
+  }
 
-    /* ── Logistics intel ── */
-    const logistics = {
-      originHub: 'Bogura Hub',
-      destinationHub: 'Dhaka Central Hub',
-      truckId: 'DH-METRO-1234',
-      fleetPartner: 'FosholLogistics™',
-      lastPing: 'Jamuna Bridge Toll Plaza (GPS Lock)',
-      speed: '54 km/h',
-    };
+  private formatBdt(value: number): string {
+    return `BDT ${value.toLocaleString('en-BD')}`;
+  }
 
-    return { orderId: id, timeline, snapshot, logistics };
+  private buildTimeline(order: OrderForTimeline): TrackingStep[] {
+    const sellerDone = [
+      'CONFIRMED',
+      'IN_FULFILLMENT',
+      'READY_FOR_HUB_HANDOFF',
+      'HUB_RECEIVED',
+      'SORTING',
+      'READY_FOR_DISPATCH',
+      'READY_FOR_BUYER_HANDOFF',
+      'COMPLETED',
+    ].includes(order.status);
+    const handoffReady = [
+      'READY_FOR_HUB_HANDOFF',
+      'HUB_RECEIVED',
+      'SORTING',
+      'READY_FOR_DISPATCH',
+      'READY_FOR_BUYER_HANDOFF',
+      'COMPLETED',
+    ].includes(order.status);
+    const hubReceived = [
+      'HUB_RECEIVED',
+      'SORTING',
+      'READY_FOR_DISPATCH',
+      'READY_FOR_BUYER_HANDOFF',
+      'COMPLETED',
+    ].includes(order.status);
+    const complete = order.status === 'COMPLETED';
+    const groupPending =
+      order.orderType === 'GROUP' && order.status === 'PENDING_GROUP_LOCK';
+
+    if (groupPending) {
+      return [
+        {
+          key: 'GROUP_ORDER_PLACED',
+          label: 'Group order placed',
+          occurredAt: order.createdAt.toISOString(),
+          status: 'done',
+          description: 'Your quantity is committed and payment is authorized.',
+        },
+        {
+          key: 'GROUP_TARGET_PENDING',
+          label: 'Waiting for group target',
+          status: 'current',
+          description:
+            'This order stays pending and is not sent to the seller until the group target is filled.',
+        },
+        {
+          key: 'SELLER_CONFIRMATION',
+          label: 'Seller confirmation',
+          status: 'upcoming',
+          description:
+            'After target lock, the seller receives the order for acceptance.',
+        },
+        {
+          key: 'HUB_RECEIPT',
+          label: 'Hub receipt and buyer handoff',
+          status: 'upcoming',
+          description:
+            'Hub receiving and pickup or delivery details appear after seller handoff.',
+        },
+      ];
+    }
+
+    return [
+      {
+        key: 'ORDER_PLACED',
+        label: 'Order placed',
+        occurredAt: order.createdAt.toISOString(),
+        status: 'done',
+        description:
+          order.orderType === 'GROUP'
+            ? 'Group target is locked. The order is waiting for seller review.'
+            : 'Order has been sent to the seller for confirmation.',
+      },
+      {
+        key: 'SELLER_CONFIRMATION',
+        label: sellerDone
+          ? 'Seller accepted order'
+          : 'Waiting for seller confirmation',
+        occurredAt: sellerDone ? order.updatedAt.toISOString() : undefined,
+        status: sellerDone ? 'done' : 'current',
+        description: sellerDone
+          ? 'Seller accepted the order and is preparing hub handoff.'
+          : 'No seller acceptance has been recorded yet.',
+      },
+      {
+        key: 'HUB_RECEIPT',
+        label: handoffReady
+          ? hubReceived
+            ? 'Hub received package'
+            : 'Ready for hub receiving'
+          : 'Seller to hub handoff',
+        occurredAt: handoffReady ? order.updatedAt.toISOString() : undefined,
+        status: hubReceived ? 'done' : handoffReady ? 'current' : 'upcoming',
+        description: hubReceived
+          ? 'Hub scanned the QR label and verified the seller seal.'
+          : handoffReady
+            ? 'Seller marked the sealed package ready for hub intake.'
+            : 'The hub step starts after seller acceptance and handoff.',
+      },
+      {
+        key: 'HUB_SORTING',
+        label: [
+          'SORTING',
+          'READY_FOR_DISPATCH',
+          'READY_FOR_BUYER_HANDOFF',
+          'COMPLETED',
+        ].includes(order.status)
+          ? 'Sorting and dispatch prep'
+          : 'Hub sorting',
+        occurredAt: [
+          'SORTING',
+          'READY_FOR_DISPATCH',
+          'READY_FOR_BUYER_HANDOFF',
+          'COMPLETED',
+        ].includes(order.status)
+          ? order.updatedAt.toISOString()
+          : undefined,
+        status: [
+          'READY_FOR_DISPATCH',
+          'READY_FOR_BUYER_HANDOFF',
+          'COMPLETED',
+        ].includes(order.status)
+          ? 'done'
+          : order.status === 'SORTING'
+            ? 'current'
+            : 'upcoming',
+        description:
+          'Hub sorts the produce and prepares buyer pickup or delivery.',
+      },
+      {
+        key: 'BUYER_RECEIVING',
+        label: complete ? 'Buyer received order' : 'Buyer pickup or delivery',
+        occurredAt: complete ? order.updatedAt.toISOString() : undefined,
+        status: complete ? 'done' : 'upcoming',
+        description: complete
+          ? 'Order is completed.'
+          : `Hub pickup or delivery instructions for ${order.buyer?.business?.name ?? 'the buyer'} appear after hub receipt.`,
+      },
+    ];
   }
 }

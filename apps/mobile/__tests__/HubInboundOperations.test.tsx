@@ -4,10 +4,31 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LOCALE_STORAGE_KEY } from "@fosholhaat/types";
 import HubInboundQueueScreen from "../src/app/hub/inbound";
 import HubInboundDetailScreen from "../src/app/hub/inbound/[receiptId]";
+import { HUB_INBOUND_DETAILS, HUB_INBOUND_QUEUE } from "../src/app/hub/inbound/_data";
+
+const mockReplace = jest.fn();
+const mockApiFetch = jest.fn();
+const mockApiPost = jest.fn();
+
+jest.mock("expo-router", () => ({
+  useRouter: () => ({ replace: mockReplace, push: jest.fn() }),
+  useLocalSearchParams: () => ({ receiptId: "RC-7801" }),
+}));
+
+jest.mock("../src/lib/api-client", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  apiPost: (...args: unknown[]) => mockApiPost(...args),
+}));
 
 describe("Hub inbound operations screens", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path === "/hub/inbound") return Promise.resolve(HUB_INBOUND_QUEUE);
+      if (path === "/hub/inbound/RC-7801") return Promise.resolve({ receipt: HUB_INBOUND_DETAILS["RC-7801"] });
+      return Promise.reject(new Error("Receipt not found"));
+    });
+    mockApiPost.mockResolvedValue({ receipt: HUB_INBOUND_DETAILS["RC-7802"] });
     await AsyncStorage.removeItem(LOCALE_STORAGE_KEY);
   });
 

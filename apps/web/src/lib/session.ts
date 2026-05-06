@@ -1,4 +1,5 @@
-import type { AuthRole, Locale } from "@fosholhaat/types";
+import type { Locale } from "@fosholhaat/types";
+import type { AuthRole } from "@fosholhaat/types/roles";
 
 export const SESSION_TOKEN_COOKIE = "fh_session";
 export const SESSION_ROLE_COOKIE = "fh_role";

@@ -1,10 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  Bell,
   ClipboardList,
   CreditCard,
   FileText,
@@ -15,6 +15,9 @@ import {
   ShoppingCart,
   User,
 } from "lucide-react";
+import type { SellerOrderQueueResponse } from "@fosholhaat/types";
+import { apiFetch } from "../../lib/api-client";
+import { NotificationMenu, type NotificationItem } from "../_components/notification-menu";
 import styles from "./seller-shell.module.css";
 
 const NAV_ITEMS = [
@@ -25,8 +28,45 @@ const NAV_ITEMS = [
   { label: "DWR Records", href: "/seller/dwr", icon: FileText },
 ] as const;
 
+type AccountProfile = {
+  fullName: string;
+  businessName?: string;
+};
+
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [profile, setProfile] = useState<AccountProfile | null>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  useEffect(() => {
+    apiFetch<AccountProfile>("/api/auth/me")
+      .then(setProfile)
+      .catch(() => setProfile(null));
+  }, []);
+
+  useEffect(() => {
+    apiFetch<SellerOrderQueueResponse>("/api/seller/orders")
+      .then((queue) => {
+        const orderItems = queue.orders.map((order) => ({
+          id: order.id,
+          title: order.nextAction === "accept" ? "Order needs review" : order.nextAction === "print_label" ? "Print hub label" : order.nextAction === "ready_for_hub" ? "Mark ready for hub" : "Order update",
+          body: `${order.productName ?? "Order"} · ${order.quantityLabel} · ${order.paymentStatus}`,
+          href: `/seller/orders/${order.id}`,
+          tone: order.nextAction === "accept" ? "urgent" as const : "info" as const,
+        }));
+        const groupItems = queue.groupProgress.map((group) => ({
+          id: group.id,
+          title: "Group buy progress",
+          body: `${group.title}: ${group.committedQty}/${group.targetQty} ${group.unit}`,
+          href: "/seller/orders",
+          tone: "info" as const,
+        }));
+        setNotifications([...orderItems, ...groupItems]);
+      })
+      .catch(() => setNotifications([]));
+  }, []);
+
+  const displayName = profile?.businessName || profile?.fullName || "Seller profile";
 
   return (
     <div className={styles.shell}>
@@ -56,21 +96,14 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           })}
         </nav>
 
-        <div className={styles.sidebarBottom}>
-          <Link href="/seller/account" className={styles.navItem}>
-            <User size={18} strokeWidth={2} />
-            <span>Account</span>
-          </Link>
-        </div>
-
         <div className={styles.userCard}>
           <div className={styles.userAvatar}>
             <User size={16} strokeWidth={2} />
           </div>
-          <div className={styles.userInfo}>
-            <div className={styles.userName}>Arif Khan</div>
-            <div className={styles.userRole}>Premium Seller</div>
-          </div>
+          <Link href="/seller/account" className={styles.userInfo}>
+            <div className={styles.userName}>{displayName}</div>
+            <div className={styles.userRole}>{profile?.fullName ?? "Seller workspace"}</div>
+          </Link>
           <form action="/api/auth/logout" method="post" className={styles.logoutForm}>
             <button type="submit" className={styles.logoutBtn} aria-label="Logout">
               <LogOut size={16} strokeWidth={2} />
@@ -95,12 +128,10 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 placeholder="Search lots or orders..."
               />
             </div>
-            <button type="button" className={styles.iconBtn} aria-label="Notifications">
-              <Bell size={18} strokeWidth={2} />
-            </button>
-            <button type="button" className={styles.iconBtn} aria-label="Settings">
+            <NotificationMenu label="Seller notifications" items={notifications} />
+            <Link href="/seller/account" className={styles.iconBtn} aria-label="Settings">
               <Settings size={18} strokeWidth={2} />
-            </button>
+            </Link>
           </div>
         </header>
 

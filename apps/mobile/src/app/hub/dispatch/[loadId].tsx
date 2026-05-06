@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   backButtonText: { color: TOKENS.color.textSecondary, fontSize: 13, fontWeight: "800" },
   heroCard: { borderRadius: MOBILE_TOKENS.radius.heroCard, backgroundColor: TOKENS.color.surface, borderWidth: 1, borderColor: TOKENS.color.borderSoft, padding: 18, gap: 8 },
   loadId: { color: TOKENS.brand.primary, fontSize: 12, fontWeight: "900", textTransform: "uppercase" },
-  routeName: { color: TOKENS.color.textStrong, fontSize: 24, fontWeight: "800", letterSpacing: -0.9 },
+  routeName: { color: TOKENS.color.textStrong, fontSize: 24, fontWeight: "800", letterSpacing: 0 },
   destination: { color: TOKENS.color.textSecondary, fontSize: 15, fontWeight: "700" },
   metaRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   metaPill: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, backgroundColor: TOKENS.color.soft, color: TOKENS.brand.primary, overflow: "hidden", fontSize: 11, fontWeight: "900", textTransform: "uppercase" },

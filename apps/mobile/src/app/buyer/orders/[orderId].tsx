@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Locale } from '@fosholhaat/types';
+import type { BuyerOrderDetail, Locale } from '@fosholhaat/types';
 import tokens from '@fosholhaat/tokens/tokens.json';
-import { getOrderById, getOrderCopy } from '../order-data';
+import { getOrderCopy } from '../order-data';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { apiFetch } from '../../../lib/api-client';
 
 export default function BuyerOrderDetailScreen() {
   const router = useRouter();
@@ -13,7 +14,12 @@ export default function BuyerOrderDetailScreen() {
   const locale: Locale = 'bn';
   const copy = getOrderCopy(locale);
   const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
-  const order = getOrderById(orderId);
+  const [order, setOrder] = useState<BuyerOrderDetail | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!orderId) return;
+    apiFetch<BuyerOrderDetail>(`/buyer/orders/${orderId}`).then(setOrder).catch((err: Error) => setError(err.message));
+  }, [orderId]);
 
   if (!order) {
     return (
@@ -27,7 +33,7 @@ export default function BuyerOrderDetailScreen() {
         />
         <View style={styles.notFound}>
           <Text style={styles.notFoundTitle}>Order not found</Text>
-          <Text style={styles.notFoundText}>This order is unavailable.</Text>
+          <Text style={styles.notFoundText}>{error || "This order is unavailable."}</Text>
         </View>
       </SafeAreaView>
     );
@@ -46,21 +52,18 @@ export default function BuyerOrderDetailScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Status Card */}
         <View style={styles.statusCard}>
-          <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&q=80&w=600' }}
-            style={styles.statusImage}
-          />
+          {order.imageUrl ? <Image source={{ uri: order.imageUrl }} style={styles.statusImage} /> : null}
           <View style={styles.statusOverlay}>
             <View style={styles.statusInfo}>
               <Text style={styles.statusLabel}>{copy.statusSummary}</Text>
               <View style={styles.statusRow}>
                 <MaterialCommunityIcons name="truck-delivery" size={24} color={tokens.brand.primary} />
                 <Text style={styles.statusValue}>
-                  {order.status === 'IN_TRANSIT'
+                  {order.status === 'HUB_RECEIVED'
                     ? copy.inTransit
-                    : order.status === 'PROCESSING'
+                    : order.status === 'CONFIRMED'
                       ? copy.processing
-                      : order.status === 'DELIVERED'
+                      : order.status === 'COMPLETED'
                         ? copy.delivered
                         : copy.shipped}
                 </Text>
@@ -107,7 +110,7 @@ export default function BuyerOrderDetailScreen() {
             </View>
             <View style={styles.priceRow}>
               <Text style={[styles.priceLabel, { color: tokens.brand.primary }]}>{copy.bulkSavings}</Text>
-              <Text style={[styles.priceValue, { color: tokens.brand.primary, fontWeight: '700' }]}>-৳400</Text>
+            <Text style={[styles.priceValue, { color: tokens.brand.primary, fontWeight: '700' }]}>৳0</Text>
             </View>
             <View style={[styles.priceRow, styles.totalRow]}>
               <Text style={styles.totalLabel}>{copy.totalAmount}</Text>
@@ -123,8 +126,8 @@ export default function BuyerOrderDetailScreen() {
               <MaterialCommunityIcons name="warehouse" size={16} color={tokens.brand.primary} />
               <Text style={styles.infoTitle}>{copy.fulfillment}</Text>
             </View>
-            <Text style={styles.infoMain}>Tejgaon Central Warehouse</Text>
-            <Text style={styles.infoSub}>Industrial Area, Dhaka</Text>
+            <Text style={styles.infoMain}>{order.shippingAddress}</Text>
+            <Text style={styles.infoSub}>{order.orderType === "GROUP" ? "Waiting for group target before seller fulfillment." : "Waiting for seller confirmation."}</Text>
           </View>
           <View style={styles.infoBox}>
             <View style={styles.infoTitleRow}>

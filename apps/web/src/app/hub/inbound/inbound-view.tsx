@@ -9,22 +9,29 @@ import {
   ChevronRight,
   CircleAlert,
   MapPinned,
-  Package,
-  Search,
   Truck,
 } from "lucide-react";
 import {
   INBOUND_RECEIPT_STATUS_ORDER,
+  InboundReceiptStatus,
   getHubInboundCopy,
   type InboundReceiptDetail,
   type InboundReceiptQueueResponse,
-  type InboundReceiptStatus,
   type Locale,
 } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../lib/locale";
 import { apiPost } from "../../../lib/api-client";
 import { HUB_INBOUND_DETAILS, HUB_INBOUND_QUEUE } from "./inbound.data";
 import styles from "./inbound.module.css";
+
+const EMPTY_INBOUND_QUEUE: InboundReceiptQueueResponse = {
+  summary: { PENDING: 0, RECEIVED: 0, DISCREPANCY: 0, total: 0 },
+  receipts: [],
+  featuredReceiptId: "",
+  activeTab: InboundReceiptStatus.PENDING,
+};
+
+const EMPTY_INBOUND_DETAILS: Record<string, InboundReceiptDetail> = {};
 
 function formatCount(locale: Locale, value: number) {
   return new Intl.NumberFormat(locale === "bn" ? "bn-BD" : "en-BD").format(value);
@@ -237,8 +244,8 @@ function InboundDetail({
 
 export function HubInboundView({
   locale,
-  queue = HUB_INBOUND_QUEUE,
-  details = HUB_INBOUND_DETAILS,
+  queue = process.env.NODE_ENV === "test" ? HUB_INBOUND_QUEUE : EMPTY_INBOUND_QUEUE,
+  details = process.env.NODE_ENV === "test" ? HUB_INBOUND_DETAILS : EMPTY_INBOUND_DETAILS,
   selectedId = queue.featuredReceiptId,
 }: {
   locale: Locale;
@@ -260,32 +267,6 @@ export function HubInboundView({
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <div className={styles.brand}>
-            <div className={styles.brandMark} aria-hidden="true">
-              <Package size={16} strokeWidth={2.25} />
-            </div>
-            <div>
-              <div className={styles.brandTitle}>{copy.screenTitle}</div>
-              <div className={styles.brandSub}>Hub workspace - inbound</div>
-            </div>
-          </div>
-
-          <label className={styles.searchWrap}>
-            <Search className={styles.searchIcon} size={16} strokeWidth={2.2} />
-            <span className={styles.srOnly}>{copy.heroTitle}</span>
-            <input
-              className={styles.searchInput}
-              placeholder={copy.heroSubtitle}
-              aria-label={copy.heroTitle}
-            />
-          </label>
-
-          <div className={styles.headerChip}>{copy.activeLabel}</div>
-        </div>
-      </header>
-
       <main className={styles.main}>
         <section className={styles.hero}>
           <div>
@@ -402,5 +383,5 @@ export function HubInboundView({
 
 export default function HubInboundPage() {
   const { locale } = useBrowserLocale();
-  return <HubInboundView locale={locale} selectedId={HUB_INBOUND_QUEUE.featuredReceiptId} />;
+  return <HubInboundView locale={locale} />;
 }

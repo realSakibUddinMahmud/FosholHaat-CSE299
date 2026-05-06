@@ -67,8 +67,8 @@ describe("Buyer cart and checkout screens", () => {
     render(<BuyerOrderSuccessScreen />);
 
     await waitFor(() => {
-      expect(screen.getByText("Order placed")).toBeTruthy();
-      expect(screen.getByText("ORD-2404")).toBeTruthy();
+      expect(screen.getAllByText("Order placed").length).toBeGreaterThan(0);
+      expect(screen.getByText("Track this order from the Orders tab.")).toBeTruthy();
     });
   });
 });

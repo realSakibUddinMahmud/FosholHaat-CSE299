@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useStoredLocale } from "../../../lib/locale";
-import { getBuyerDiscoveryCopy } from "@fosholhaat/types";
-import { getBuyerSearchFixture, getFirstDiscoveryParam } from "../discovery-data";
+import { getBuyerDiscoveryCopy, type BuyerSearchResponse } from "@fosholhaat/types";
+import { apiFetch } from "../../../lib/api-client";
 import {
   BuyerActionButton,
   BuyerDiscoveryShell,
@@ -17,10 +17,18 @@ export default function BuyerSearchScreen() {
   const params = useLocalSearchParams<{ q?: string | string[] }>();
   const { locale } = useStoredLocale();
   const copy = getBuyerDiscoveryCopy(locale);
-  const activeQuery = getFirstDiscoveryParam(params.q) ?? "onion";
-  const response = getBuyerSearchFixture(activeQuery, locale);
+  const activeQuery = Array.isArray(params.q) ? params.q[0] : params.q;
+  const [response, setResponse] = useState<BuyerSearchResponse | null>(null);
+  const [error, setError] = useState("");
 
-  if (!response) {
+  useEffect(() => {
+    if (!activeQuery?.trim()) return;
+    apiFetch<BuyerSearchResponse>(`/buyer/catalog/search?q=${encodeURIComponent(activeQuery)}&locale=${locale}`)
+      .then((data) => { setResponse(data); setError(""); })
+      .catch((err: Error) => setError(err.message));
+  }, [activeQuery, locale]);
+
+  if (!activeQuery?.trim()) {
     return (
       <BuyerDiscoveryShell locale={locale} title={copy.invalidQueryTitle} subtitle={copy.invalidQueryBody}>
         <NoticeCard title={copy.invalidQueryTitle} body={copy.invalidQueryBody} />
@@ -29,9 +37,19 @@ export default function BuyerSearchScreen() {
     );
   }
 
+  if (!response) {
+    return (
+      <BuyerDiscoveryShell locale={locale} title={copy.searchTitle} subtitle={copy.searchLead}>
+        <SearchPlate text={activeQuery} />
+        <NoticeCard title={copy.searchTitle} body={error || copy.searchLead} />
+      </BuyerDiscoveryShell>
+    );
+  }
+
   return (
     <BuyerDiscoveryShell locale={locale} title={copy.searchTitle} subtitle={copy.searchLead}>
       <SearchPlate text={response.query} />
+      {error ? <NoticeCard title={copy.searchEmptyTitle} body={error} /> : null}
       <SectionTitle
         title={`${copy.labels.totalResults}: ${response.totalResults}`}
         body={response.items.length ? copy.labels.searchResults : copy.searchEmptyBody}

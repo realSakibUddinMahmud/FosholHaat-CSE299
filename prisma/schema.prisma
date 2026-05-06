@@ -49,11 +49,25 @@ enum CartStatus {
 
 enum OrderStatus {
   PENDING_PAYMENT
+  PENDING_SELLER_REVIEW
+  PENDING_GROUP_LOCK
   CONFIRMED
   IN_FULFILLMENT
+  READY_FOR_HUB_HANDOFF
+  HUB_RECEIVED
+  SORTING
   READY_FOR_DISPATCH
+  READY_FOR_BUYER_HANDOFF
   COMPLETED
   CANCELLED
+}
+
+enum SellerHandoffStatus {
+  CREATED
+  LABEL_PRINTED
+  READY_FOR_HUB
+  RECEIVED
+  DISCREPANCY
 }
 
 enum PaymentStatus {
@@ -72,83 +86,89 @@ enum GroupBuyStatus {
   CANCELLED
 }
 
+enum PurchaseMode {
+  SINGLE
+  GROUP
+}
+
 model User {
-  id               String              @id @default(cuid())
-  email            String              @unique
-  passwordHash     String
-  fullName         String
-  role             UserRole
-  locale           Locale              @default(bn)
-  businessId       String?
-  business         Business?           @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  sessions         AccountSession[]
-  supplyLots       SupplyLot[]         @relation("SellerSupplyLots")
-  inboundReceipts  InboundReceipt[]    @relation("HubInboundReceipts")
-  sortingBatches   SortingBatch[]      @relation("HubSortingBatches")
-  carts            Cart[]
-  orders           Order[]             @relation("BuyerOrders")
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String
+  fullName            String
+  role                UserRole
+  locale              Locale               @default(bn)
+  businessId          String?
+  business            Business?            @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  sessions            AccountSession[]
+  supplyLots          SupplyLot[]          @relation("SellerSupplyLots")
+  inboundReceipts     InboundReceipt[]     @relation("HubInboundReceipts")
+  sortingBatches      SortingBatch[]       @relation("HubSortingBatches")
+  carts               Cart[]
+  orders              Order[]              @relation("BuyerOrders")
   groupBuyCommitments GroupBuyCommitment[]
-  createdAt        DateTime            @default(now())
-  updatedAt        DateTime            @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 }
 
 model AccountSession {
-  id           String   @id @default(cuid())
-  token        String   @unique
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  activeRole   UserRole
-  expiresAt    DateTime
-  lastSeenAt   DateTime @default(now())
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  token      String   @unique
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activeRole UserRole
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 model Business {
-  id          String      @id @default(cuid())
-  name        String
-  role        UserRole
-  corridor    String      @default("bogura-dhaka")
-  district    String
-  users       User[]
-  supplyLots  SupplyLot[]
-  orders      Order[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id         String      @id @default(cuid())
+  name       String
+  role       UserRole
+  corridor   String      @default("bogura-dhaka")
+  district   String
+  users      User[]
+  supplyLots SupplyLot[]
+  orders     Order[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model Hub {
-  id               String           @id @default(cuid())
-  name             String
-  corridor         String           @default("bogura-dhaka")
-  district         String
-  inboundReceipts  InboundReceipt[]
-  sortingBatches   SortingBatch[]
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  name            String
+  corridor        String           @default("bogura-dhaka")
+  district        String
+  inboundReceipts InboundReceipt[]
+  sortingBatches  SortingBatch[]
+  sellerHandoffs  SellerHandoff[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Product {
-  id               String                @id @default(cuid())
-  slug             String                @unique
-  name             String
-  category         String
-  unitLabel        String
-  imageUrl         String?
-  supplyLots       SupplyLot[]
-  groupBuys        GroupBuy[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  id         String      @id @default(cuid())
+  slug       String      @unique
+  name       String
+  category   String
+  unitLabel  String
+  imageUrl   String?
+  supplyLots SupplyLot[]
+  groupBuys  GroupBuy[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model SupplyLot {
-  id               String                @id @default(cuid())
-  code             String                @unique
+  id               String           @id @default(cuid())
+  code             String           @unique
   sellerId         String
-  seller           User                  @relation("SellerSupplyLots", fields: [sellerId], references: [id], onDelete: Cascade)
+  seller           User             @relation("SellerSupplyLots", fields: [sellerId], references: [id], onDelete: Cascade)
   businessId       String?
-  business         Business?             @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  business         Business?        @relation(fields: [businessId], references: [id], onDelete: SetNull)
   productId        String
-  product          Product               @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product          Product          @relation(fields: [productId], references: [id], onDelete: Restrict)
   commodityLabel   String
   gradeLabel       String
   packageLabel     String
@@ -156,15 +176,19 @@ model SupplyLot {
   availableQty     Int
   unit             String
   askingPrice      Int
+  singleBuyEnabled Boolean          @default(true)
+  groupBuyEnabled  Boolean          @default(false)
+  singleMinQty     Int              @default(1)
+  singleMaxQty     Int?
   availableFrom    DateTime?
-  status           SupplyLotStatus       @default(DRAFT)
+  status           SupplyLotStatus  @default(DRAFT)
   stockHint        String
   inboundReceipts  InboundReceipt[]
   orderLines       OrderLine[]
   cartLines        CartLine[]
   groupBuys        GroupBuy[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model InboundReceipt {
@@ -204,97 +228,143 @@ model SortingBatch {
 }
 
 model Cart {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status      CartStatus  @default(ACTIVE)
-  locale      Locale      @default(bn)
-  lines       CartLine[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id        String     @id @default(cuid())
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    CartStatus @default(ACTIVE)
+  locale    Locale     @default(bn)
+  lines     CartLine[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 }
 
 model CartLine {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   cartId      String
-  cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart        Cart         @relation(fields: [cartId], references: [id], onDelete: Cascade)
   supplyLotId String
-  supplyLot   SupplyLot @relation(fields: [supplyLotId], references: [id], onDelete: Restrict)
+  supplyLot   SupplyLot    @relation(fields: [supplyLotId], references: [id], onDelete: Restrict)
   quantity    Int
   unitPrice   Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  mode        PurchaseMode @default(SINGLE)
+  groupBuyId  String?
+  groupBuy    GroupBuy?    @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  @@unique([cartId, supplyLotId])
+  @@unique([cartId, supplyLotId, mode, groupBuyId])
 }
 
 model Order {
-  id            String          @id @default(cuid())
-  code          String          @unique
+  id            String         @id @default(cuid())
+  code          String         @unique
   buyerId       String
-  buyer         User            @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
+  buyer         User           @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Restrict)
   businessId    String?
-  business      Business?       @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  status        OrderStatus     @default(PENDING_PAYMENT)
+  business      Business?      @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  status        OrderStatus    @default(PENDING_PAYMENT)
+  orderType     PurchaseMode   @default(SINGLE)
   subtotal      Int
   total         Int
-  paymentStatus PaymentStatus   @default(PENDING)
+  paymentStatus PaymentStatus  @default(PENDING)
   lines         OrderLine[]
   paymentRecord PaymentRecord?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  sellerHandoff SellerHandoff?
+  events        OrderEvent[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model SellerHandoff {
+  id               String              @id @default(cuid())
+  orderId          String              @unique
+  order            Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  hubId            String?
+  hub              Hub?                @relation(fields: [hubId], references: [id], onDelete: SetNull)
+  handoffCode      String              @unique
+  qrPayload        String
+  sealCode         String
+  status           SellerHandoffStatus @default(CREATED)
+  labelPrintedAt   DateTime?
+  sellerReadyAt    DateTime?
+  hubReceivedAt    DateTime?
+  discrepancyNotes String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+model OrderEvent {
+  id         String      @id @default(cuid())
+  orderId    String
+  order      Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actorRole  UserRole
+  eventType  String
+  fromStatus OrderStatus?
+  toStatus   OrderStatus?
+  message    String
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+
+  @@index([orderId, createdAt])
 }
 
 model OrderLine {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   orderId     String
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order       Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
   supplyLotId String
-  supplyLot   SupplyLot @relation(fields: [supplyLotId], references: [id], onDelete: Restrict)
+  supplyLot   SupplyLot    @relation(fields: [supplyLotId], references: [id], onDelete: Restrict)
   quantity    Int
   unitPrice   Int
+  mode        PurchaseMode @default(SINGLE)
+  groupBuyId  String?
+  groupBuy    GroupBuy?    @relation(fields: [groupBuyId], references: [id], onDelete: Restrict)
   sellerName  String
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime     @default(now())
 }
 
 model PaymentRecord {
-  id             String        @id @default(cuid())
-  orderId        String        @unique
-  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  status         PaymentStatus @default(PENDING)
-  provider       String        @default("manual")
-  reference      String?
-  amount         Int
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id        String        @id @default(cuid())
+  orderId   String        @unique
+  order     Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    PaymentStatus @default(PENDING)
+  provider  String        @default("manual")
+  reference String?
+  amount    Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
 }
 
 model GroupBuy {
-  id               String                @id @default(cuid())
-  code             String                @unique
-  productId        String
-  product          Product               @relation(fields: [productId], references: [id], onDelete: Restrict)
-  supplyLotId      String
-  supplyLot        SupplyLot             @relation(fields: [supplyLotId], references: [id], onDelete: Restrict)
-  targetQty        Int
-  committedQty     Int                   @default(0)
-  groupPrice       Int
-  status           GroupBuyStatus        @default(DRAFT)
-  deadlineAt       DateTime
-  commitments      GroupBuyCommitment[]
-  createdAt        DateTime              @default(now())
-  updatedAt        DateTime              @updatedAt
+  id             String               @id @default(cuid())
+  code           String               @unique
+  productId      String
+  product        Product              @relation(fields: [productId], references: [id], onDelete: Restrict)
+  supplyLotId    String
+  supplyLot      SupplyLot            @relation(fields: [supplyLotId], references: [id], onDelete: Restrict)
+  targetQty      Int
+  committedQty   Int                  @default(0)
+  minimumJoinQty Int                  @default(1)
+  maximumJoinQty Int?
+  groupPrice     Int
+  status         GroupBuyStatus       @default(DRAFT)
+  deadlineAt     DateTime
+  commitments    GroupBuyCommitment[]
+  cartLines      CartLine[]
+  orderLines     OrderLine[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model GroupBuyCommitment {
-  id           String   @id @default(cuid())
-  groupBuyId   String
-  groupBuy     GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
-  buyerId      String
-  buyer        User     @relation(fields: [buyerId], references: [id], onDelete: Restrict)
-  quantity     Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(cuid())
+  groupBuyId String
+  groupBuy   GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  buyerId    String
+  buyer      User     @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+  quantity   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([groupBuyId, buyerId])
 }

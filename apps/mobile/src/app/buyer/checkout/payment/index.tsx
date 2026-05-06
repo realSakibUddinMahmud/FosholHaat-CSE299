@@ -1,14 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { useStoredLocale } from "../../../../lib/locale";
 import {
-  BUYER_CART_FIXTURE,
-  BUYER_PAYMENT_FIXTURE,
   getBuyerCheckoutCopy,
   getBuyerFlowCopy,
 } from "../../_data";
+import type { BuyerCartResponse, BuyerPaymentMethod } from "@fosholhaat/types";
+import { apiFetch, apiPost } from "../../../../lib/api-client";
 import {
   BuyerActionButton,
+  BuyerBanner,
   BuyerChoiceCard,
   BuyerField,
   BuyerShell,
@@ -20,8 +21,23 @@ export default function BuyerPaymentScreen() {
   const { locale } = useStoredLocale();
   const copy = getBuyerCheckoutCopy(locale);
   const flowCopy = getBuyerFlowCopy(locale);
-  const [method, setMethod] = useState(BUYER_PAYMENT_FIXTURE.method);
-  const [reference, setReference] = useState(BUYER_PAYMENT_FIXTURE.referenceLabel ?? "");
+  const [method, setMethod] = useState<BuyerPaymentMethod>("cash-on-delivery");
+  const [reference, setReference] = useState("");
+  const [cart, setCart] = useState<BuyerCartResponse | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    apiFetch<BuyerCartResponse>("/buyer/cart").then(setCart).catch((err: Error) => setError(err.message));
+  }, []);
+  async function submit() {
+    try {
+      await apiPost("/buyer/checkout/payment", { method, payableTotal: cart?.totals.payableTotal ?? 0, referenceLabel: reference || undefined });
+      router.push("/buyer/checkout/confirmation");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : flowCopy.validationPayment);
+    }
+  }
+  const lines = cart?.lines ?? [];
+  const totals = cart?.totals ?? { subtotal: 0, deliveryFee: 0, serviceFee: 0, payableTotal: 0 };
 
   return (
     <BuyerShell
@@ -32,7 +48,7 @@ export default function BuyerPaymentScreen() {
       footer={
         <BuyerActionButton
           label={flowCopy.continueToConfirmation}
-          onPress={() => router.push("/buyer/checkout/confirmation")}
+          onPress={submit}
         />
       }
     >
@@ -55,13 +71,14 @@ export default function BuyerPaymentScreen() {
         onPress={() => setMethod("bank-transfer")}
       />
       <BuyerField label="Reference" value={reference} onChangeText={setReference} placeholder="Payment reference" />
+      {error ? <BuyerBanner tone="error" title="Payment check" body={error} /> : null}
       <BuyerSummaryCard
         locale={locale}
-        lines={BUYER_CART_FIXTURE.lines.map((line) => ({
+        lines={lines.map((line) => ({
           label: line.productName,
           value: `${line.quantity} ${line.unit}`,
         }))}
-        totals={BUYER_CART_FIXTURE.totals}
+        totals={totals}
       />
     </BuyerShell>
   );

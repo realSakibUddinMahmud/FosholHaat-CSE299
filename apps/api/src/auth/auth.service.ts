@@ -27,13 +27,6 @@ const ROLE_ROUTES: Record<string, RoleRoute> = {
   HUB_MANAGER: { role: 'hub_manager', nextRoute: '/hub' },
 };
 
-const IDENTIFIER_ALIASES: Record<string, string> = {
-  'buyer-user': 'buyer@fosholhaat.local',
-  'seller-user': 'seller@fosholhaat.local',
-  'hub-user': 'hub@fosholhaat.local',
-  admin: 'buyer@fosholhaat.local',
-};
-
 @Injectable()
 export class AuthService {
   constructor(@Optional() private readonly prisma?: PrismaService) {}
@@ -45,11 +38,7 @@ export class AuthService {
       const user = await this.findUserByIdentifier(identifier);
       const route = user ? ROLE_ROUTES[user.role] : undefined;
 
-      if (
-        user &&
-        route &&
-        (password === user.passwordHash || password === 'password')
-      ) {
+      if (user && route && password === user.passwordHash) {
         const session = await this.prisma.accountSession.create({
           data: {
             token: `session-${randomUUID()}`,
@@ -76,29 +65,6 @@ export class AuthService {
       }
     }
 
-    const legacyMatch =
-      ROLE_ROUTES[
-        identifier === 'seller-user'
-          ? 'SELLER'
-          : identifier === 'hub-user'
-            ? 'HUB_MANAGER'
-            : identifier === 'buyer-user' || identifier === 'admin'
-              ? 'BUYER'
-              : ''
-      ];
-
-    if (legacyMatch && password === 'password') {
-      return {
-        sessionToken: 'valid-session-token-' + legacyMatch.role,
-        user: {
-          id: 'user-' + identifier,
-          role: legacyMatch.role,
-          locale: locale,
-        },
-        nextRoute: legacyMatch.nextRoute,
-      };
-    }
-
     throw new UnauthorizedException('Invalid credentials');
   }
 
@@ -121,23 +87,26 @@ export class AuthService {
     });
   }
 
+  private normalizePhone(phone: string): string {
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('880')) cleaned = cleaned.slice(2);
+    if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
+    return cleaned;
+  }
+
+  private phoneFromGeneratedEmail(email: string): string | undefined {
+    const match = /^(buyer|seller)-(\d+)@fosholhaat\.local$/i.exec(email);
+    return match ? `+880${match[2]}` : undefined;
+  }
+
   async signup(request: SignupRequest): Promise<SignupResponse> {
     if (!this.prisma) {
-      const route = request.role === 'seller' ? '/seller' : '/buyer';
-      return {
-        sessionToken: `valid-session-token-${request.role}`,
-        user: {
-          id: `user-${request.phone}`,
-          role: request.role,
-          locale: request.locale,
-        },
-        nextRoute: route,
-      };
+      throw new UnauthorizedException('Database unavailable');
     }
 
     const role = this.toDbSignupRole(request.role);
     const route = ROLE_ROUTES[role];
-    const phoneKey = request.phone.replace(/\D/g, '') || randomUUID();
+    const phoneKey = this.normalizePhone(request.phone) || randomUUID();
     const email = `${request.role}-${phoneKey}@fosholhaat.local`;
 
     const existing = await this.prisma.user.findUnique({ where: { email } });
@@ -189,12 +158,11 @@ export class AuthService {
   private async findUserByIdentifier(identifier: string) {
     if (!this.prisma) return null;
     const raw = identifier.trim().toLowerCase();
-    const aliased = IDENTIFIER_ALIASES[raw] ?? raw;
-    if (aliased.includes('@')) {
-      return this.prisma.user.findUnique({ where: { email: aliased } });
+    if (raw.includes('@')) {
+      return this.prisma.user.findUnique({ where: { email: raw } });
     }
 
-    const phoneKey = raw.replace(/\D/g, '');
+    const phoneKey = this.normalizePhone(raw);
     if (phoneKey) {
       return this.prisma.user.findFirst({
         where: {
@@ -237,6 +205,7 @@ export class AuthService {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
+      phone: this.phoneFromGeneratedEmail(user.email),
       role: user.role,
       locale: user.locale,
       businessName: user.business?.name,

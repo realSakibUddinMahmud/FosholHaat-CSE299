@@ -38,48 +38,11 @@ export type PayoutCopy = {
   status: Record<PayoutStatus, string>;
 };
 
-export const SELLER_PAYOUT_ROWS: PayoutRow[] = [
-  {
-    id: "TR-10492",
-    period: "Oct 28",
-    date: "Oct 28, 2023",
-    orderRef: "#FH-8492",
-    method: "Bank Transfer",
-    amount: 12450,
-    status: "settled",
-    note: "Funds landed in the linked commercial account.",
-  },
-  {
-    id: "TR-10488",
-    period: "Oct 27",
-    date: "Oct 27, 2023",
-    orderRef: "#FH-8485",
-    method: "bKash (MFS)",
-    amount: 8920,
-    status: "processing",
-    note: "Queued for the next settlement window.",
-  },
-  {
-    id: "TR-10482",
-    period: "Oct 26",
-    date: "Oct 26, 2023",
-    orderRef: "#FH-8472",
-    method: "Bank Transfer",
-    amount: 23830,
-    status: "settled",
-    note: "Completed and reflected in the payout rail.",
-  },
-  {
-    id: "TR-10475",
-    period: "Oct 24",
-    date: "Oct 24, 2023",
-    orderRef: "#FH-8461",
-    method: "Bank Transfer",
-    amount: 15200,
-    status: "settled",
-    note: "Settled in the last payout batch.",
-  },
-];
+/**
+ * Empty — payout data now comes from the API.
+ * Kept for backward compatibility with any test-mode references.
+ */
+export const SELLER_PAYOUT_ROWS: PayoutRow[] = [];
 
 export const SELLER_PAYOUT_COPY: Record<Locale, PayoutCopy> = {
   en: {

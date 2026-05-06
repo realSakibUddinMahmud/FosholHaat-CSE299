@@ -87,8 +87,7 @@ export default function GroupBuyDetailPage() {
   const percent = detail.targetQuantity > 0 ? Math.round((detail.currentQuantity / detail.targetQuantity) * 100) : 0;
   const savings = detail.unitPrice - detail.groupPrice;
   const remaining = Math.max(0, detail.targetQuantity - detail.currentQuantity);
-  const productSlug = detail.productId?.replace(/-/g, "") || "";
-  const imgSrc = CATEGORY_IMAGES[productSlug] || CATEGORY_IMAGES["potato"] || "/images/potato.png";
+  const imgSrc = detail.productImage || CATEGORY_IMAGES[detail.productId] || "/images/vegetables.png";
 
   function getTimeLeft(deadline: string) {
     const ms = new Date(deadline).getTime() - Date.now();
@@ -99,7 +98,10 @@ export default function GroupBuyDetailPage() {
   }
 
   const minQty = detail.minimumJoinQuantity || 1;
-  const maxQty = detail.maximumJoinQuantity || detail.targetQuantity;
+  const maxQty = Math.min(
+    detail.maximumJoinQuantity || detail.targetQuantity,
+    remaining || detail.targetQuantity,
+  );
 
   return (
     <main className={styles.page}>
@@ -191,7 +193,16 @@ export default function GroupBuyDetailPage() {
               >
                 <Minus size={16} />
               </button>
-              <span className={styles.qtyValue}>{quantity}</span>
+              <input
+                className={styles.qtyInput}
+                type="number"
+                min={minQty}
+                max={maxQty}
+                value={quantity}
+                onChange={(event) =>
+                  setQuantity(Math.min(maxQty, Math.max(minQty, Number(event.target.value) || minQty)))
+                }
+              />
               <button
                 type="button"
                 className={styles.qtyBtn}
@@ -219,6 +230,11 @@ export default function GroupBuyDetailPage() {
           >
             {joining ? "Joining..." : "Join Group Buy →"}
           </button>
+          {joinResult?.success ? (
+            <Link href="/buyer/cart" className={styles.cartLink}>
+              View cart
+            </Link>
+          ) : null}
 
           {/* How it works */}
           <div className={styles.howItWorks}>

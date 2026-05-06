@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import type {
   InboundReceiptDetailResponse,
   InboundReceiptMutationResponse,
@@ -15,23 +15,31 @@ export class HubInboundOperationsController {
   ) {}
 
   @Get()
-  async getInboundQueue(): Promise<InboundReceiptQueueResponse> {
-    return this.hubInboundOperationsService.getInboundQueue();
+  async getInboundQueue(
+    @Headers('authorization') authorization?: string,
+  ): Promise<InboundReceiptQueueResponse> {
+    return this.hubInboundOperationsService.getInboundQueue(authorization);
   }
 
   @Get(':receiptId')
   async getInboundReceipt(
+    @Headers('authorization') authorization: string | undefined,
     @Param('receiptId') receiptId: string,
   ): Promise<InboundReceiptDetailResponse> {
-    return this.hubInboundOperationsService.getInboundReceipt(receiptId);
+    return this.hubInboundOperationsService.getInboundReceipt(
+      authorization,
+      receiptId,
+    );
   }
 
   @Post(':receiptId/receive')
   async receiveInboundReceipt(
+    @Headers('authorization') authorization: string | undefined,
     @Param('receiptId') receiptId: string,
     @Body() body: ReceiveReceiptPayload = {},
   ): Promise<InboundReceiptMutationResponse> {
     return this.hubInboundOperationsService.receiveInboundReceipt(
+      authorization,
       receiptId,
       body,
     );
@@ -39,10 +47,12 @@ export class HubInboundOperationsController {
 
   @Post(':receiptId/discrepancies')
   async reportInboundReceiptDiscrepancy(
+    @Headers('authorization') authorization: string | undefined,
     @Param('receiptId') receiptId: string,
     @Body() body: ReportDiscrepancyPayload,
   ): Promise<InboundReceiptMutationResponse> {
     return this.hubInboundOperationsService.reportInboundReceiptDiscrepancy(
+      authorization,
       receiptId,
       body,
     );

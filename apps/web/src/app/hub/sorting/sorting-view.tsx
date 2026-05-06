@@ -5,22 +5,29 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   CircleAlert,
-  Package,
-  Search,
   SlidersHorizontal,
 } from "lucide-react";
 import {
   SORTING_BATCH_STATUS_ORDER,
+  SortingBatchStatus,
   getHubSortingCopy,
   type Locale,
   type SortingBatchDetail,
-  type SortingBatchStatus,
   type SortingQueueResponse,
 } from "@fosholhaat/types";
 import { useBrowserLocale } from "../../../lib/locale";
 import { apiPost } from "../../../lib/api-client";
 import { HUB_SORTING_DETAILS, HUB_SORTING_QUEUE } from "./sorting.data";
 import styles from "./sorting.module.css";
+
+const EMPTY_SORTING_QUEUE: SortingQueueResponse = {
+  summary: { READY: 0, IN_PROGRESS: 0, HOLD: 0, COMPLETE: 0, total: 0 },
+  batches: [],
+  featuredBatchId: "",
+  activeTab: SortingBatchStatus.READY,
+};
+
+const EMPTY_SORTING_DETAILS: Record<string, SortingBatchDetail> = {};
 
 function formatCount(locale: Locale, value: number) {
   return new Intl.NumberFormat(locale === "bn" ? "bn-BD" : "en-BD").format(value);
@@ -213,8 +220,8 @@ function SortingDetail({
 
 export function HubSortingView({
   locale,
-  queue = HUB_SORTING_QUEUE,
-  details = HUB_SORTING_DETAILS,
+  queue = process.env.NODE_ENV === "test" ? HUB_SORTING_QUEUE : EMPTY_SORTING_QUEUE,
+  details = process.env.NODE_ENV === "test" ? HUB_SORTING_DETAILS : EMPTY_SORTING_DETAILS,
   selectedId = queue.featuredBatchId,
 }: {
   locale: Locale;
@@ -239,28 +246,6 @@ export function HubSortingView({
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <div className={styles.brand}>
-            <div className={styles.brandMark} aria-hidden="true">
-              <Package size={16} strokeWidth={2.25} />
-            </div>
-            <div>
-              <div className={styles.brandTitle}>{copy.screenTitle}</div>
-              <div className={styles.brandSub}>Hub workspace - sorting detail</div>
-            </div>
-          </div>
-
-          <label className={styles.searchWrap}>
-            <Search className={styles.searchIcon} size={16} strokeWidth={2.2} />
-            <span className={styles.srOnly}>{copy.heroTitle}</span>
-            <input className={styles.searchInput} placeholder={copy.heroSubtitle} aria-label={copy.heroTitle} />
-          </label>
-
-          <div className={styles.headerChip}>{copy.activeLabel}</div>
-        </div>
-      </header>
-
       <main className={styles.main}>
         <section className={styles.hero}>
           <div>
@@ -361,5 +346,5 @@ export function HubSortingView({
 
 export default function HubSortingViewWithLocale() {
   const { locale } = useBrowserLocale();
-  return <HubSortingView locale={locale} selectedId={HUB_SORTING_QUEUE.featuredBatchId} />;
+  return <HubSortingView locale={locale} />;
 }

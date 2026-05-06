@@ -16,19 +16,28 @@ import {
 import type { BuyerOrderDetail } from "@fosholhaat/types";
 import { apiFetch } from "../../../../lib/api-client";
 import { getOrderCopy, getOrderStatusLabel } from "../order-data";
+import { downloadOrderInvoice } from "../invoice";
 import styles from "./order-detail.module.css";
 
-const CATEGORY_IMAGES: Record<string, string> = {
-  potato: "/images/potato.png",
-  onion: "/images/onion.png",
-  vegetables: "/images/vegetables.png",
-};
-
 function StatusIcon({ status }: { status: string }) {
-  if (status === "IN_TRANSIT") return <Truck size={24} />;
-  if (status === "DELIVERED") return <CheckCircle2 size={24} />;
-  if (status === "PROCESSING" || status === "CONFIRMED") return <Package size={24} />;
+  if (status === "READY_FOR_DISPATCH") return <Truck size={24} />;
+  if (status === "COMPLETED") return <CheckCircle2 size={24} />;
+  if (status === "IN_FULFILLMENT") return <Package size={24} />;
   return <Clock size={24} />;
+}
+
+export function BuyerOrderDetailView({ orderId, locale = "en" }: { orderId: string; locale?: "en" | "bn" }) {
+  const copy = getOrderCopy(locale);
+
+  return (
+    <main className={styles.page}>
+      <div className={styles.errorState}>
+        <h1 className={styles.errorTitle}>{copy.notFoundTitle}</h1>
+        <p className={styles.errorDesc}>{copy.notFoundBody}</p>
+        <Link href="/buyer/orders" className={styles.backLink}>{copy.backToOrders}</Link>
+      </div>
+    </main>
+  );
 }
 
 export default function BuyerOrderDetailPage() {
@@ -66,13 +75,7 @@ export default function BuyerOrderDetailPage() {
 
   const statusLabel = getOrderStatusLabel("en", order.status);
 
-  /* Simulated mini-timeline for the status card */
-  const miniSteps = [
-    { key: "confirmed", label: "Order Confirmed", done: true },
-    { key: "dispatched", label: "Dispatched from Hub", done: order.status !== "PROCESSING" },
-    { key: "transit", label: "In Transit to Destination", active: order.status === "IN_TRANSIT" || order.status === "SHIPPED", done: order.status === "DELIVERED" },
-    { key: "delivery", label: "Out for Delivery", done: order.status === "DELIVERED" },
-  ];
+  const miniSteps = order.workflow;
 
   return (
     <main className={styles.page}>
@@ -91,7 +94,7 @@ export default function BuyerOrderDetailPage() {
           <h1 className={styles.title}>Order #{order.id}</h1>
           <p className={styles.headerMeta}>Placed on {order.dateGroup}</p>
         </div>
-        <button type="button" className={styles.outlineBtn}>
+        <button type="button" className={styles.outlineBtn} onClick={() => downloadOrderInvoice(order)}>
           <Download size={16} /> Download Invoice
         </button>
       </div>
@@ -121,11 +124,12 @@ export default function BuyerOrderDetailPage() {
             <ol className={styles.miniTimeline}>
               {miniSteps.map((step) => (
                 <li key={step.key} className={styles.miniStep}>
-                  <span className={`${styles.miniStepDot} ${step.done ? styles.miniStepDotDone : step.active ? styles.miniStepDotActive : ""}`} />
+                  <span className={`${styles.miniStepDot} ${step.status === "done" ? styles.miniStepDotDone : step.status === "current" ? styles.miniStepDotActive : ""}`} />
                   <div>
-                    <span className={`${styles.miniStepLabel} ${step.active ? styles.miniStepLabelActive : ""} ${!step.done && !step.active ? styles.miniStepLabelUpcoming : ""}`}>
+                    <span className={`${styles.miniStepLabel} ${step.status === "current" ? styles.miniStepLabelActive : ""} ${step.status === "upcoming" ? styles.miniStepLabelUpcoming : ""}`}>
                       {step.label}
                     </span>
+                    {step.description ? <p className={styles.miniStepDesc}>{step.description}</p> : null}
                   </div>
                 </li>
               ))}
@@ -137,24 +141,21 @@ export default function BuyerOrderDetailPage() {
             <h2 className={styles.cardTitle}>Order Items ({order.items.length})</h2>
             <div className={styles.itemsList}>
               {order.items.map((item) => {
-                const cat = item.name.toLowerCase().includes("potato") ? "potato"
-                  : item.name.toLowerCase().includes("onion") ? "onion" : "vegetables";
                 return (
                   <div key={`${item.name}-${item.quantity}`} className={styles.itemRow}>
                     <div className={styles.itemImageWrap}>
-                      <Image
-                        src={CATEGORY_IMAGES[cat] || "/images/vegetables.png"}
-                        alt={item.name}
-                        width={64}
-                        height={64}
-                        style={{ objectFit: "cover", borderRadius: "10px" }}
-                      />
+                      {item.imageUrl ? (
+                        <Image src={item.imageUrl} alt={item.name} width={64} height={64} style={{ objectFit: "cover", borderRadius: "10px" }} />
+                      ) : (
+                        <Package size={24} />
+                      )}
                     </div>
                     <div className={styles.itemInfo}>
                       <span className={styles.itemName}>{item.name}</span>
-                      <span className={styles.itemOrigin}>Origin: Bogura Region</span>
+                      <span className={styles.itemOrigin}>{item.sellerName ?? "Seller not recorded"}</span>
                       <div className={styles.itemBadges}>
                         <span className={styles.itemBadge}>{item.quantity}</span>
+                        {item.packageLabel ? <span className={styles.itemBadge}>{item.packageLabel}</span> : null}
                       </div>
                     </div>
                     <div className={styles.itemPrice}>
@@ -170,8 +171,8 @@ export default function BuyerOrderDetailPage() {
           <section className={styles.card}>
             <div className={styles.hubRow}>
               <div className={styles.hubInfo}>
-                <h3 className={styles.hubName}>🏢 Bogura Logistics Hub (BOG-04)</h3>
-                <p className={styles.hubDesc}>Primary sorting facility. Goods inspected for moisture and caliber before dispatch.</p>
+                <h3 className={styles.hubName}>Hub receipt status</h3>
+                <p className={styles.hubDesc}>Hub and DWR details will appear after the seller handoff is recorded.</p>
                 <div className={styles.hubMeta}>
                   <div>
                     <span className={styles.hubMetaLabel}>HANDOFF TIME</span>
@@ -179,7 +180,7 @@ export default function BuyerOrderDetailPage() {
                   </div>
                   <div>
                     <span className={styles.hubMetaLabel}>SEAL NUMBER</span>
-                    <span className={styles.hubMetaValue}>#FH-BOG-{order.id.slice(-4)}</span>
+                    <span className={styles.hubMetaValue}>Not assigned</span>
                   </div>
                 </div>
               </div>
@@ -235,11 +236,11 @@ export default function BuyerOrderDetailPage() {
           {/* Delivery Address */}
           <div className={styles.card}>
             <h3 className={styles.addressLabel}>DELIVERY ADDRESS</h3>
-            <p className={styles.addressName}>Buyer Warehouse</p>
+            <p className={styles.addressName}>Delivery location</p>
             <p className={styles.addressText}>
               <MapPin size={14} /> {order.shippingAddress}
             </p>
-            <p className={styles.addressPhone}>+880 1712-XXXXXX</p>
+            <p className={styles.addressPhone}>Not recorded</p>
           </div>
         </aside>
       </div>

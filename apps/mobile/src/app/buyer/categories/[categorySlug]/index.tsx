@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useStoredLocale } from "../../../../lib/locale";
-import { getBuyerDiscoveryCopy } from "@fosholhaat/types";
-import { getBuyerCategoryFixture, getFirstDiscoveryParam } from "../../discovery-data";
+import { getBuyerDiscoveryCopy, type BuyerCategoryBrowseResponse } from "@fosholhaat/types";
+import { apiFetch } from "../../../../lib/api-client";
 import {
   BuyerActionButton,
   BuyerDiscoveryShell,
@@ -17,13 +17,30 @@ export default function BuyerCategoryBrowseScreen() {
   const { categorySlug } = useLocalSearchParams<{ categorySlug?: string | string[] }>();
   const { locale } = useStoredLocale();
   const copy = getBuyerDiscoveryCopy(locale);
-  const response = getBuyerCategoryFixture(getFirstDiscoveryParam(categorySlug) ?? "", locale);
+  const slug = Array.isArray(categorySlug) ? categorySlug[0] : categorySlug;
+  const [response, setResponse] = useState<BuyerCategoryBrowseResponse | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!slug) return;
+    apiFetch<BuyerCategoryBrowseResponse>(`/buyer/catalog/categories/${slug}?locale=${locale}`)
+      .then((data) => { setResponse(data); setError(""); })
+      .catch((err: Error) => setError(err.message));
+  }, [slug, locale]);
+
+  if (!slug || (!response && error)) {
+    return (
+      <BuyerDiscoveryShell locale={locale} title={copy.categoryMissingTitle} subtitle={copy.categoryMissingBody}>
+        <NoticeCard title={copy.categoryMissingTitle} body={error || copy.categoryMissingBody} />
+        <BuyerActionButton label={copy.actions.backToBrowse} onPress={() => router.push("/buyer")} />
+      </BuyerDiscoveryShell>
+    );
+  }
 
   if (!response) {
     return (
-      <BuyerDiscoveryShell locale={locale} title={copy.categoryMissingTitle} subtitle={copy.categoryMissingBody}>
-        <NoticeCard title={copy.categoryMissingTitle} body={copy.categoryMissingBody} />
-        <BuyerActionButton label={copy.actions.backToBrowse} onPress={() => router.push("/buyer")} />
+      <BuyerDiscoveryShell locale={locale} title={copy.categoryTitlePrefix} subtitle={copy.categoryLead}>
+        <NoticeCard title={copy.categoryTitlePrefix} body={copy.categoryLead} />
       </BuyerDiscoveryShell>
     );
   }

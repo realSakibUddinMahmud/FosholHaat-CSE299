@@ -1,64 +1,73 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import type {
   SellerPayoutDetail,
   SellerPayoutDetailResponse,
   SellerPayoutListResponse,
+  SellerPayoutStatus,
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
-
-const sellerPayouts: SellerPayoutDetail[] = [
-  {
-    id: 'payout-2026-10-28',
-    referenceCode: '#TR-10492',
-    orderRef: '#FH-8492',
-    method: 'Bank transfer',
-    status: 'settled',
-    amount: 12450,
-    createdAt: '2026-10-28',
-    periodLabel: '28 Oct 2026',
-    businessName: 'GreenLeaf Wholesalers Ltd.',
-    payoutAccountLabel: 'Chase **** 8291',
-    breakdown: [
-      { label: 'Orders settled', amount: 12980 },
-      { label: 'Service fee', amount: -530 },
-    ],
-    documents: [
-      { id: 'csv-oct', title: 'CSV statement (Oct)', format: 'csv' },
-      { id: 'pdf-q3', title: 'PDF tax invoice (Q3)', format: 'pdf' },
-    ],
-  },
-  {
-    id: 'payout-2026-10-27',
-    referenceCode: '#TR-10488',
-    orderRef: '#FH-8485',
-    method: 'bKash',
-    status: 'processing',
-    amount: 8920,
-    createdAt: '2026-10-27',
-    periodLabel: '27 Oct 2026',
-    businessName: 'GreenLeaf Wholesalers Ltd.',
-    payoutAccountLabel: 'bKash merchant balance',
-    breakdown: [
-      { label: 'Orders settled', amount: 9260 },
-      { label: 'Service fee', amount: -340 },
-    ],
-    documents: [],
-  },
-];
+import { resolveCurrentSeller } from '../auth/current-user';
 
 @Injectable()
 export class SellerPayoutsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSellerPayouts(): Promise<SellerPayoutListResponse> {
-    const user = await this.prisma.user.findFirst({
-      where: { role: 'SELLER' },
+  private payoutStatus(paymentStatus: string): SellerPayoutStatus {
+    if (paymentStatus === 'PAID') return 'settled';
+    if (paymentStatus === 'AUTHORIZED') return 'processing';
+    return 'pending';
+  }
+
+  private async getPayouts(
+    authorization: string | undefined,
+  ): Promise<SellerPayoutDetail[]> {
+    const seller = await resolveCurrentSeller(this.prisma, authorization);
+    const user = await this.prisma.user.findUnique({
+      where: { id: seller.id },
+      include: { business: true },
     });
+    const lines = await this.prisma.orderLine.findMany({
+      where: { supplyLot: { sellerId: seller.id } },
+      include: {
+        order: { include: { paymentRecord: true } },
+        supplyLot: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return lines.map((line) => {
+      const amount = line.quantity * line.unitPrice;
+      const paymentStatus =
+        line.order.paymentRecord?.status ?? line.order.paymentStatus;
+      const createdAt =
+        line.order.paymentRecord?.createdAt ?? line.order.createdAt;
+      const referenceCode = `TR-${line.order.code}-${line.id.slice(-5)}`;
+      return {
+        id: line.id,
+        referenceCode,
+        orderRef: line.order.code,
+        method: line.order.paymentRecord?.provider ?? 'manual',
+        status: this.payoutStatus(paymentStatus),
+        amount,
+        createdAt: createdAt.toISOString(),
+        periodLabel: createdAt.toLocaleDateString('en-BD', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        }),
+        businessName: user?.business?.name ?? seller.fullName,
+        payoutAccountLabel:
+          line.order.paymentRecord?.reference ?? 'Not configured',
+        breakdown: [{ label: line.supplyLot.commodityLabel, amount }],
+        documents: [],
+      };
+    });
+  }
+
+  async getSellerPayouts(
+    authorization: string | undefined,
+  ): Promise<SellerPayoutListResponse> {
+    const sellerPayouts = await this.getPayouts(authorization);
     const pendingAmount = sellerPayouts
       .filter((payout) => payout.status !== 'settled')
       .reduce((total, payout) => total + payout.amount, 0);
@@ -72,7 +81,9 @@ export class SellerPayoutsService {
         completed: completedAmount,
         total: pendingAmount + completedAmount,
         nextDisbursementAmount: pendingAmount,
-        nextDisbursementDate: '2026-11-05',
+        nextDisbursementDate: pendingAmount
+          ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+          : '',
       },
       records: sellerPayouts.map((payout) => ({
         id: payout.id,
@@ -84,15 +95,18 @@ export class SellerPayoutsService {
         createdAt: payout.createdAt,
         periodLabel: payout.periodLabel,
       })),
-      featuredDetailId: sellerPayouts[0].id,
+      featuredDetailId: sellerPayouts[0]?.id ?? '',
     };
   }
 
-  async getSellerPayout(payoutId: string): Promise<SellerPayoutDetailResponse> {
-    const user = await this.prisma.user.findFirst({
-      where: { role: 'SELLER' },
-    });
-    const payout = sellerPayouts.find((item) => item.id === payoutId);
+  async getSellerPayout(
+    authorization: string | undefined,
+    payoutId: string,
+  ): Promise<SellerPayoutDetailResponse> {
+    const sellerPayouts = await this.getPayouts(authorization);
+    const payout = sellerPayouts.find(
+      (item) => item.id === payoutId || item.referenceCode === payoutId,
+    );
 
     if (!payout) {
       throw new NotFoundException({

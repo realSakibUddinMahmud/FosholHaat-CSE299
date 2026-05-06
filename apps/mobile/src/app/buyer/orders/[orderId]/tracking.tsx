@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { Locale } from '@fosholhaat/types';
+import type { BuyerOrderTrackingResponse, Locale } from '@fosholhaat/types';
 import tokens from '@fosholhaat/tokens/tokens.json';
-import { getOrderCopy, getOrderTracking } from '../../order-data';
+import { getOrderCopy } from '../../order-data';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { apiFetch } from '../../../../lib/api-client';
 
 const TimelineItem = ({
   label,
@@ -49,7 +50,12 @@ export default function BuyerOrderTrackingScreen() {
   const locale: Locale = 'bn';
   const copy = getOrderCopy(locale);
   const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
-  const tracking = getOrderTracking(orderId);
+  const [tracking, setTracking] = useState<BuyerOrderTrackingResponse | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!orderId) return;
+    apiFetch<BuyerOrderTrackingResponse>(`/buyer/orders/${orderId}/tracking`).then(setTracking).catch((err: Error) => setError(err.message));
+  }, [orderId]);
 
   if (!tracking) {
     return (
@@ -63,7 +69,7 @@ export default function BuyerOrderTrackingScreen() {
         />
         <View style={styles.notFound}>
           <Text style={styles.notFoundTitle}>Tracking not found</Text>
-          <Text style={styles.notFoundText}>This order is unavailable.</Text>
+          <Text style={styles.notFoundText}>{error || "This order is unavailable."}</Text>
         </View>
       </SafeAreaView>
     );
@@ -85,8 +91,8 @@ export default function BuyerOrderTrackingScreen() {
             <MaterialCommunityIcons name="truck-delivery" size={24} color={tokens.color.surface} />
           </View>
           <View style={styles.liveInfo}>
-            <Text style={styles.truckId}>DH-METRO-1234</Text>
-            <Text style={styles.estArrival}>Est. Arrival: Oct 26, 04:00 PM</Text>
+            <Text style={styles.truckId}>{tracking.logistics?.truckId ?? tracking.snapshot?.title ?? tracking.orderId}</Text>
+            <Text style={styles.estArrival}>{tracking.logistics?.lastPing ?? tracking.snapshot?.deliveryAddress ?? "Waiting for next operational update"}</Text>
           </View>
         </View>
 
@@ -109,12 +115,12 @@ export default function BuyerOrderTrackingScreen() {
         <View style={styles.lastPingCard}>
           <View style={styles.pingInfo}>
             <Text style={styles.pingLabel}>{copy.lastPing}</Text>
-            <Text style={styles.pingValue}>Jamuna Bridge Area</Text>
+            <Text style={styles.pingValue}>{tracking.logistics?.lastPing ?? "Not available"}</Text>
           </View>
           <View style={styles.pingDivider} />
           <View style={styles.pingInfo}>
             <Text style={styles.pingLabel}>Speed</Text>
-            <Text style={[styles.pingValue, { color: tokens.brand.primary }]}>54 km/h</Text>
+            <Text style={[styles.pingValue, { color: tokens.brand.primary }]}>{tracking.logistics?.speed ?? "Not available"}</Text>
           </View>
         </View>
       </ScrollView>

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/require-await, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
@@ -20,6 +20,7 @@ import {
   BUYER_PAYMENT_METHODS,
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveCurrentBuyer } from '../auth/current-user';
 
 const SERVICE_FEE = 35;
 const HUB_PICKUP_FEE = 0;
@@ -29,19 +30,13 @@ const DIRECT_DELIVERY_FEE = 120;
 export class BuyerCartCheckoutService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyer() {
-    const user = await this.prisma.user.findFirst({ where: { role: 'BUYER' } });
-    if (!user)
-      throw new BadRequestException('No buyer found. Please run seed script.');
-    return user;
-  }
-
   private async getOrCreateCart(userId: string) {
     let cart = await this.prisma.cart.findFirst({
       where: { userId, status: 'ACTIVE' },
       include: {
         lines: {
           include: {
+            groupBuy: true,
             supplyLot: {
               include: { product: true, seller: true, business: true },
             },
@@ -55,6 +50,7 @@ export class BuyerCartCheckoutService {
         include: {
           lines: {
             include: {
+              groupBuy: true,
               supplyLot: {
                 include: { product: true, seller: true, business: true },
               },
@@ -66,8 +62,8 @@ export class BuyerCartCheckoutService {
     return cart;
   }
 
-  async getBuyerCart(): Promise<BuyerCartResponse> {
-    const buyer = await this.getBuyer();
+  async getBuyerCart(authorization?: string): Promise<BuyerCartResponse> {
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const cart = await this.getOrCreateCart(buyer.id);
     const totals = this.calculateTotals(cart.lines as any);
 
@@ -82,6 +78,12 @@ export class BuyerCartCheckoutService {
         unit: line.supplyLot.unit,
         unitPrice: line.unitPrice,
         subtotal: line.quantity * line.unitPrice,
+        mode: line.mode,
+        groupBuyId: line.groupBuy?.code,
+        note:
+          line.mode === 'GROUP'
+            ? 'Group-buy order stays pending until the target is filled.'
+            : undefined,
       })),
       totals,
       nextRoute: '/buyer/checkout',
@@ -89,10 +91,11 @@ export class BuyerCartCheckoutService {
   }
 
   async updateBuyerCartLine(
+    authorization: string | undefined,
     lineId: string,
     request: BuyerCartMutationPayload = {},
   ): Promise<BuyerCartResponse> {
-    const buyer = await this.getBuyer();
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const cart = await this.getOrCreateCart(buyer.id);
 
     const line = cart.lines.find((item: any) => item.id === lineId);
@@ -104,27 +107,61 @@ export class BuyerCartCheckoutService {
 
     if (request.quantity !== undefined) {
       this.assertQuantity(lineId, request.quantity);
+      if ((line as any).mode === 'GROUP') {
+        const groupBuy = (line as any).groupBuy;
+        if (
+          !groupBuy ||
+          groupBuy.status !== 'LIVE' ||
+          request.quantity + groupBuy.committedQty > groupBuy.targetQty
+        ) {
+          throw new BadRequestException(
+            this.createError(
+              'INVALID_QUANTITY',
+              'Quantity exceeds the remaining group-buy target.',
+              lineId,
+            ),
+          );
+        }
+      }
       await this.prisma.cartLine.update({
         where: { id: lineId },
         data: { quantity: request.quantity },
       });
     }
 
-    return this.getBuyerCart();
+    return this.getBuyerCart(authorization);
   }
 
   async addBuyerCartLine(
+    authorization: string | undefined,
     supplyLotId: string,
     request: BuyerCartMutationPayload = {},
   ): Promise<BuyerCartResponse> {
     const quantity = request.quantity ?? 1;
     this.assertQuantity(supplyLotId, quantity);
-    const buyer = await this.getBuyer();
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const cart = await this.getOrCreateCart(buyer.id);
+    const mode =
+      request.mode === 'GROUP' || request.groupBuyId ? 'GROUP' : 'SINGLE';
+    const groupBuy =
+      mode === 'GROUP'
+        ? await this.prisma.groupBuy.findFirst({
+            where: {
+              code: request.groupBuyId,
+              supplyLotId,
+              status: 'LIVE',
+            },
+          })
+        : null;
     const lot = await this.prisma.supplyLot.findUnique({
       where: { id: supplyLotId },
     });
-    if (!lot || lot.availableQty < quantity) {
+    if (
+      !lot ||
+      lot.availableQty < quantity ||
+      (mode === 'SINGLE' && !lot.singleBuyEnabled) ||
+      (mode === 'GROUP' && (!groupBuy || !lot.groupBuyEnabled))
+    ) {
       throw new BadRequestException(
         this.createError(
           'INVALID_QUANTITY',
@@ -133,13 +170,32 @@ export class BuyerCartCheckoutService {
         ),
       );
     }
+    if (mode === 'SINGLE') {
+      const min = lot.singleMinQty || 1;
+      const max = lot.singleMaxQty || lot.availableQty;
+      if (quantity < min || quantity > max) {
+        throw new BadRequestException(
+          this.createError(
+            'INVALID_QUANTITY',
+            `Single buy quantity must be between ${min} and ${max}.`,
+            supplyLotId,
+          ),
+        );
+      }
+    }
     const existing = cart.lines.find(
-      (item: any) => item.supplyLotId === supplyLotId,
+      (item: any) =>
+        item.supplyLotId === supplyLotId &&
+        item.mode === mode &&
+        (mode === 'SINGLE' || item.groupBuyId === groupBuy?.id),
     );
     if (existing) {
       await this.prisma.cartLine.update({
         where: { id: existing.id },
-        data: { quantity: existing.quantity + quantity },
+        data: {
+          quantity: existing.quantity + quantity,
+          unitPrice: mode === 'GROUP' ? groupBuy!.groupPrice : lot.askingPrice,
+        },
       });
     } else {
       await this.prisma.cartLine.create({
@@ -147,16 +203,20 @@ export class BuyerCartCheckoutService {
           cartId: cart.id,
           supplyLotId,
           quantity,
-          unitPrice: lot.askingPrice,
+          unitPrice: mode === 'GROUP' ? groupBuy!.groupPrice : lot.askingPrice,
+          mode,
+          groupBuyId: groupBuy?.id,
         },
       });
     }
-    return this.getBuyerCart();
+    return this.getBuyerCart(authorization);
   }
 
   async setCheckoutFulfillment(
+    authorization: string | undefined,
     request: BuyerFulfillmentDetails,
   ): Promise<BuyerFulfillmentResponse> {
+    await resolveCurrentBuyer(this.prisma, authorization);
     this.assertFulfillmentDetails(request);
 
     return {
@@ -172,8 +232,10 @@ export class BuyerCartCheckoutService {
   }
 
   async setCheckoutPayment(
+    authorization: string | undefined,
     request: BuyerPaymentDetails,
   ): Promise<BuyerPaymentResponse> {
+    await resolveCurrentBuyer(this.prisma, authorization);
     this.assertPaymentDetails(request);
 
     return {
@@ -186,8 +248,10 @@ export class BuyerCartCheckoutService {
     };
   }
 
-  async submitCheckout(): Promise<BuyerCheckoutSubmitResponse> {
-    const buyer = await this.getBuyer();
+  async submitCheckout(
+    authorization?: string,
+  ): Promise<BuyerCheckoutSubmitResponse> {
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
     const cart = await this.getOrCreateCart(buyer.id);
 
     if (cart.lines.length === 0) {
@@ -198,25 +262,91 @@ export class BuyerCartCheckoutService {
 
     const totals = this.calculateTotals(cart.lines as any);
 
-    const orderId = `ORD-${Date.now()}`;
-
-    await this.prisma.order.create({
-      data: {
-        code: orderId,
-        buyerId: buyer.id,
-        status: 'PENDING_PAYMENT',
-        subtotal: totals.subtotal,
-        total: totals.payableTotal,
-        lines: {
-          create: cart.lines.map((l: any) => ({
-            supplyLotId: l.supplyLotId,
-            quantity: l.quantity,
-            unitPrice: l.unitPrice,
-            sellerName:
-              l.supplyLot.business?.name || l.supplyLot.seller.fullName,
-          })),
-        },
-      },
+    const orderIds: string[] = [];
+    await this.prisma.$transaction(async (tx) => {
+      const groups = new Map<string, any[]>();
+      for (const line of cart.lines as any[]) {
+        const key = line.mode === 'GROUP' ? 'GROUP' : 'SINGLE';
+        groups.set(key, [...(groups.get(key) ?? []), line]);
+      }
+      let index = 0;
+      for (const [mode, lines] of groups) {
+        index += 1;
+        const subtotal = lines.reduce(
+          (sum, line) => sum + line.quantity * line.unitPrice,
+          0,
+        );
+        const code = `ORD-${Date.now()}-${index}`;
+        const isGroup = mode === 'GROUP';
+        await tx.order.create({
+          data: {
+            code,
+            buyerId: buyer.id,
+            status: isGroup ? 'PENDING_GROUP_LOCK' : 'PENDING_SELLER_REVIEW',
+            orderType: isGroup ? 'GROUP' : 'SINGLE',
+            subtotal,
+            total: subtotal + (subtotal > 0 ? SERVICE_FEE : 0),
+            paymentStatus: isGroup ? 'AUTHORIZED' : 'PENDING',
+            lines: {
+              create: lines.map((l: any) => ({
+                supplyLotId: l.supplyLotId,
+                quantity: l.quantity,
+                unitPrice: l.unitPrice,
+                mode: isGroup ? 'GROUP' : 'SINGLE',
+                groupBuyId: l.groupBuyId,
+                sellerName:
+                  l.supplyLot.business?.name || l.supplyLot.seller.fullName,
+              })),
+            },
+            paymentRecord: {
+              create: {
+                status: isGroup ? 'AUTHORIZED' : 'PENDING',
+                provider: 'manual',
+                reference: isGroup ? 'GROUP-BUY-AUTHORIZED' : undefined,
+                amount: subtotal + (subtotal > 0 ? SERVICE_FEE : 0),
+              },
+            },
+          },
+        });
+        orderIds.push(code);
+        if (isGroup) {
+          for (const line of lines) {
+            if (!line.groupBuyId) continue;
+            await tx.groupBuyCommitment.upsert({
+              where: {
+                groupBuyId_buyerId: {
+                  groupBuyId: line.groupBuyId,
+                  buyerId: buyer.id,
+                },
+              },
+              create: {
+                groupBuyId: line.groupBuyId,
+                buyerId: buyer.id,
+                quantity: line.quantity,
+              },
+              update: { quantity: { increment: line.quantity } },
+            });
+            const updated = await tx.groupBuy.update({
+              where: { id: line.groupBuyId },
+              data: { committedQty: { increment: line.quantity } },
+            });
+            if (updated.committedQty >= updated.targetQty) {
+              await tx.groupBuy.update({
+                where: { id: updated.id },
+                data: { status: 'LOCKED' },
+              });
+              await tx.order.updateMany({
+                where: {
+                  orderType: 'GROUP',
+                  status: 'PENDING_GROUP_LOCK',
+                  lines: { some: { groupBuyId: updated.id } },
+                },
+                data: { status: 'PENDING_SELLER_REVIEW' },
+              });
+            }
+          }
+        }
+      }
     });
 
     await this.prisma.cart.update({
@@ -225,7 +355,7 @@ export class BuyerCartCheckoutService {
     });
 
     return {
-      orderId,
+      orderId: orderIds[0] ?? `ORD-${Date.now()}`,
       successRoute: '/buyer/orders/success',
     };
   }

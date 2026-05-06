@@ -233,6 +233,12 @@
 .miniStepLabelUpcoming {
   color: var(--color-text-tertiary);
 }
+.miniStepDesc {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.35;
+}
 
 /* ─── Order Items ─── */
 .itemsList {
@@ -255,6 +261,10 @@
   height: 64px;
   border-radius: 10px;
   overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: var(--color-primary-tint, #e8f5e9);
+  color: var(--brand-strong);
 }
 
 .itemInfo { flex: 1; min-width: 0; }

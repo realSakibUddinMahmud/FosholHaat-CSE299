@@ -8,7 +8,6 @@ import {
   HttpStatus,
   Param,
   BadRequestException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import {

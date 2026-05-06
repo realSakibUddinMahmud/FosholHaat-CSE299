@@ -1,19 +1,21 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Locale } from "@fosholhaat/types";
+import type { GroupBuySummary, Locale } from "@fosholhaat/types";
 import tokens from "@fosholhaat/tokens/tokens.json";
-import { MOCK_GROUP_BUYS, getGroupBuyCopy } from "../group-buy-data";
-
-const locale: Locale = "bn";
+import { getGroupBuyCopy } from "../group-buy-data";
+import { apiFetch } from "../../../lib/api-client";
+import { BuyerBottomNav } from "../bottom-nav";
+import { useStoredLocale } from "../../../lib/locale";
+import { BrandLockup } from "../../../components/brand-lockup";
 
 function progress(current: number, target: number) {
   return target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
 }
 
-function GroupBuyCard({ item, onPress }: { item: (typeof MOCK_GROUP_BUYS)[number]; onPress: () => void }) {
+function GroupBuyCard({ item, locale, onPress }: { item: GroupBuySummary; locale: Locale; onPress: () => void }) {
   const pct = progress(item.currentQuantity, item.targetQuantity);
   return (
     <Pressable style={styles.card} onPress={onPress}>
@@ -32,6 +34,7 @@ function GroupBuyCard({ item, onPress }: { item: (typeof MOCK_GROUP_BUYS)[number
           <Text style={styles.title}>{item.productName[locale]}</Text>
           <Text style={styles.price}>৳{item.groupPrice}/bag</Text>
         </View>
+        {item.sellerName ? <Text style={styles.sellerName}>{item.sellerName}</Text> : null}
         <Text style={styles.save}>SAVE ৳{item.unitPrice - item.groupPrice}</Text>
         <View style={styles.progressRow}>
           <Text style={styles.meta}>{pct}% Filled</Text>
@@ -51,16 +54,24 @@ function GroupBuyCard({ item, onPress }: { item: (typeof MOCK_GROUP_BUYS)[number
 
 export default function GroupBuyListScreen() {
   const router = useRouter();
+  const { locale } = useStoredLocale();
   const copy = getGroupBuyCopy(locale);
+  const [items, setItems] = useState<GroupBuySummary[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    apiFetch<GroupBuySummary[]>("/buyer/group-buys")
+      .then((data) => {
+        setItems(data);
+        setError("");
+      })
+      .catch((err: Error) => setError(err.message));
+  }, []);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.shell}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.brand}>FosholHaat</Text>
-            <Text style={styles.subBrand}>B2B MARKETPLACE</Text>
-          </View>
+          <BrandLockup subtitle={locale === "bn" ? "বায়ার ওয়ার্কস্পেস" : "Buyer workspace"} />
           <View style={styles.headerIcon}>
             <MaterialIcons name="notifications-none" size={22} color={tokens.color.textSecondary} />
           </View>
@@ -79,11 +90,21 @@ export default function GroupBuyListScreen() {
           <View style={styles.chip}><Text style={styles.chipText}>Popular</Text></View>
         </View>
 
+        {error ? (
+          <View style={styles.authCard}>
+            <Text style={styles.emptyText}>{error}</Text>
+            <Pressable style={styles.loginButton} onPress={() => router.replace("/login")}>
+              <Text style={styles.loginText}>{locale === "bn" ? "লগইন করুন" : "Log in"}</Text>
+            </Pressable>
+          </View>
+        ) : null}
+        {!error && items.length === 0 ? <Text style={styles.emptyText}>No group-buy opportunities right now.</Text> : null}
         <View style={styles.list}>
-          {MOCK_GROUP_BUYS.map((item) => (
-            <GroupBuyCard key={item.id} item={item} onPress={() => router.push(`/buyer/group-buys/${item.id}`)} />
+          {items.map((item) => (
+            <GroupBuyCard key={item.id} item={item} locale={locale} onPress={() => router.push(`/buyer/group-buys/${item.id}`)} />
           ))}
         </View>
+        <BuyerBottomNav active="group-buy" />
       </View>
     </SafeAreaView>
   );
@@ -98,10 +119,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  brand: { color: tokens.color.textPrimary, fontSize: 18, fontWeight: "900", letterSpacing: -0.4 },
-  subBrand: { color: tokens.color.textTertiary, fontSize: 11, fontWeight: "800", letterSpacing: 1.2 },
   headerIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: tokens.color.surface, alignItems: "center", justifyContent: "center" },
-  pageTitle: { color: tokens.color.textPrimary, fontSize: 30, fontWeight: "900", letterSpacing: -1 },
+  pageTitle: { color: tokens.color.textPrimary, fontSize: 30, fontWeight: "900", letterSpacing: 0 },
   searchBar: {
     minHeight: 56,
     borderRadius: 28,
@@ -120,6 +139,10 @@ const styles = StyleSheet.create({
   chipText: { color: tokens.color.textSecondary, fontSize: 13, fontWeight: "800" },
   chipTextActive: { color: tokens.color.surface, fontSize: 13, fontWeight: "800" },
   list: { gap: 14, paddingBottom: 24 },
+  emptyText: { color: tokens.color.textSecondary, fontSize: 14, fontWeight: "700" },
+  authCard: { borderRadius: 18, borderWidth: 1, borderColor: tokens.color.borderSoft, backgroundColor: tokens.color.surface, padding: 14, gap: 10 },
+  loginButton: { minHeight: 44, borderRadius: 14, backgroundColor: tokens.brand.primary, alignItems: "center", justifyContent: "center" },
+  loginText: { color: tokens.color.surface, fontSize: 14, fontWeight: "900" },
   card: {
     backgroundColor: tokens.color.surface,
     borderRadius: 22,
@@ -140,9 +163,10 @@ const styles = StyleSheet.create({
   timeBadgeText: { color: tokens.color.surface, fontSize: 12, fontWeight: "800" },
   body: { padding: 16, gap: 8 },
   headRow: { flexDirection: "row", justifyContent: "space-between", gap: 12, alignItems: "flex-start" },
-  title: { flex: 1, color: tokens.color.textPrimary, fontSize: 18, fontWeight: "900", letterSpacing: -0.5 },
+  title: { flex: 1, color: tokens.color.textPrimary, fontSize: 18, fontWeight: "900", letterSpacing: 0 },
   price: { color: tokens.brand.primary, fontSize: 18, fontWeight: "900" },
   save: { color: tokens.color.alertLive, fontSize: 12, fontWeight: "900", textAlign: "right" },
+  sellerName: { color: tokens.color.textSecondary, fontSize: 12, fontWeight: "800" },
   progressRow: { flexDirection: "row", justifyContent: "space-between" },
   meta: { color: tokens.color.textSecondary, fontSize: 12, fontWeight: "800" },
   progressTrack: { height: 10, borderRadius: 999, backgroundColor: tokens.color.progressTrack, overflow: "hidden" },

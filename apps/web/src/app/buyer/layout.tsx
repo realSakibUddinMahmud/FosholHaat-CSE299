@@ -2,16 +2,20 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Bell, ShoppingCart, User } from "lucide-react";
+import { ShoppingCart, User } from "lucide-react";
+import type { BuyerOrderSummary } from "@fosholhaat/types";
+import { apiFetch } from "../../lib/api-client";
+import { NotificationMenu, type NotificationItem } from "../_components/notification-menu";
 import styles from "./buyer-shell.module.css";
 
 const NAV_LINKS = [
   { label: "Home", href: "/buyer" },
-  { label: "Categories", href: "/buyer/categories" },
   { label: "Group Buying", href: "/buyer/group-buy" },
   { label: "Orders", href: "/buyer/orders" },
   { label: "Cart", href: "/buyer/cart" },
+  { label: "Account", href: "/buyer/account" },
 ] as const;
 
 const FOOTER_INDICES = [
@@ -22,6 +26,25 @@ const FOOTER_INDICES = [
 
 export default function BuyerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  useEffect(() => {
+    apiFetch<BuyerOrderSummary[]>("/api/buyer/orders")
+      .then((orders) => {
+        setNotifications(
+          orders
+            .filter((order) => ["PENDING_GROUP_LOCK", "PENDING_SELLER_REVIEW", "CONFIRMED", "READY_FOR_HUB_HANDOFF", "HUB_RECEIVED", "READY_FOR_DISPATCH", "READY_FOR_BUYER_HANDOFF"].includes(order.status))
+            .map((order) => ({
+              id: order.id,
+              title: order.status === "PENDING_GROUP_LOCK" ? "Group target pending" : order.status === "PENDING_SELLER_REVIEW" ? "Waiting for seller" : "Order update",
+              body: `${order.title} · ${order.total}`,
+              href: `/buyer/orders/${order.id}/tracking`,
+              tone: order.status === "READY_FOR_BUYER_HANDOFF" ? "success" : "info",
+            })),
+        );
+      })
+      .catch(() => setNotifications([]));
+  }, []);
 
   return (
     <div className={styles.shell}>
@@ -33,15 +56,18 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
         </Link>
 
         <nav className={styles.nav} aria-label="Primary navigation">
-          {NAV_LINKS.map(({ label, href }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`${styles.navLink} ${pathname === href ? styles.navLinkActive : ""}`}
-            >
-              {label}
-            </Link>
-          ))}
+          {NAV_LINKS.map(({ label, href }) => {
+            const isActive = pathname === href || (href !== "/buyer" && pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`${styles.navLink} ${isActive ? styles.navLinkActive : ""}`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className={styles.headerRight}>
@@ -49,9 +75,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             <span className={styles.verifiedDot} />
             BUYER VERIFIED
           </span>
-          <button type="button" className={styles.iconBtn} aria-label="Notifications" onClick={() => alert('Notifications coming soon')}>
-            <Bell size={18} strokeWidth={2} />
-          </button>
+          <NotificationMenu label="Buyer notifications" items={notifications} />
           <Link href="/buyer/cart" className={styles.iconBtn} aria-label="Cart">
             <ShoppingCart size={18} strokeWidth={2} />
           </Link>
@@ -79,7 +103,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             ))}
           </div>
           <div className={styles.footerRight}>
-            <span className={styles.copyright}>© 2024 FosholHaat B2B. All prices real-time.</span>
+            <span className={styles.copyright}>© 2026 FosholHaat B2B. All prices real-time.</span>
             <Link href="/help" className={styles.footerLink}>Help Center</Link>
             <Link href="/policies" className={styles.footerLink}>Corridor Policies</Link>
           </div>

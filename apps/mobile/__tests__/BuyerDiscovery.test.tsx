@@ -6,12 +6,58 @@ import BuyerDiscoveryHomeScreen from "../src/app/buyer";
 import BuyerCategoryBrowseScreen from "../src/app/buyer/categories/[categorySlug]";
 import BuyerSearchScreen from "../src/app/buyer/search";
 import BuyerProductDetailScreen from "../src/app/buyer/products/[productId]";
+import type { BuyerCatalogResponse, BuyerProductDetailResponse, BuyerSearchResponse, BuyerCategoryBrowseResponse, Locale } from "@fosholhaat/types";
+
+function catalog(locale: Locale): BuyerCatalogResponse {
+  const item = {
+    productId: "PR-BD-101",
+    title: locale === "bn" ? "বগুড়া আলু" : "Bogura potato lot",
+    commodity: "potato" as const,
+    packageLabel: "50 kg bag",
+    priceLabel: "BDT 45 per kg",
+    stockLabel: "100 kg ready",
+    sellerLabel: "Database Seller",
+    verificationLabel: "Verified seller",
+    imageUrl: "https://example.com/potato.jpg",
+    singleMinQty: 10,
+    singleMaxQty: 100,
+  };
+  return { workspace: { role: "buyer", corridor: "bogura-dhaka", locale }, categories: [{ slug: "potato", label: locale === "bn" ? "আলু" : "Potato", productCount: 1 }], highlights: [item] };
+}
+
+function product(locale: Locale): BuyerProductDetailResponse {
+  return {
+    product: {
+      id: "PR-BD-101",
+      title: locale === "bn" ? "বগুড়া আলু" : "Bogura potato lot",
+      commodity: "potato",
+      description: "DB product",
+      packageLabel: "50 kg bag",
+      priceLabel: "BDT 45 per kg",
+      stockLabel: "100 kg ready",
+      verificationLabel: "Verified seller",
+      sellerLabel: "Database Seller",
+      imageUrls: ["https://example.com/potato.jpg"],
+      singleMinQty: 10,
+      singleMaxQty: 100,
+    },
+    purchaseOptions: { canAddToCart: true, cartRoute: "/buyer/cart" },
+    locale,
+  };
+}
 
 const mockPush = jest.fn();
+const mockApiFetch = jest.fn();
+const mockApiPost = jest.fn();
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({ push: mockPush }),
   useLocalSearchParams: jest.fn(),
+}));
+
+jest.mock("../src/lib/api-client", () => ({
+  apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+  apiPost: (...args: unknown[]) => mockApiPost(...args),
 }));
 
 const { useLocalSearchParams } = jest.requireMock("expo-router") as {
@@ -22,6 +68,15 @@ describe("Buyer discovery mobile screens", () => {
   beforeEach(async () => {
     jest.clearAllMocks();
     mockPush.mockClear();
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path.startsWith("/buyer/catalog/products/PR-BD-101")) return Promise.resolve(product("en"));
+      if (path.startsWith("/buyer/catalog/products/")) return Promise.reject(new Error("Product not found"));
+      if (path.startsWith("/buyer/catalog/search")) return Promise.resolve({ query: "onion", locale: "en", totalResults: 1, items: catalog("en").highlights } satisfies BuyerSearchResponse);
+      if (path.startsWith("/buyer/catalog/categories/potato")) return Promise.resolve({ category: { slug: "potato", label: "আলু" }, locale: "bn", items: catalog("bn").highlights } satisfies BuyerCategoryBrowseResponse);
+      if (path.startsWith("/buyer/catalog")) return Promise.resolve(catalog("en"));
+      return Promise.reject(new Error("Product not found"));
+    });
+    mockApiPost.mockResolvedValue({ success: true });
     await AsyncStorage.removeItem(LOCALE_STORAGE_KEY);
   });
 
@@ -30,13 +85,10 @@ describe("Buyer discovery mobile screens", () => {
     render(<BuyerDiscoveryHomeScreen />);
 
     await waitFor(() => {
-      expect(screen.getByText("Group-Buy Savings")).toBeTruthy();
+      expect(screen.getByText("Single-buy lots")).toBeTruthy();
       expect(screen.getByText("All Items")).toBeTruthy();
-      expect(screen.getByText("Join Group")).toBeTruthy();
+      expect(screen.getAllByText("Open product").length).toBeGreaterThan(0);
     });
-
-    fireEvent.press(screen.getByText("Join Group"));
-    expect(mockPush).toHaveBeenCalledWith("/buyer/group-buys");
   });
 
   it("renders category browse in Bangla", async () => {
@@ -57,7 +109,7 @@ describe("Buyer discovery mobile screens", () => {
 
     await waitFor(() => {
       expect(screen.getAllByText("Search results").length).toBeGreaterThan(0);
-      expect(screen.getByText("Dhaka onion line")).toBeTruthy();
+      expect(screen.getByText("Bogura potato lot")).toBeTruthy();
     });
 
     search.unmount();
@@ -71,24 +123,25 @@ describe("Buyer discovery mobile screens", () => {
     });
   });
 
-  it("renders invalid search and missing product states", async () => {
+  it("renders invalid search state", async () => {
     await AsyncStorage.setItem(LOCALE_STORAGE_KEY, "bn");
     useLocalSearchParams.mockReturnValue({ q: "   " });
-    const invalidSearch = render(<BuyerSearchScreen />);
+    render(<BuyerSearchScreen />);
 
     await waitFor(() => {
       expect(screen.getAllByText("আগে সার্চ শব্দ দিন").length).toBeGreaterThan(0);
       expect(screen.getByText("ব্রাউজে ফিরুন")).toBeTruthy();
     });
+  });
 
-    invalidSearch.unmount();
+  it("renders missing product state", async () => {
     await AsyncStorage.setItem(LOCALE_STORAGE_KEY, "en");
     useLocalSearchParams.mockReturnValue({ productId: "missing" });
-    render(<BuyerProductDetailScreen />);
+    const missingProduct = render(<BuyerProductDetailScreen />);
 
     await waitFor(() => {
-      expect(screen.getAllByText("Product not found").length).toBeGreaterThan(0);
-      expect(screen.getByText("Back to browse")).toBeTruthy();
+      expect(missingProduct.getAllByText("Product not found").length).toBeGreaterThan(0);
+      expect(missingProduct.getByText("Back to browse")).toBeTruthy();
     });
   });
 });

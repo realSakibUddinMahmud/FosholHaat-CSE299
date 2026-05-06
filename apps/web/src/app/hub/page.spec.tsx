@@ -8,8 +8,8 @@ describe("hub coordination web shell", () => {
 
     expect(screen.getByRole("heading", { name: "Hub coordination", level: 1 })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Inbound/i })).toHaveAttribute("href", "/hub/inbound");
-    expect(screen.getByText("Mobile handoff only")).toBeInTheDocument();
-    expect(screen.getByText("Sorting line 2 blocked")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Dispatch/i })).toHaveAttribute("href", "/hub/dispatch");
+    expect(screen.getByText("Active alerts")).toBeInTheDocument();
   });
 
   it("reads locale from the page entrypoint", () => {

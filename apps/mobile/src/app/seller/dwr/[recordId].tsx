@@ -1,12 +1,14 @@
-import React from "react";
-import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import type { Locale } from "@fosholhaat/types";
+import type { Locale, SellerDwrDetailResponse } from "@fosholhaat/types";
 import { useLocalSearchParams } from "expo-router";
 import { useStoredLocale } from "../../../lib/locale";
 import { TOKENS } from "../../../styles/tokens";
-import { MOBILE_SELLER_DWR_RECORDS, formatSellerMoney, getMobileSellerCopy } from "../supply/supply-data";
+import { apiFetch } from "../../../lib/api-client";
+import { formatSellerMoney, getMobileSellerCopy } from "../supply/supply-data";
+import { SellerBottomNav, SellerHeader } from "../_shared";
 
 export function SellerDwrScreen({
   locale,
@@ -16,15 +18,36 @@ export function SellerDwrScreen({
   recordId: string;
 }) {
   const copy = getMobileSellerCopy(locale);
-  const record = MOBILE_SELLER_DWR_RECORDS.find((item) => item.id === recordId);
+  const [data, setData] = useState<SellerDwrDetailResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [showReceipt, setShowReceipt] = React.useState(false);
+
+  useEffect(() => {
+    if (!recordId) {
+      setLoading(false);
+      setError("No record ID");
+      return;
+    }
+    apiFetch<SellerDwrDetailResponse>(`/seller/dwr/${recordId}`)
+      .then(setData)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [recordId]);
+
+  const record = data?.record;
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {!record ? (
+        <SellerHeader title="DWR records" />
+
+        {loading ? (
+          <ActivityIndicator size="large" color={TOKENS.brand.primary} style={{ marginTop: 32 }} />
+        ) : error || !record ? (
           <View style={styles.card}>
             <Text style={styles.title}>{copy.notFoundTitle}</Text>
-            <Text style={styles.subtitle}>{copy.notFoundBody}</Text>
+            <Text style={styles.subtitle}>{error || copy.notFoundBody}</Text>
           </View>
         ) : (
           <>
@@ -90,35 +113,28 @@ export function SellerDwrScreen({
               ))}
             </View>
 
-            <View style={styles.linkCard}>
+            <Pressable style={styles.linkCard} onPress={() => setShowReceipt((value) => !value)}>
               <MaterialIcons name="description" size={20} color={TOKENS.color.textSecondary} />
               <View style={styles.linkBody}>
                 <Text style={styles.linkTitle}>Digital Warehouse Receipt</Text>
-                <Text style={styles.linkMeta}>Click to view the linked warehouse record.</Text>
+                <Text style={styles.linkMeta}>Tap to view receipt summary and warehouse record.</Text>
               </View>
-              <MaterialIcons name="chevron-right" size={24} color={TOKENS.color.textTertiary} />
-            </View>
+              <MaterialIcons name={showReceipt ? "expand-less" : "chevron-right"} size={24} color={TOKENS.color.textTertiary} />
+            </Pressable>
+            {showReceipt ? (
+              <View style={styles.receiptCard}>
+                <Text style={styles.receiptTitle}>Receipt generated</Text>
+                <Text style={styles.receiptLine}>Receipt: {record.recordCode}</Text>
+                <Text style={styles.receiptLine}>Warehouse: {record.hubLabel}</Text>
+                <Text style={styles.receiptLine}>Received: {record.receivedAt}</Text>
+                <Text style={styles.receiptLine}>Linked supply: {record.listingId}</Text>
+              </View>
+            ) : null}
           </>
         )}
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        {[
-          { icon: "home", label: "Home", active: false },
-          { icon: "inventory", label: "Supplies", active: true },
-          { icon: "shopping-cart", label: "Orders", active: false },
-          { icon: "account-circle", label: "Profile", active: false },
-        ].map((item) => (
-          <View key={item.label} style={styles.navItem}>
-            <MaterialIcons
-              name={item.icon as never}
-              size={24}
-              color={item.active ? TOKENS.brand.primary : TOKENS.color.textTertiary}
-            />
-            <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
-          </View>
-        ))}
-      </View>
+      <SellerBottomNav active="supply" />
     </SafeAreaView>
   );
 }
@@ -134,7 +150,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 112, gap: 14 },
   hero: { gap: 6 },
   kicker: { color: TOKENS.brand.primary, fontSize: 11, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
-  title: { color: TOKENS.color.textStrong, fontSize: 30, lineHeight: 34, fontWeight: "900", letterSpacing: -1.1 },
+  title: { color: TOKENS.color.textStrong, fontSize: 30, lineHeight: 34, fontWeight: "900", letterSpacing: 0 },
   subtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20 },
   card: {
     borderWidth: 1,
@@ -161,7 +177,7 @@ const styles = StyleSheet.create({
   },
   recordBody: { flex: 1, gap: 2 },
   recordLabel: { color: TOKENS.color.textSecondary, fontSize: 11, fontWeight: "900", letterSpacing: 0.8, textTransform: "uppercase" },
-  recordTitle: { color: TOKENS.color.textStrong, fontSize: 22, fontWeight: "900", letterSpacing: -0.8 },
+  recordTitle: { color: TOKENS.color.textStrong, fontSize: 22, fontWeight: "900", letterSpacing: 0 },
   recordMeta: { color: TOKENS.color.textSecondary, fontSize: 13, lineHeight: 18, fontWeight: "700" },
   statusPill: {
     borderRadius: 999,
@@ -218,21 +234,14 @@ const styles = StyleSheet.create({
   linkBody: { flex: 1, gap: 4 },
   linkTitle: { color: TOKENS.color.textStrong, fontSize: 16, fontWeight: "900" },
   linkMeta: { color: TOKENS.color.textSecondary, fontSize: 13, lineHeight: 18 },
-  bottomNav: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingTop: 10,
-    paddingBottom: 18,
-    backgroundColor: TOKENS.color.surfaceOverlayStrong,
-    borderTopWidth: 1,
-    borderTopColor: TOKENS.color.borderSoft,
+  receiptCard: {
+    borderWidth: 1,
+    borderColor: TOKENS.color.borderSoft,
+    backgroundColor: TOKENS.color.surface,
+    borderRadius: 18,
+    padding: 14,
+    gap: 6,
   },
-  navItem: { alignItems: "center", gap: 3, minWidth: 58 },
-  navLabel: { color: TOKENS.color.textTertiary, fontSize: 10, fontWeight: "900", letterSpacing: 0.8, textTransform: "uppercase" },
-  navLabelActive: { color: TOKENS.brand.primary },
+  receiptTitle: { color: TOKENS.brand.primary, fontSize: 16, fontWeight: "900" },
+  receiptLine: { color: TOKENS.color.textSecondary, fontSize: 13, fontWeight: "700" },
 });

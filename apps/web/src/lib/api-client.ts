@@ -9,7 +9,18 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
   if (!response.ok) {
     const text = await response.text().catch(() => "");
-    throw new Error(text || `Request failed: ${response.status}`);
+    let errorMessage = text || `Request failed: ${response.status}`;
+    try {
+      if (text) {
+        const json = JSON.parse(text);
+        if (json && json.message) {
+          errorMessage = typeof json.message === "string" ? json.message : Array.isArray(json.message) ? json.message.join(", ") : JSON.stringify(json.message);
+        }
+      }
+    } catch {
+      // Ignore parse error, use raw text
+    }
+    throw new Error(errorMessage);
   }
   return response.json() as Promise<T>;
 }

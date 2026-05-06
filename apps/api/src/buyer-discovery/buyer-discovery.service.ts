@@ -26,6 +26,15 @@ import {
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
 
+function unpackPhotoUrls(value: string) {
+  try {
+    const parsed = JSON.parse(value) as { photoUrls?: string[] };
+    return Array.isArray(parsed.photoUrls) ? parsed.photoUrls.slice(0, 3) : [];
+  } catch {
+    return [];
+  }
+}
+
 @Injectable()
 export class BuyerDiscoveryService {
   constructor(private readonly prisma: PrismaService) {}
@@ -40,6 +49,7 @@ export class BuyerDiscoveryService {
 
     const where: any = {
       status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+      singleBuyEnabled: true,
     };
     if (query.categorySlug) {
       where.product = { category: query.categorySlug };
@@ -47,12 +57,18 @@ export class BuyerDiscoveryService {
 
     const supplyLots = await this.prisma.supplyLot.findMany({
       where,
-      include: { product: true, seller: true, business: true, groupBuys: true },
+      include: {
+        product: true,
+        seller: { include: { business: true } },
+        business: true,
+        groupBuys: true,
+      },
     });
 
     const allLots = await this.prisma.supplyLot.findMany({
       where: {
         status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+        singleBuyEnabled: true,
       },
       include: { product: true },
     });
@@ -86,9 +102,15 @@ export class BuyerDiscoveryService {
     const items = await this.prisma.supplyLot.findMany({
       where: {
         status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+        singleBuyEnabled: true,
         product: { category: resolvedCategory },
       },
-      include: { product: true, seller: true, business: true, groupBuys: true },
+      include: {
+        product: true,
+        seller: { include: { business: true } },
+        business: true,
+        groupBuys: true,
+      },
     });
 
     return {
@@ -122,12 +144,19 @@ export class BuyerDiscoveryService {
     const allLots = await this.prisma.supplyLot.findMany({
       where: {
         status: { in: ['ACTIVE', 'SCHEDULED', 'LOW_STOCK', 'ORDERED'] },
+        singleBuyEnabled: true,
       },
-      include: { product: true, seller: true, business: true, groupBuys: true },
+      include: {
+        product: true,
+        seller: { include: { business: true } },
+        business: true,
+        groupBuys: true,
+      },
     });
 
     const items = allLots.filter((lot: any) => {
-      const sellerName = lot.business?.name || lot.seller.fullName;
+      const sellerName =
+        lot.business?.name || lot.seller.business?.name || lot.seller.fullName;
       return (
         lot.product.name.toLowerCase().includes(needle) ||
         lot.product.category.toLowerCase().includes(needle) ||
@@ -156,7 +185,7 @@ export class BuyerDiscoveryService {
       where: { id: productId },
       include: {
         product: true,
-        seller: true,
+        seller: { include: { business: true } },
         business: true,
         groupBuys: { where: { status: 'LIVE' } },
       },
@@ -172,13 +201,18 @@ export class BuyerDiscoveryService {
         ),
       );
     }
-
-    const sellerName = lot.business?.name || lot.seller.fullName;
+    const sellerName =
+      lot.business?.name || lot.seller.business?.name || lot.seller.fullName;
+    const imageUrls = unpackPhotoUrls(lot.stockHint);
+    const title =
+      lot.commodityLabel && lot.commodityLabel !== lot.product.name
+        ? `${lot.commodityLabel} ${lot.product.name}`
+        : lot.product.name;
 
     return {
       product: {
         id: lot.id,
-        title: `${lot.product.name} ${lot.commodityLabel}`,
+        title,
         commodity: lot.product.category as any,
         description: `Grade: ${lot.gradeLabel}. Fresh supply from ${sellerName}.`,
         packageLabel: lot.packageLabel,
@@ -186,13 +220,21 @@ export class BuyerDiscoveryService {
         stockLabel: `${lot.availableQty} ${lot.unit} ready`,
         verificationLabel: 'Verified seller',
         sellerLabel: sellerName,
-        imageUrls: lot.product.imageUrl ? [lot.product.imageUrl] : [],
+        imageUrls: imageUrls.length
+          ? imageUrls
+          : lot.product.imageUrl
+            ? [lot.product.imageUrl]
+            : [],
+        singleMinQty: lot.singleMinQty,
+        singleMaxQty: lot.singleMaxQty ?? lot.availableQty,
       },
       purchaseOptions: {
-        canAddToCart: lot.availableQty > 0,
+        canAddToCart: lot.singleBuyEnabled && lot.availableQty > 0,
         cartRoute: '/buyer/cart',
         groupBuyRoute:
-          lot.groupBuys.length > 0 ? '/buyer/group-buys' : undefined,
+          lot.groupBuyEnabled && lot.groupBuys.length > 0
+            ? '/buyer/group-buys'
+            : undefined,
       },
       locale,
     };
@@ -298,17 +340,27 @@ export class BuyerDiscoveryService {
     });
 
     return sorted.map((lot) => {
-      const sellerName = lot.business?.name || lot.seller.fullName;
+      const sellerName =
+        lot.business?.name || lot.seller.business?.name || lot.seller.fullName;
+      const imageUrl =
+        unpackPhotoUrls(lot.stockHint)[0] || lot.product.imageUrl || '';
+      const title =
+        lot.commodityLabel && lot.commodityLabel !== lot.product.name
+          ? `${lot.commodityLabel} ${lot.product.name}`
+          : lot.product.name;
       return {
         productId: lot.id,
-        title: `${lot.product.name} ${lot.commodityLabel}`,
+        title,
         commodity: lot.product.category,
         packageLabel: lot.packageLabel,
         priceLabel: `৳${lot.askingPrice} per ${lot.unit}`,
         stockLabel: `${lot.availableQty} ${lot.unit} ready`,
         sellerLabel: sellerName,
         verificationLabel: 'Verified seller',
-        imageUrl: lot.product.imageUrl || '',
+        imageUrl,
+        groupBuyId: lot.groupBuys?.[0]?.code,
+        singleMinQty: lot.singleMinQty,
+        singleMaxQty: lot.singleMaxQty ?? lot.availableQty,
       };
     });
   }

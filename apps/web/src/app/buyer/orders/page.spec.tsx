@@ -26,11 +26,10 @@ describe("buyer orders web lane", () => {
     expect(screen.getByRole("link", { name: "Back to orders" })).toHaveAttribute("href", "/buyer/orders");
   });
 
-  it("renders a valid order without falling back to a different one", () => {
+  it("does not render dummy order data for an arbitrary order id", () => {
     render(<BuyerOrderDetailView orderId="FH-8510" locale="en" />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Order ID: #FH-8510" })).toBeInTheDocument();
-    expect(screen.getByText(/Green Lentils \(Grade A\)/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Order not found" })).toBeInTheDocument();
     expect(screen.queryByText(/Red Onions, Premium Rice/)).toBeNull();
   });
 });

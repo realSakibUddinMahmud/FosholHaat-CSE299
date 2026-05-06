@@ -54,7 +54,7 @@ export function SellerDwrDetailView({
             <ArrowLeft size={16} strokeWidth={2.2} />
             {copy.supplyTitle}
           </Link>
-          <button type="button" className={styles.primaryAction}>
+          <button type="button" className={styles.primaryAction} onClick={() => window.print()}>
             <Download size={16} strokeWidth={2.2} />
             Download DWR
           </button>
@@ -183,7 +183,7 @@ export function SellerDwrDetailView({
             </div>
             <div className={styles.darkCard}>
               <p className={styles.cardText}>Verify this DWR hash against the physical dispatch note.</p>
-              <div className={styles.hashField}>HASH: 8f2a9c...1e3d0b5</div>
+              <div className={styles.hashField}>HASH: Not recorded</div>
               <button type="button" className={styles.hashButton}>
                 Verify hash
               </button>

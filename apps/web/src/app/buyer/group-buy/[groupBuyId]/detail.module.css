@@ -299,6 +299,19 @@
   border-right: 1.5px solid var(--color-border-soft);
   background: var(--color-surface);
 }
+.qtyInput {
+  width: 76px;
+  height: 40px;
+  border: 0;
+  border-left: 1.5px solid var(--color-border-soft);
+  border-right: 1.5px solid var(--color-border-soft);
+  background: var(--color-surface);
+  text-align: center;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text-strong);
+}
 
 /* ─── Result Banner ─── */
 .resultBanner {
@@ -340,6 +353,15 @@
 .joinBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+.cartLink {
+  display: flex;
+  justify-content: center;
+  margin: -14px 0 24px;
+  color: var(--brand-strong);
+  font-size: 14px;
+  font-weight: 800;
+  text-decoration: none;
 }
 
 /* ─── How It Works ─── */

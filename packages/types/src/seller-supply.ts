@@ -5,8 +5,7 @@ export const SELLER_SUPPLY_COMMODITIES = [
   "onion",
   "vegetables",
 ] as const;
-export type SellerSupplyCommodity =
-  (typeof SELLER_SUPPLY_COMMODITIES)[number];
+export type SellerSupplyCommodity = (typeof SELLER_SUPPLY_COMMODITIES)[number];
 
 export const SELLER_SUPPLY_UNITS = ["kg", "bag", "crate"] as const;
 export type SellerSupplyUnit = (typeof SELLER_SUPPLY_UNITS)[number];
@@ -37,7 +36,17 @@ export interface SellerSupplyListing {
   availableFrom?: string;
   status: SellerSupplyStatus;
   stockHint: string;
-  dwrRecordId: string;
+  photoUrls?: string[];
+  singleBuyEnabled?: boolean;
+  groupBuyEnabled?: boolean;
+  singleMinQty?: number;
+  singleMaxQty?: number;
+  groupTargetQty?: number;
+  groupMinQty?: number;
+  groupMaxQty?: number;
+  groupDeadline?: string;
+  groupPrice?: number;
+  dwrRecordId?: string;
 }
 
 export interface SellerSupplyWorkspace {
@@ -59,6 +68,16 @@ export interface CreateSellerSupplyInput {
   gradeLabel: string;
   askingPrice: number;
   availableFrom?: string;
+  photoUrls?: string[];
+  singleBuyEnabled?: boolean;
+  groupBuyEnabled?: boolean;
+  singleMinQty?: number;
+  singleMaxQty?: number;
+  groupTargetQty?: number;
+  groupMinQty?: number;
+  groupMaxQty?: number;
+  groupDeadline?: string;
+  groupPrice?: number;
 }
 
 export interface UpdateSellerSupplyInput {
@@ -67,6 +86,16 @@ export interface UpdateSellerSupplyInput {
   askingPrice?: number;
   availableFrom?: string;
   status?: SellerSupplyStatus;
+  photoUrls?: string[];
+  singleBuyEnabled?: boolean;
+  groupBuyEnabled?: boolean;
+  singleMinQty?: number;
+  singleMaxQty?: number;
+  groupTargetQty?: number;
+  groupMinQty?: number;
+  groupMaxQty?: number;
+  groupDeadline?: string;
+  groupPrice?: number;
 }
 
 export interface SellerSupplyMutationResponse {
@@ -92,6 +121,21 @@ export interface SellerDwrRecord {
 
 export interface SellerDwrDetailResponse {
   record: SellerDwrRecord;
+}
+
+export interface SellerDwrSummary {
+  id: string;
+  recordCode: string;
+  commodityLabel: string;
+  quantity: number;
+  unit: SellerSupplyUnit;
+  status: string;
+  hubLabel: string;
+  receivedAt: string;
+}
+
+export interface SellerDwrListResponse {
+  records: SellerDwrSummary[];
 }
 
 export interface SellerSupplyErrorResponse {
@@ -211,11 +255,9 @@ export const SELLER_SUPPLY_COPY: Record<Locale, SellerSupplyCopy> = {
     workspaceSubtitle:
       "স্টক দেখুন, নতুন সরবরাহ দিন, আর DWR রেকর্ড হাতের কাছে রাখুন।",
     supplyTitle: "সরবরাহ তালিকা",
-    supplySubtitle:
-      "পরিমাণ, গ্রেড, প্যাকেজ আর দর যেন এক নজরে দেখা যায়।",
+    supplySubtitle: "পরিমাণ, গ্রেড, প্যাকেজ আর দর যেন এক নজরে দেখা যায়।",
     newSupplyTitle: "নতুন সরবরাহ দিন",
-    newSupplySubtitle:
-      "সহজভাবে পণ্য, পরিমাণ আর দামের তথ্য দিন।",
+    newSupplySubtitle: "সহজভাবে পণ্য, পরিমাণ আর দামের তথ্য দিন।",
     dwrTitle: "DWR রেকর্ড",
     dwrSubtitle: "এই সরবরাহের সাথে যুক্ত গুদাম রেকর্ড দেখুন।",
     addSupply: "সরবরাহ দিন",

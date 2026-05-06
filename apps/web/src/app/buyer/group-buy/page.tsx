@@ -76,8 +76,7 @@ export default function GroupBuyPage() {
         {groupBuys.map((gb) => {
           const percent = gb.targetQuantity > 0 ? Math.round((gb.currentQuantity / gb.targetQuantity) * 100) : 0;
           const savings = gb.unitPrice - gb.groupPrice;
-          const productSlug = gb.productId?.replace(/-/g, '') || "";
-          const imgSrc = CATEGORY_IMAGES[productSlug] || CATEGORY_IMAGES["potato"] || "/images/potato.png";
+          const imgSrc = gb.productImage || CATEGORY_IMAGES[gb.productId] || "/images/vegetables.png";
           const timeLeft = getTimeLeft(gb.deadline);
 
           return (

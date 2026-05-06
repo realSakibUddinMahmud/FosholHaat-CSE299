@@ -1,15 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { type Locale, type SellerPayoutStatus } from "@fosholhaat/types";
+import { useRouter } from "expo-router";
+import { type Locale, type SellerPayoutListResponse, type SellerPayoutStatus } from "@fosholhaat/types";
+import { apiFetch } from "../../../lib/api-client";
 import { useStoredLocale } from "../../../lib/locale";
 import { MOBILE_TOKENS, TOKENS } from "../../../styles/tokens";
+import { SellerBottomNav, SellerHeader } from "../_shared";
 
 type PayoutRow = {
   id: string;
-  date: { en: string; bn: string };
-  method: { en: string; bn: string };
+  date: string;
+  method: string;
   reference: string;
   amount: number;
   status: SellerPayoutStatus;
@@ -58,19 +61,27 @@ const COPY = {
   },
 } as const;
 
-const PAYOUT_ROWS: PayoutRow[] = [
-  { id: "#TR-10492", date: { en: "Oct 28, 2023", bn: "২৮ অক্টোবর ২০২৩" }, method: { en: "Bank Transfer", bn: "ব্যাংক ট্রান্সফার" }, reference: "Ref: Order #FH-8492", amount: 12450, status: "settled" },
-  { id: "#TR-10488", date: { en: "Oct 27, 2023", bn: "২৭ অক্টোবর ২০২৩" }, method: { en: "bKash (MFS)", bn: "বিকাশ (MFS)" }, reference: "Ref: Order #FH-8485", amount: 8920, status: "processing" },
-  { id: "#TR-10482", date: { en: "Oct 26, 2023", bn: "২৬ অক্টোবর ২০২৩" }, method: { en: "Bank Transfer", bn: "ব্যাংক ট্রান্সফার" }, reference: "Ref: Order #FH-8472", amount: 23830, status: "settled" },
-  { id: "#TR-10475", date: { en: "Oct 24, 2023", bn: "২৪ অক্টোবর ২০২৩" }, method: { en: "Bank Transfer", bn: "ব্যাংক ট্রান্সফার" }, reference: "Ref: Order #FH-8461", amount: 15200, status: "settled" },
-];
-
 function formatMoney(amount: number, locale: Locale) {
   return new Intl.NumberFormat(locale === "bn" ? "bn-BD" : "en-BD", {
     style: "currency",
     currency: "BDT",
     maximumFractionDigits: 0,
   }).format(amount);
+}
+
+function mapRows(data: SellerPayoutListResponse, locale: Locale): PayoutRow[] {
+  return data.records.map((record) => ({
+    id: record.referenceCode,
+    date: new Date(record.createdAt).toLocaleDateString(locale === "bn" ? "bn-BD" : "en-BD", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
+    method: record.method,
+    reference: record.orderRef,
+    amount: record.amount,
+    status: record.status,
+  }));
 }
 
 function statusColor(status: SellerPayoutStatus) {
@@ -80,16 +91,38 @@ function statusColor(status: SellerPayoutStatus) {
 }
 
 export default function SellerPayoutVisibilityScreen() {
+  const router = useRouter();
   const { locale } = useStoredLocale();
   const copy = COPY[locale === "bn" ? "bn" : "en"];
   const [showDetail, setShowDetail] = useState(false);
-  const pendingAmount = 45200;
-  const completedAmount = 74832;
-  const totalAmount = 120032;
+  const [selectedId, setSelectedId] = useState("");
+  const [payouts, setPayouts] = useState<SellerPayoutListResponse | null>(null);
+  const [error, setError] = useState("");
+  const rows = useMemo(() => (payouts ? mapRows(payouts, locale) : []), [locale, payouts]);
+  const pendingAmount = payouts?.summary.pending ?? 0;
+  const completedAmount = payouts?.summary.completed ?? 0;
+  const totalAmount = payouts?.summary.total ?? 0;
+  const selectedRow = rows.find((row) => row.id === selectedId) ?? rows[0];
+  const nextDate = payouts?.summary.nextDisbursementDate
+    ? new Date(payouts.summary.nextDisbursementDate).toLocaleDateString(locale === "bn" ? "bn-BD" : "en-BD", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
+
+  useEffect(() => {
+    apiFetch<SellerPayoutListResponse>("/seller/payouts")
+      .then(setPayouts)
+      .catch((err: Error) => setError(err.message));
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <SellerHeader title="Seller finance" />
+        </View>
         <View style={styles.header}>
           <View>
             <Text style={styles.kicker}>{copy.subtitle}</Text>
@@ -100,10 +133,6 @@ export default function SellerPayoutVisibilityScreen() {
                 : "See what is due, what is paid, and which payout needs attention."}
             </Text>
           </View>
-          <View style={styles.iconButton}>
-            <MaterialIcons name="notifications" size={18} color={TOKENS.color.textSecondary} />
-            <View style={styles.badgeDot} />
-          </View>
         </View>
 
         <View style={styles.summaryCard}>
@@ -112,7 +141,7 @@ export default function SellerPayoutVisibilityScreen() {
               <View style={styles.summaryDot} />
               <Text style={styles.summaryPillText}>{copy.nextDisbursement}</Text>
             </View>
-            <Text style={styles.summaryDate}>Nov 05, 2023</Text>
+            <Text style={styles.summaryDate}>{nextDate}</Text>
           </View>
 
           <View style={styles.summaryAmountRow}>
@@ -130,15 +159,15 @@ export default function SellerPayoutVisibilityScreen() {
               <Text style={styles.detailTitle}>{copy.detailTitle}</Text>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>{copy.detailPeriod}</Text>
-                <Text style={styles.detailValue}>Oct 28 - Nov 05</Text>
+                <Text style={styles.detailValue}>{selectedRow?.date ?? "-"}</Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>{copy.detailMethod}</Text>
-                <Text style={styles.detailValue}>{locale === "bn" ? "ব্যাংক ট্রান্সফার" : "Bank Transfer"}</Text>
+                <Text style={styles.detailValue}>{selectedRow?.method ?? "-"}</Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>{copy.detailExpected}</Text>
-                <Text style={styles.detailValue}>Nov 05, 2023</Text>
+                <Text style={styles.detailValue}>{nextDate || "-"}</Text>
               </View>
             </View>
           ) : null}
@@ -161,21 +190,26 @@ export default function SellerPayoutVisibilityScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{copy.recentActivity}</Text>
-          <Pressable style={styles.filterButton}>
-            <MaterialIcons name="tune" size={16} color={TOKENS.color.textSecondary} />
-            <Text style={styles.filterText}>{copy.filter}</Text>
-          </Pressable>
         </View>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.rowList}>
-          {PAYOUT_ROWS.map((row) => (
-            <View key={row.id} style={styles.rowCard}>
+          {rows.map((row) => (
+            <Pressable
+              key={row.id}
+              style={[styles.rowCard, selectedRow?.id === row.id && styles.rowCardActive]}
+              onPress={() => {
+                setSelectedId(row.id);
+                setShowDetail(true);
+                router.push({ pathname: "/seller/payouts/[payoutId]", params: { payoutId: encodeURIComponent(row.id) } });
+              }}
+            >
               <View style={styles.rowHeader}>
                 <View>
                   <Text style={styles.rowId}>{row.id}</Text>
                   <View style={styles.rowMetaLine}>
                     <MaterialIcons name="calendar-today" size={13} color={TOKENS.color.textTertiary} />
-                    <Text style={styles.rowMeta}>{row.date[locale === "bn" ? "bn" : "en"]}</Text>
+                    <Text style={styles.rowMeta}>{row.date}</Text>
                   </View>
                 </View>
                 <View style={[styles.statusPill, statusColor(row.status)]}>
@@ -188,38 +222,19 @@ export default function SellerPayoutVisibilityScreen() {
                   <MaterialIcons name="receipt-long" size={16} color={TOKENS.brand.primary} />
                   <View>
                     <Text style={styles.referenceText}>{row.reference}</Text>
-                    <Text style={styles.referenceSub}>{row.method[locale === "bn" ? "bn" : "en"]}</Text>
+                    <Text style={styles.referenceSub}>{row.method}</Text>
                   </View>
                 </View>
                 <Text style={styles.rowAmount}>{formatMoney(row.amount, locale)}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
         </View>
 
-        <Pressable style={styles.loadMoreButton}>
-          <Text style={styles.loadMoreText}>{copy.loadMoreHistory}</Text>
-        </Pressable>
+        {!rows.length ? <Text style={styles.emptyText}>{locale === "bn" ? "লাইভ পেমেন্ট পাওয়া যায়নি।" : "No live payouts found."}</Text> : null}
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        {[
-          { icon: "grid-view", label: "Home", active: false },
-          { icon: "local-shipping", label: "Orders", active: false },
-          { icon: "account-balance-wallet", label: "Payouts", active: true },
-          { icon: "inventory", label: "Stock", active: false },
-          { icon: "account-circle", label: "Profile", active: false },
-        ].map((item) => (
-          <View key={item.label} style={styles.navItem}>
-            <MaterialIcons
-              name={item.icon as never}
-              size={24}
-              color={item.active ? TOKENS.brand.primary : TOKENS.color.textTertiary}
-            />
-            <Text style={[styles.navLabel, item.active && styles.navLabelActive]}>{item.label}</Text>
-          </View>
-        ))}
-      </View>
+      <SellerBottomNav active="payouts" />
     </SafeAreaView>
   );
 }
@@ -229,7 +244,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 118, gap: 14 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   kicker: { color: TOKENS.brand.primary, fontSize: 11, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
-  title: { color: TOKENS.color.textStrong, fontSize: 30, fontWeight: "900", letterSpacing: -1.1 },
+  title: { color: TOKENS.color.textStrong, fontSize: 30, fontWeight: "900", letterSpacing: 0 },
   subtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20, maxWidth: 290 },
   iconButton: {
     width: 40,
@@ -281,7 +296,7 @@ const styles = StyleSheet.create({
   summaryAmountRow: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 },
   summaryAmountBlock: { flex: 1, gap: 3 },
   summaryAmountLabel: { color: TOKENS.color.textTertiary, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.7 },
-  summaryAmount: { color: TOKENS.color.textStrong, fontSize: 36, lineHeight: 40, fontWeight: "900", letterSpacing: -1.1 },
+  summaryAmount: { color: TOKENS.color.textStrong, fontSize: 36, lineHeight: 40, fontWeight: "900", letterSpacing: 0 },
   breakdownButton: {
     minWidth: 86,
     height: 36,
@@ -318,7 +333,9 @@ const styles = StyleSheet.create({
   statLabel: { color: TOKENS.color.textTertiary, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.6 },
   statValue: { color: TOKENS.color.textPrimary, fontSize: 15, fontWeight: "800" },
   sectionHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 2 },
-  sectionTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "800", letterSpacing: -0.2 },
+  sectionTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "800", letterSpacing: 0 },
+  errorText: { color: TOKENS.color.alertLive, fontSize: 12, fontWeight: "700" },
+  emptyText: { color: TOKENS.color.textSecondary, fontSize: 13, fontWeight: "700", textAlign: "center", paddingVertical: 18 },
   filterButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -344,6 +361,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 1,
   },
+  rowCardActive: { borderColor: TOKENS.brand.primary, backgroundColor: TOKENS.color.selectedSurface },
   rowHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   rowId: { color: TOKENS.color.textStrong, fontSize: 18, fontWeight: "900" },
   rowMetaLine: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 4 },

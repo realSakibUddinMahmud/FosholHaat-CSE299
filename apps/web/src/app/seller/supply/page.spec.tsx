@@ -3,13 +3,16 @@ import { SellerSupplyListView } from "./supply-view";
 import { SellerNewSupplyView } from "./new/page";
 import { SellerDwrDetailView } from "../dwr/[recordId]/page";
 
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 describe("seller supply web lane", () => {
   it("renders the seller workspace supply cards", () => {
     render(<SellerSupplyListView locale="en" mode="workspace" />);
 
     expect(screen.getByRole("heading", { name: "Supply workspace" })).toBeInTheDocument();
-    expect(screen.getByText(/Cold store grade A/)).toBeInTheDocument();
-    expect(screen.getAllByText("View DWR").length).toBeGreaterThan(0);
+    expect(screen.getByText("0 lots visible")).toBeInTheDocument();
   });
 
   it("shows validation errors on an invalid new supply submit", () => {

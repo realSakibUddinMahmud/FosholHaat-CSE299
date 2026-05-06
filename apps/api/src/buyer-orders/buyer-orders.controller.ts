@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Headers, Param } from '@nestjs/common';
 import { BuyerOrdersService } from './buyer-orders.service';
 import {
   BuyerOrderSummary,
@@ -11,19 +11,25 @@ export class BuyerOrdersController {
   constructor(private readonly buyerOrdersService: BuyerOrdersService) {}
 
   @Get()
-  async getOrders(): Promise<BuyerOrderSummary[]> {
-    return this.buyerOrdersService.getOrders();
+  async getOrders(
+    @Headers('authorization') authorization?: string,
+  ): Promise<BuyerOrderSummary[]> {
+    return this.buyerOrdersService.getOrders(authorization);
   }
 
   @Get(':id')
-  async getOrderDetail(@Param('id') id: string): Promise<BuyerOrderDetail> {
-    return this.buyerOrdersService.getOrderDetail(id);
+  async getOrderDetail(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id') id: string,
+  ): Promise<BuyerOrderDetail> {
+    return this.buyerOrdersService.getOrderDetail(authorization, id);
   }
 
   @Get(':id/tracking')
   async getOrderTracking(
+    @Headers('authorization') authorization: string | undefined,
     @Param('id') id: string,
   ): Promise<BuyerOrderTrackingResponse> {
-    return this.buyerOrdersService.getOrderTracking(id);
+    return this.buyerOrdersService.getOrderTracking(authorization, id);
   }
 }

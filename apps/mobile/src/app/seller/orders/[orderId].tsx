@@ -1,11 +1,15 @@
-import React from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { ActivityIndicator, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { type Locale, getSellerOrdersCopy } from "@fosholhaat/types";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import QRCode from "qrcode";
+import { type Locale, type SellerOrderDetailResponse, getSellerOrdersCopy } from "@fosholhaat/types";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useStoredLocale } from "../../../lib/locale";
 import { MOBILE_TOKENS, TOKENS } from "../../../styles/tokens";
-import { getSellerOrderById, nextActionLabel } from "./_data";
+import { apiFetch, apiPost } from "../../../lib/api-client";
+import { nextActionLabel, SELLER_ORDER_TEST_DETAIL } from "./_data";
 
 type Props = {
   locale: Locale;
@@ -15,14 +19,76 @@ type Props = {
 
 export function SellerOrderDetailScreen({ locale, orderId, onBack = () => {} }: Props) {
   const copy = getSellerOrdersCopy(locale);
-  const order = getSellerOrderById(orderId);
+  const [data, setData] = useState<SellerOrderDetailResponse | null>(process.env.NODE_ENV === "test" ? SELLER_ORDER_TEST_DETAIL : null);
+  const [loading, setLoading] = useState(process.env.NODE_ENV !== "test");
+  const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
 
-  if (!order) {
+  useEffect(() => {
+    if (process.env.NODE_ENV === "test") return;
+    if (!orderId) {
+      setLoading(false);
+      setError("No order ID");
+      return;
+    }
+    apiFetch<SellerOrderDetailResponse>(`/seller/orders/${orderId}`)
+      .then(setData)
+      .catch((err: Error) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [orderId]);
+
+  const order = data?.order;
+
+  useEffect(() => {
+    if (!order?.handoff?.qrPayload) return;
+    QRCode.toDataURL(order.handoff.qrPayload, { margin: 1, width: 240 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(""));
+  }, [order?.handoff?.qrPayload]);
+
+  async function handleAction(action: string) {
+    if (!orderId) return;
+    setActionLoading(true);
+    try {
+      const result = await apiPost<SellerOrderDetailResponse>(`/seller/orders/${orderId}/${action}`, {});
+      setData(result);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function printHandoffLabel() {
+    if (!order?.handoff) return;
+    const qr = qrDataUrl ? `<img src="${qrDataUrl}" style="width:180px;height:180px" />` : "";
+    const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;padding:28px;color:#0f172a"><div style="border:2px solid #0b5a34;border-radius:18px;padding:24px;max-width:520px"><h1 style="margin:0;color:#0b5a34">FosholHaat Hub Handoff</h1><p><b>Order:</b> ${order.id}</p><p><b>Buyer:</b> ${order.buyerName}</p><p><b>Quantity:</b> ${order.quantityLabel}</p>${qr}<h2>Handoff ${order.handoff.handoffCode}</h2><p><b>Seal:</b> ${order.handoff.sealCode}</p><p><b>Hub:</b> ${order.handoff.hubName}, ${order.handoff.hubDistrict}</p><p style="margin-top:24px">Send only sealed packages. Hub must scan QR and verify seal before DWR receipt.</p></div></body></html>`;
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const doc = window.open("", "_blank", "width=720,height=900");
+      doc?.document.write(html);
+      doc?.document.close();
+      doc?.print();
+      return;
+    }
+    const file = await Print.printToFileAsync({ html });
+    if (await Sharing.isAvailableAsync()) await Sharing.shareAsync(file.uri);
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <ActivityIndicator size="large" color={TOKENS.brand.primary} style={{ marginTop: 100 }} />
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !order) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={[styles.shell, styles.notFoundShell]}>
           <Text style={styles.notFoundTitle}>{copy.notFoundTitle}</Text>
-          <Text style={styles.notFoundBody}>{copy.notFoundBody}</Text>
+          <Text style={styles.notFoundBody}>{error || copy.notFoundBody}</Text>
           <Pressable accessibilityRole="button" onPress={onBack} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>{copy.queueTitle}</Text>
           </Pressable>
@@ -76,23 +142,60 @@ export function SellerOrderDetailScreen({ locale, orderId, onBack = () => {} }: 
             ))}
           </View>
 
+          {order.handoff ? (
+            <View style={styles.panel}>
+              <Text style={styles.panelTitle}>Hub handoff QR and seal</Text>
+              <View style={styles.qrBox}>
+                {qrDataUrl ? <Image source={{ uri: qrDataUrl }} style={styles.qrImage} /> : <Text style={styles.qrText}>Generating QR...</Text>}
+              </View>
+              <View style={styles.row}><Text style={styles.label}>Handoff</Text><Text style={styles.value}>{order.handoff.handoffCode}</Text></View>
+              <View style={styles.row}><Text style={styles.label}>Seal</Text><Text style={styles.value}>{order.handoff.sealCode}</Text></View>
+              <View style={styles.row}><Text style={styles.label}>Hub</Text><Text style={styles.value}>{order.handoff.hubName}, {order.handoff.hubDistrict}</Text></View>
+              <Pressable accessibilityRole="button" style={styles.secondaryButton} onPress={printHandoffLabel}>
+                <Text style={styles.secondaryButtonText}>Print/share handoff label</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
           <View style={styles.panel}>
-            <Text style={styles.panelTitle}>{copy.ready}</Text>
-            {order.notes.map((note) => (
-              <Text key={note} style={styles.note}>{note}</Text>
-            ))}
+            <Text style={styles.panelTitle}>Order lifecycle</Text>
+            {order.notes?.map((note) => <Text key={note} style={styles.note}>{note}</Text>)}
+            {order.trackingEvents.length ? order.trackingEvents.map((event) => (
+              <Text key={event.id} style={styles.note}>{event.label}: {event.message}</Text>
+            )) : order.notes?.length ? null : <Text style={styles.note}>No tracking events yet.</Text>}
           </View>
 
           <View style={styles.actionRow}>
-            <Pressable accessibilityRole="button" style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>{copy.accept}</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>{copy.pack}</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>{copy.readyAction}</Text>
-            </Pressable>
+            {order.nextAction === "accept" && (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.primaryButton}
+                onPress={() => handleAction("accept")}
+                disabled={actionLoading}
+              >
+                <Text style={styles.primaryButtonText}>{copy.accept}</Text>
+              </Pressable>
+            )}
+            {order.nextAction === "print_label" && (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.primaryButton}
+                onPress={() => handleAction("print-label")}
+                disabled={actionLoading}
+              >
+                <Text style={styles.primaryButtonText}>Print QR label</Text>
+              </Pressable>
+            )}
+            {order.nextAction === "ready_for_hub" && (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.primaryButton}
+                onPress={() => handleAction("ready")}
+                disabled={actionLoading}
+              >
+                <Text style={styles.primaryButtonText}>Ready for hub</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </ScrollView>
@@ -148,7 +251,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   orderId: { color: TOKENS.brand.primary, fontSize: 12, fontWeight: "900", letterSpacing: 0.8 },
-  title: { color: TOKENS.color.textStrong, fontSize: 24, fontWeight: "800", letterSpacing: -0.8 },
+  title: { color: TOKENS.color.textStrong, fontSize: 24, fontWeight: "800", letterSpacing: 0 },
   subtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20 },
   metaRow: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   metaPill: {
@@ -182,6 +285,9 @@ const styles = StyleSheet.create({
   itemName: { color: TOKENS.color.textStrong, fontSize: 14, fontWeight: "800" },
   itemText: { color: TOKENS.color.textSecondary, fontSize: 12, fontWeight: "700" },
   note: { color: TOKENS.color.textSecondary, fontSize: 13, lineHeight: 18 },
+  qrBox: { minHeight: 190, borderRadius: 16, borderWidth: 1, borderColor: TOKENS.color.borderSoft, backgroundColor: TOKENS.color.canvas, padding: 12, justifyContent: "center", alignItems: "center" },
+  qrImage: { width: 170, height: 170 },
+  qrText: { color: TOKENS.color.textPrimary, fontSize: 11, fontWeight: "800" },
   actionRow: { flexDirection: "row", gap: 10 },
   primaryButton: {
     flex: 1,

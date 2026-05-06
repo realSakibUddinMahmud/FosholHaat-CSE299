@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { type HubCoordinationResponse, type Locale, getHubCoordinationCopy } from "@fosholhaat/types";
-import { BrandLockup } from "../../components/brand-lockup";
 import { useBrowserLocale } from "../../lib/locale";
 import { HUB_OVERVIEW, getHubLaneHref } from "./hub.data";
 import styles from "./hub.module.css";
@@ -27,7 +26,6 @@ export function HubWorkspaceView({ locale }: { locale: Locale }) {
     <div className={styles.page}>
       <header className={styles.hero}>
         <div>
-          <BrandLockup subtitle={copy.screenTitle} />
           <p className={styles.kicker}>HUB COORDINATION</p>
           <h1 className={styles.title}>{copy.screenTitle}</h1>
           <p className={styles.subtitle}>{copy.screenSubtitle}</p>

@@ -1,29 +1,57 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { Locale } from '@fosholhaat/types';
+import type { GroupBuyDetail } from '@fosholhaat/types';
 import tokens from '@fosholhaat/tokens/tokens.json';
-import { getGroupBuyById, getGroupBuyCopy } from '../group-buy-data';
+import { getGroupBuyCopy } from '../group-buy-data';
 import { formatBuyerMoney } from '../_data';
+import { apiFetch, apiPost } from '../../../lib/api-client';
+import { useStoredLocale } from '../../../lib/locale';
 
 type JoinState = 'idle' | 'pending' | 'success' | 'error';
 
 export default function GroupBuyDetailScreen() {
   const params = useLocalSearchParams<{ groupBuyId?: string | string[] }>();
   const router = useRouter();
-  const locale: Locale = 'bn';
+  const { locale } = useStoredLocale();
   const copy = getGroupBuyCopy(locale);
   const groupBuyId = Array.isArray(params.groupBuyId) ? params.groupBuyId[0] : params.groupBuyId;
-  const item = useMemo(() => (groupBuyId ? getGroupBuyById(groupBuyId) : null), [groupBuyId]);
+  const [item, setItem] = useState<GroupBuyDetail | null>(null);
+  const [qty, setQty] = useState("1");
   const [joinState, setJoinState] = useState<JoinState>('idle');
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!groupBuyId) return;
+    apiFetch<GroupBuyDetail>(`/buyer/group-buys/${groupBuyId}`)
+      .then((data) => {
+        setItem(data);
+        setQty(String(data.minimumJoinQuantity));
+        setError("");
+      })
+      .catch((err: Error) => setError(err.message));
+  }, [groupBuyId]);
 
   const handleJoin = () => {
     if (!item) return;
+    const quantity = Number(qty);
+    if (!Number.isFinite(quantity) || quantity < item.minimumJoinQuantity || quantity > (item.maximumJoinQuantity ?? item.targetQuantity)) {
+      setError(`Quantity must be between ${item.minimumJoinQuantity} and ${item.maximumJoinQuantity ?? item.targetQuantity} ${item.unit.en}.`);
+      setJoinState("error");
+      return;
+    }
     setJoinState('pending');
-    setTimeout(() => {
-      setJoinState('success');
-    }, 800);
+    apiPost<{ success: boolean; message?: string }>(`/buyer/group-buys/${item.id}/join`, { quantity })
+      .then((result) => {
+        if (!result.success) throw new Error(result.message || "Could not join group buy");
+        setJoinState("success");
+        router.push("/buyer/cart");
+      })
+      .catch((err: Error) => {
+        setError(err.message);
+        setJoinState("error");
+      });
   };
 
   if (!item) {
@@ -38,7 +66,7 @@ export default function GroupBuyDetailScreen() {
         />
         <View style={styles.stateWrap}>
           <Text style={styles.stateTitle}>{copy.notFoundTitle}</Text>
-          <Text style={styles.stateText}>{copy.notFoundMessage}</Text>
+          <Text style={styles.stateText}>{error || copy.notFoundMessage}</Text>
           <TouchableOpacity style={styles.stateButton} onPress={() => router.back()}>
             <Text style={styles.stateButtonText}>{copy.backToList}</Text>
           </TouchableOpacity>
@@ -107,8 +135,14 @@ export default function GroupBuyDetailScreen() {
 
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>• {copy.minQuantityNote} {item.minimumJoinQuantity} {unit}</Text>
+            <Text style={styles.infoText}>• Maximum: {item.maximumJoinQuantity ?? item.targetQuantity} {unit}</Text>
             <Text style={styles.infoText}>• {copy.targetNote}</Text>
           </View>
+          <View style={styles.qtyBox}>
+            <Text style={styles.priceLabel}>Order quantity</Text>
+            <TextInput style={styles.qtyInput} value={qty} onChangeText={setQty} keyboardType="numeric" />
+          </View>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           {joinState !== 'idle' ? (
             <View style={styles.feedbackBox}>
@@ -309,6 +343,25 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: tokens.brand.primary,
   },
+  qtyBox: {
+    backgroundColor: tokens.color.canvas,
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 12,
+    gap: 8,
+  },
+  qtyInput: {
+    minHeight: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: tokens.color.borderSoft,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    fontWeight: "800",
+    color: tokens.color.textPrimary,
+    backgroundColor: tokens.color.surface,
+  },
+  errorText: { color: tokens.color.alertLive, fontSize: 13, fontWeight: "700", marginTop: 8 },
   infoText: {
     fontSize: 13,
     color: tokens.color.textBody,

@@ -1,24 +1,36 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   getHubInboundCopy,
+  type InboundReceiptQueueResponse,
   type InboundReceiptStatus,
 } from "@fosholhaat/types";
 import { useStoredLocale } from "../../../lib/locale";
 import { MOBILE_TOKENS, TOKENS } from "../../../styles/tokens";
-import { HUB_INBOUND_QUEUE, HUB_INBOUND_DETAILS } from "./_data";
+import { apiFetch } from "../../../lib/api-client";
 
 export default function HubInboundQueueScreen() {
   const router = useRouter();
   const { locale } = useStoredLocale();
   const copy = getHubInboundCopy(locale);
-  const [activeTab, setActiveTab] = useState<InboundReceiptStatus>(HUB_INBOUND_QUEUE.activeTab);
+  const [queue, setQueue] = useState<InboundReceiptQueueResponse | null>(null);
+  const [activeTab, setActiveTab] = useState<InboundReceiptStatus>("PENDING" as InboundReceiptStatus);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    apiFetch<InboundReceiptQueueResponse>("/hub/inbound")
+      .then((data) => {
+        setQueue(data);
+        setActiveTab(data.activeTab);
+        setError("");
+      })
+      .catch((err: Error) => setError(err.message));
+  }, []);
   const receipts = useMemo(
-    () => HUB_INBOUND_QUEUE.receipts.filter((item) => item.status === activeTab),
-    [activeTab],
+    () => (queue?.receipts ?? []).filter((item) => item.status === activeTab),
+    [activeTab, queue],
   );
 
   return (
@@ -47,7 +59,7 @@ export default function HubInboundQueueScreen() {
                   onPress={() => setActiveTab(status)}
                 >
                   <Text style={styles.metricLabel}>{copy.tabs[status]}</Text>
-                  <Text style={styles.metricValue}>{HUB_INBOUND_QUEUE.summary[status]}</Text>
+                  <Text style={styles.metricValue}>{queue?.summary[status] ?? 0}</Text>
                 </Pressable>
               ))}
             </View>
@@ -56,7 +68,6 @@ export default function HubInboundQueueScreen() {
           {receipts.length ? (
             <View style={styles.queueList}>
               {receipts.map((receipt) => {
-                const detail = HUB_INBOUND_DETAILS[receipt.id];
                 return (
                   <Pressable
                     key={receipt.id}
@@ -91,7 +102,7 @@ export default function HubInboundQueueScreen() {
 
                     <Text style={styles.note}>{receipt.note}</Text>
                     <Text style={styles.nextStep}>
-                      {copy.labels.nextStep}: {detail?.nextStepLabel ?? receipt.note}
+                      {copy.labels.nextStep}: {receipt.note}
                     </Text>
 
                     <View style={styles.queueFooter}>
@@ -104,7 +115,7 @@ export default function HubInboundQueueScreen() {
             </View>
           ) : (
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyTitle}>{copy.queueEmptyTitle}</Text>
+              <Text style={styles.emptyTitle}>{error || copy.queueEmptyTitle}</Text>
               <Text style={styles.emptyBody}>{copy.queueEmptyBody}</Text>
             </View>
           )}
@@ -130,13 +141,13 @@ const styles = StyleSheet.create({
     color: TOKENS.brand.primary,
     fontSize: MOBILE_TOKENS.font.sectionTitle.size,
     fontWeight: MOBILE_TOKENS.font.sectionTitle.weight,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   brandSubtitle: { color: TOKENS.color.textTertiary, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
   headerPill: { flexDirection: "row", gap: 6, alignItems: "center", paddingHorizontal: 12, height: 36, borderRadius: 18, backgroundColor: TOKENS.color.soft },
   headerPillText: { color: TOKENS.brand.primary, fontSize: 12, fontWeight: "800" },
   heroCard: { borderRadius: MOBILE_TOKENS.radius.heroCard, backgroundColor: TOKENS.color.surface, borderWidth: 1, borderColor: TOKENS.color.borderSoft, padding: 18, gap: 12 },
-  heroTitle: { color: TOKENS.color.textStrong, fontSize: 22, fontWeight: "800", letterSpacing: -0.8 },
+  heroTitle: { color: TOKENS.color.textStrong, fontSize: 22, fontWeight: "800", letterSpacing: 0 },
   heroSubtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20 },
   metricRow: { flexDirection: "row", gap: 10 },
   metricCard: { flex: 1, borderRadius: MOBILE_TOKENS.radius.card, backgroundColor: TOKENS.color.canvas, borderWidth: 1, borderColor: TOKENS.color.borderSoft, paddingVertical: 10, paddingHorizontal: 10, gap: 4 },
@@ -148,7 +159,7 @@ const styles = StyleSheet.create({
   queueCardHeader: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   routeBlock: { flex: 1, gap: 4 },
   receiptId: { color: TOKENS.brand.primary, fontSize: 13, fontWeight: "800", textTransform: "uppercase" },
-  routeName: { color: TOKENS.color.textStrong, fontSize: 18, fontWeight: "800", letterSpacing: -0.4 },
+  routeName: { color: TOKENS.color.textStrong, fontSize: 18, fontWeight: "800", letterSpacing: 0 },
   statusPill: { alignSelf: "flex-start", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: TOKENS.color.surfaceMuted },
   statusText: { color: TOKENS.color.textSecondary, fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
   destination: { color: TOKENS.color.textPrimary, fontSize: 14, fontWeight: "700" },

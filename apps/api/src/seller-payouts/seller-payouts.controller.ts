@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Headers, Param } from '@nestjs/common';
 import type {
   SellerPayoutDetailResponse,
   SellerPayoutListResponse,
@@ -10,14 +10,17 @@ export class SellerPayoutsController {
   constructor(private readonly sellerPayoutsService: SellerPayoutsService) {}
 
   @Get()
-  async getSellerPayouts(): Promise<SellerPayoutListResponse> {
-    return this.sellerPayoutsService.getSellerPayouts();
+  async getSellerPayouts(
+    @Headers('authorization') authorization?: string,
+  ): Promise<SellerPayoutListResponse> {
+    return this.sellerPayoutsService.getSellerPayouts(authorization);
   }
 
   @Get(':payoutId')
   async getSellerPayout(
+    @Headers('authorization') authorization: string | undefined,
     @Param('payoutId') payoutId: string,
   ): Promise<SellerPayoutDetailResponse> {
-    return this.sellerPayoutsService.getSellerPayout(payoutId);
+    return this.sellerPayoutsService.getSellerPayout(authorization, payoutId);
   }
 }

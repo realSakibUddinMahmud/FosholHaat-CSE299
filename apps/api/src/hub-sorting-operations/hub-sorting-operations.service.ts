@@ -17,98 +17,14 @@ import type {
 } from '@fosholhaat/types';
 import { SORTING_HOLD_REASONS, SortingBatchStatus } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
-
-const hubSortingBatchSeed: SortingBatchDetail[] = [
-  {
-    batchId: 'SB-3401',
-    commodityLabel: 'Potato mix',
-    expectedQuantityLabel: '120 sacks',
-    laneLabel: 'Sorting lane 1',
-    status: SortingBatchStatus.READY,
-    nextActionLabel: 'Start sorting batch.',
-    updatedAtLabel: '5m ago',
-    receiverLabel: 'Unassigned',
-    itemGroups: [
-      { label: 'Grade A', quantityLabel: '70 sacks' },
-      { label: 'Grade B', quantityLabel: '50 sacks' },
-    ],
-    holdRecord: null,
-  },
-  {
-    batchId: 'SB-3402',
-    commodityLabel: 'Onion mix',
-    expectedQuantityLabel: '84 bags',
-    laneLabel: 'Sorting lane 2',
-    status: SortingBatchStatus.READY,
-    nextActionLabel: 'Start sorting batch.',
-    updatedAtLabel: '8m ago',
-    receiverLabel: 'Unassigned',
-    itemGroups: [
-      { label: 'Premium', quantityLabel: '40 bags' },
-      { label: 'Standard', quantityLabel: '44 bags' },
-    ],
-    holdRecord: null,
-  },
-  {
-    batchId: 'SB-3403',
-    commodityLabel: 'Vegetable crates',
-    expectedQuantityLabel: '64 crates',
-    laneLabel: 'Sorting lane 3',
-    status: SortingBatchStatus.IN_PROGRESS,
-    nextActionLabel: 'Review mix and count.',
-    updatedAtLabel: 'Just now',
-    receiverLabel: 'Sorting lead',
-    itemGroups: [
-      { label: 'Leafy', quantityLabel: '22 crates' },
-      { label: 'Root', quantityLabel: '42 crates' },
-    ],
-    holdRecord: null,
-  },
-  {
-    batchId: 'SB-3404',
-    commodityLabel: 'Vegetable crates',
-    expectedQuantityLabel: '58 crates',
-    laneLabel: 'Sorting lane 4',
-    status: SortingBatchStatus.HOLD,
-    nextActionLabel: 'Resolve hold and recheck batch.',
-    updatedAtLabel: '12m ago',
-    receiverLabel: 'Shift lead',
-    itemGroups: [
-      { label: 'Leafy', quantityLabel: '28 crates' },
-      { label: 'Root', quantityLabel: '30 crates' },
-    ],
-    holdRecord: {
-      reason: 'count-mismatch',
-      reasonLabel: 'Count mismatch',
-      note: 'Gate scan and physical count differ by 2 crates.',
-      reportedAt: '2026-04-21T02:30:00.000Z',
-    },
-  },
-  {
-    batchId: 'SB-3405',
-    commodityLabel: 'Potato mix',
-    expectedQuantityLabel: '96 sacks',
-    laneLabel: 'Sorting lane 5',
-    status: SortingBatchStatus.COMPLETE,
-    nextActionLabel: 'Move to dispatch intake.',
-    updatedAtLabel: '18m ago',
-    receiverLabel: 'Sorting lead',
-    itemGroups: [
-      { label: 'Grade A', quantityLabel: '60 sacks' },
-      { label: 'Grade B', quantityLabel: '36 sacks' },
-    ],
-    holdRecord: null,
-  },
-];
+import { resolveCurrentHubManager } from '../auth/current-user';
 
 @Injectable()
 export class HubSortingOperationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly hubSortingBatches: SortingBatchDetail[] =
-    structuredClone(hubSortingBatchSeed);
-
-  async getSortingQueue(): Promise<SortingQueueResponse> {
+  async getSortingQueue(authorization?: string): Promise<SortingQueueResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const batches = await this.prisma.sortingBatch.findMany({
       include: {
         inboundReceipt: {
@@ -142,14 +58,20 @@ export class HubSortingOperationsService {
     };
   }
 
-  async getSortingBatch(batchId: string): Promise<SortingBatchDetailResponse> {
+  async getSortingBatch(
+    authorization: string | undefined,
+    batchId: string,
+  ): Promise<SortingBatchDetailResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     return { batch: this.fromDbBatch(await this.getDbBatch(batchId)) };
   }
 
   async startSortingBatch(
+    authorization: string | undefined,
     batchId: string,
     request: SortingBatchTransitionPayload = {},
   ): Promise<SortingBatchMutationResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const current = this.fromDbBatch(await this.getDbBatch(batchId));
     this.assertTransition(current, SortingBatchStatus.READY, 'start');
     const batch = await this.prisma.sortingBatch.update({
@@ -170,9 +92,11 @@ export class HubSortingOperationsService {
   }
 
   async holdSortingBatch(
+    authorization: string | undefined,
     batchId: string,
     request: SortingBatchHoldPayload,
   ): Promise<SortingBatchMutationResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const current = this.fromDbBatch(await this.getDbBatch(batchId));
     this.assertTransition(current, SortingBatchStatus.IN_PROGRESS, 'hold');
     this.assertHoldPayload(batchId, request);
@@ -192,9 +116,11 @@ export class HubSortingOperationsService {
   }
 
   async completeSortingBatch(
+    authorization: string | undefined,
     batchId: string,
     request: SortingBatchTransitionPayload = {},
   ): Promise<SortingBatchMutationResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const current = this.fromDbBatch(await this.getDbBatch(batchId));
     this.assertTransition(
       current,
@@ -281,18 +207,6 @@ export class HubSortingOperationsService {
             }
           : null,
     };
-  }
-
-  private findBatch(batchId: string): SortingBatchDetail {
-    const batch = this.hubSortingBatches.find(
-      (item) => item.batchId === batchId,
-    );
-    if (!batch) {
-      throw new NotFoundException(
-        this.createError('BATCH_NOT_FOUND', batchId, 'Batch not found'),
-      );
-    }
-    return batch;
   }
 
   private toSummary(batch: SortingBatchDetail): SortingBatchSummary {

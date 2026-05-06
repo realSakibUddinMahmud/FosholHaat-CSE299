@@ -17,94 +17,16 @@ import type {
 } from '@fosholhaat/types';
 import { InboundReceiptStatus } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
-
-const inboundReceiptSeed: InboundReceiptDetail[] = [
-  {
-    id: 'IR-9101',
-    supplierName: 'Bogra Fresh Supply',
-    commodity: 'Potato',
-    expectedQuantity: 120,
-    unit: 'kg',
-    status: InboundReceiptStatus.PENDING,
-    arrivalDate: '2026-04-21T03:30:00.000Z',
-    arrivalWindowLabel: '08:00 - 09:00',
-    laneLabel: 'Inbound Bay 1',
-    note: 'Primary receipt for morning intake.',
-    receivedAt: null,
-    expectedGradeLabel: 'Grade A',
-    actualGradeLabel: null,
-    receiverName: null,
-    discrepancy: null,
-    nextStepLabel: 'Confirm receipt before sorting.',
-  },
-  {
-    id: 'IR-9102',
-    supplierName: 'North Agro Market',
-    commodity: 'Onion',
-    expectedQuantity: 84,
-    unit: 'bags',
-    status: InboundReceiptStatus.PENDING,
-    arrivalDate: '2026-04-21T04:10:00.000Z',
-    arrivalWindowLabel: '09:00 - 10:00',
-    laneLabel: 'Inbound Bay 2',
-    note: 'Awaiting dock scan.',
-    receivedAt: null,
-    expectedGradeLabel: 'Grade A',
-    actualGradeLabel: null,
-    receiverName: null,
-    discrepancy: null,
-    nextStepLabel: 'Capture receipt details.',
-  },
-  {
-    id: 'IR-9103',
-    supplierName: 'Dhaka Valley Produce',
-    commodity: 'Vegetables',
-    expectedQuantity: 64,
-    unit: 'crates',
-    status: InboundReceiptStatus.RECEIVED,
-    arrivalDate: '2026-04-21T02:50:00.000Z',
-    arrivalWindowLabel: '07:00 - 08:00',
-    laneLabel: 'Inbound Bay 3',
-    note: 'Confirmed at gate.',
-    receivedAt: '2026-04-21T03:05:00.000Z',
-    expectedGradeLabel: 'Grade B',
-    actualGradeLabel: 'Grade B',
-    receiverName: 'Hub receiver',
-    discrepancy: null,
-    nextStepLabel: 'Move to sorting intake.',
-  },
-  {
-    id: 'IR-9104',
-    supplierName: 'Shibganj Cooperative',
-    commodity: 'Potato',
-    expectedQuantity: 96,
-    unit: 'kg',
-    status: InboundReceiptStatus.DISCREPANCY,
-    arrivalDate: '2026-04-21T01:35:00.000Z',
-    arrivalWindowLabel: '06:00 - 07:00',
-    laneLabel: 'Inbound Bay 4',
-    note: 'Quantity mismatch already logged.',
-    receivedAt: '2026-04-21T01:50:00.000Z',
-    expectedGradeLabel: 'Grade A',
-    actualGradeLabel: 'Grade A',
-    receiverName: 'Shift lead',
-    discrepancy: {
-      reportedAt: '2026-04-21T01:50:00.000Z',
-      actualQuantity: 88,
-      notes: '8 kg short at gate scan.',
-    },
-    nextStepLabel: 'Hold for discrepancy review.',
-  },
-];
+import { resolveCurrentHubManager } from '../auth/current-user';
 
 @Injectable()
 export class HubInboundOperationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private readonly inboundReceipts: InboundReceiptDetail[] =
-    structuredClone(inboundReceiptSeed);
-
-  async getInboundQueue(): Promise<InboundReceiptQueueResponse> {
+  async getInboundQueue(
+    authorization?: string,
+  ): Promise<InboundReceiptQueueResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const receipts = await this.prisma.inboundReceipt.findMany({
       include: {
         supplyLot: { include: { product: true, business: true, seller: true } },
@@ -130,16 +52,20 @@ export class HubInboundOperationsService {
   }
 
   async getInboundReceipt(
+    authorization: string | undefined,
     receiptId: string,
   ): Promise<InboundReceiptDetailResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const receipt = await this.getDbReceipt(receiptId);
     return { receipt: this.fromDbReceipt(receipt) };
   }
 
   async receiveInboundReceipt(
+    authorization: string | undefined,
     receiptId: string,
     request: ReceiveReceiptPayload = {},
   ): Promise<InboundReceiptMutationResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const current = this.fromDbReceipt(await this.getDbReceipt(receiptId));
     this.assertPending(current);
     const receipt = await this.prisma.inboundReceipt.update({
@@ -169,9 +95,11 @@ export class HubInboundOperationsService {
   }
 
   async reportInboundReceiptDiscrepancy(
+    authorization: string | undefined,
     receiptId: string,
     request: ReportDiscrepancyPayload,
   ): Promise<InboundReceiptMutationResponse> {
+    await resolveCurrentHubManager(this.prisma, authorization);
     const current = this.fromDbReceipt(await this.getDbReceipt(receiptId));
     this.assertPending(current);
     this.assertDiscrepancyPayload(receiptId, request);
@@ -248,16 +176,6 @@ export class HubInboundOperationsService {
             ? 'Hold for discrepancy review.'
             : 'Confirm receipt before sorting.',
     };
-  }
-
-  private findReceipt(receiptId: string): InboundReceiptDetail {
-    const receipt = this.inboundReceipts.find((item) => item.id === receiptId);
-    if (!receipt) {
-      throw new NotFoundException(
-        this.createError('RECEIPT_NOT_FOUND', receiptId, 'Receipt not found'),
-      );
-    }
-    return receipt;
   }
 
   private toSummary(receipt: InboundReceiptDetail): InboundReceiptSummary {

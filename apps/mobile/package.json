@@ -10,7 +10,8 @@
     "lint": "eslint App.tsx index.ts",
     "test": "jest --runInBand",
     "typecheck": "tsc --noEmit",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
+    "eas-build-post-install": "npm -w @fosholhaat/types run build"
   },
   "jest": {
     "preset": "react-native",
@@ -24,12 +25,18 @@
   "dependencies": {
     "@fosholhaat/tokens": "^0.1.0",
     "@fosholhaat/types": "^0.1.0",
-    "@react-native-async-storage/async-storage": "^3.0.2",
+    "@react-native-async-storage/async-storage": "^2.2.0",
+    "@types/qrcode": "^1.5.6",
     "expo": "^55.0.0",
+    "expo-camera": "~55.0.18",
     "expo-constants": "~55.0.9",
+    "expo-image-picker": "~55.0.20",
     "expo-linking": "~55.0.9",
+    "expo-print": "~55.0.14",
     "expo-router": "~55.0.8",
+    "expo-sharing": "~55.0.18",
     "expo-status-bar": "~55.0.4",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-native": "0.83.0",

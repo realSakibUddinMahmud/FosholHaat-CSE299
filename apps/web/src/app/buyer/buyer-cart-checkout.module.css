@@ -50,7 +50,7 @@
 .brandTitle {
   font-size: 1rem;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .brandSub,
@@ -90,7 +90,7 @@
   margin-top: 0.55rem;
   font-size: clamp(2rem, 2.9vw, 3.35rem);
   line-height: 1.06;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   font-weight: 950;
   color: var(--color-text-strong);
 }
@@ -183,7 +183,7 @@
 .cardTitle {
   font-size: 1.2rem;
   line-height: 1.15;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   font-weight: 950;
   color: var(--color-text-strong);
 }
@@ -259,7 +259,7 @@
 
 .lineItemName {
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   color: var(--color-text-strong);
 }
 
@@ -278,7 +278,7 @@
   margin-top: 0.85rem;
   font-size: 1.05rem;
   font-weight: 950;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   color: var(--color-text-strong);
 }
 

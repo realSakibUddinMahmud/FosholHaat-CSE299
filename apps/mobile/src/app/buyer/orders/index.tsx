@@ -1,30 +1,36 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { BuyerOrderSummary, Locale } from '@fosholhaat/types';
 import tokens from '@fosholhaat/tokens/tokens.json';
-import { MOCK_ORDERS, getOrderCopy } from '../order-data';
+import { getOrderCopy } from '../order-data';
 import { Ionicons } from '@expo/vector-icons';
+import { apiFetch } from '../../../lib/api-client';
+import { BuyerBottomNav } from '../bottom-nav';
+import { useStoredLocale } from '../../../lib/locale';
+import { BrandLockup } from '../../../components/brand-lockup';
 
 const OrderCard = ({ item, onPress, onTrackPress, locale }: { item: BuyerOrderSummary; onPress: () => void; onTrackPress: () => void; locale: Locale }) => {
   const copy = getOrderCopy(locale);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'IN_TRANSIT': return styles.statusInTransit;
-      case 'PROCESSING': return styles.statusProcessing;
-      case 'SHIPPED': return styles.statusShipped;
+      case 'HUB_RECEIVED': return styles.statusInTransit;
+      case 'CONFIRMED': return styles.statusProcessing;
+      case 'READY_FOR_DISPATCH': return styles.statusShipped;
       default: return styles.statusDefault;
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case 'IN_TRANSIT': return copy.inTransit;
-      case 'PROCESSING': return copy.processing;
-      case 'SHIPPED': return copy.shipped;
-      case 'DELIVERED': return copy.delivered;
+      case 'PENDING_GROUP_LOCK': return locale === 'bn' ? 'গ্রুপ লক্ষ্য পূরণের অপেক্ষায়' : 'Waiting for group target';
+      case 'PENDING_SELLER_REVIEW': return locale === 'bn' ? 'সেলার নিশ্চিতকরণের অপেক্ষায়' : 'Waiting for seller';
+      case 'HUB_RECEIVED': return copy.inTransit;
+      case 'CONFIRMED': return copy.processing;
+      case 'READY_FOR_DISPATCH': return copy.shipped;
+      case 'COMPLETED': return copy.delivered;
       default: return status;
     }
   };
@@ -67,14 +73,19 @@ const OrderCard = ({ item, onPress, onTrackPress, locale }: { item: BuyerOrderSu
 
 export default function BuyerOrdersListScreen() {
   const router = useRouter();
-  const locale: Locale = 'bn'; // In real app, get from context
+  const { locale } = useStoredLocale();
   const copy = getOrderCopy(locale);
   const [activeTab, setActiveTab] = useState<'all' | 'ongoing' | 'completed'>('ongoing');
+  const [orders, setOrders] = useState<BuyerOrderSummary[]>([]);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    apiFetch<BuyerOrderSummary[]>("/buyer/orders").then(setOrders).catch((err: Error) => setError(err.message));
+  }, []);
 
-  const filteredOrders = MOCK_ORDERS.filter(order => {
+  const filteredOrders = orders.filter(order => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'ongoing') return ['PROCESSING', 'IN_TRANSIT', 'SHIPPED'].includes(order.status);
-    if (activeTab === 'completed') return order.status === 'DELIVERED';
+    if (activeTab === 'ongoing') return order.status !== 'COMPLETED' && order.status !== 'CANCELLED';
+    if (activeTab === 'completed') return order.status === 'COMPLETED';
     return true;
   });
 
@@ -116,10 +127,21 @@ export default function BuyerOrdersListScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={() => (
           <View style={styles.header}>
+            <BrandLockup subtitle={locale === 'bn' ? 'বায়ার ওয়ার্কস্পেস' : 'Buyer workspace'} />
             <Text style={styles.headerTitle}>{copy.listTitle}</Text>
             <Text style={styles.headerSubtitle}>{copy.listSubtitle}</Text>
+            {error ? (
+              <View style={styles.authCard}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity style={styles.loginButton} onPress={() => router.replace('/login')}>
+                  <Text style={styles.loginText}>{locale === 'bn' ? 'লগইন করুন' : 'Log in'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
         )}
+        ListEmptyComponent={() => <Text style={styles.emptyText}>{locale === 'bn' ? 'ডাটাবেসে এখনো কোনো অর্ডার নেই।' : 'No orders from the database yet.'}</Text>}
+        ListFooterComponent={() => <BuyerBottomNav active="orders" />}
       />
     </SafeAreaView>
   );
@@ -168,6 +190,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: tokens.color.textSecondary,
   },
+  errorText: { color: tokens.color.alertLive, fontSize: 13, fontWeight: '700', marginTop: 6 },
+  authCard: { marginTop: 10, borderRadius: 16, borderWidth: 1, borderColor: tokens.color.borderSoft, backgroundColor: tokens.color.surface, padding: 12, gap: 10 },
+  loginButton: { minHeight: 42, borderRadius: 14, backgroundColor: tokens.brand.primary, alignItems: 'center', justifyContent: 'center' },
+  loginText: { color: tokens.color.surface, fontSize: 14, fontWeight: '900' },
+  emptyText: { color: tokens.color.textSecondary, fontSize: 14, fontWeight: '700', textAlign: 'center', marginTop: 24 },
   listContent: {
     paddingBottom: 20,
   },

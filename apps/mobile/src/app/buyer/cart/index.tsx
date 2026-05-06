@@ -4,8 +4,8 @@ import { useRouter } from "expo-router";
 import { useStoredLocale } from "../../../lib/locale";
 import { TOKENS } from "../../../styles/tokens";
 import type { BuyerCartResponse } from "@fosholhaat/types";
-import { getApiUrl } from "../../../api-config";
-import { BUYER_CART_FIXTURE, getBuyerCheckoutCopy, getBuyerFlowCopy } from "../_data";
+import { getBuyerCheckoutCopy, getBuyerFlowCopy } from "../_data";
+import { apiFetch } from "../../../lib/api-client";
 import {
   BuyerActionButton,
   BuyerLineCard,
@@ -21,14 +21,11 @@ export default function BuyerCartScreen() {
   const [cart, setCart] = useState<BuyerCartResponse | null>(null);
 
   useEffect(() => {
-    fetch(`${getApiUrl()}/buyer/cart`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: BuyerCartResponse | null) => setCart(data))
-      .catch(() => undefined);
+    apiFetch<BuyerCartResponse>("/buyer/cart").then(setCart).catch(() => setCart({ lines: [], totals: { subtotal: 0, deliveryFee: 0, serviceFee: 0, payableTotal: 0 }, nextRoute: "/buyer/checkout" }));
   }, []);
 
-  const lines = cart?.lines ?? BUYER_CART_FIXTURE.lines;
-  const totals = cart?.totals ?? BUYER_CART_FIXTURE.totals;
+  const lines = cart?.lines ?? [];
+  const totals = cart?.totals ?? { subtotal: 0, deliveryFee: 0, serviceFee: 0, payableTotal: 0 };
 
   return (
     <BuyerShell
@@ -39,6 +36,7 @@ export default function BuyerCartScreen() {
       footer={<BuyerActionButton label={flowCopy.continueToFulfillment} onPress={() => router.push("/buyer/checkout")} />}
     >
       <View style={{ gap: 12 }}>
+        {lines.length === 0 ? <Text style={styles.noteText}>{copy.emptyCartBody}</Text> : null}
         {lines.map((line) => (
           <BuyerLineCard
             key={line.lineId}

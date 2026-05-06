@@ -1,7 +1,7 @@
 import React from "react";
 import { useRouter } from "expo-router";
 import { useStoredLocale } from "../../../../lib/locale";
-import { BUYER_SUCCESS_FIXTURE, getBuyerCheckoutCopy, getBuyerFlowCopy } from "../../_data";
+import { getBuyerCheckoutCopy, getBuyerFlowCopy } from "../../_data";
 import {
   BuyerActionButton,
   BuyerBanner,
@@ -23,14 +23,14 @@ export default function BuyerOrderSuccessScreen() {
       footer={
         <BuyerActionButton
           label={flowCopy.viewOrders}
-          onPress={() => router.push(BUYER_SUCCESS_FIXTURE.successRoute)}
+          onPress={() => router.push("/buyer/orders")}
           variant="secondary"
         />
       }
     >
       <BuyerBanner
         tone="success"
-        title={BUYER_SUCCESS_FIXTURE.orderId}
+        title={copy.successTitle}
         body={flowCopy.orderTrackingNote}
       />
     </BuyerShell>

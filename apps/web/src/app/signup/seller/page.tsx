@@ -40,7 +40,9 @@ export default function SellerSignupPage() {
       });
 
       if (!response.ok) {
-        setError(copy.login.invalidCredentials);
+        const data = await response.json().catch(() => null);
+        const message = data?.message;
+        setError(Array.isArray(message) ? message.join(", ") : message || copy.login.connectionFailed);
         return;
       }
 

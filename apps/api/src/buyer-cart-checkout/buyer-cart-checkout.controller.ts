@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import type {
   BuyerCartMutationPayload,
   BuyerCartResponse,
@@ -17,15 +25,19 @@ export class BuyerCartCheckoutController {
   ) {}
 
   @Get('cart')
-  async getBuyerCart(): Promise<BuyerCartResponse> {
-    return this.buyerCartCheckoutService.getBuyerCart();
+  async getBuyerCart(
+    @Headers('authorization') authorization?: string,
+  ): Promise<BuyerCartResponse> {
+    return this.buyerCartCheckoutService.getBuyerCart(authorization);
   }
 
   @Post('cart/items')
   async addBuyerCartLine(
+    @Headers('authorization') authorization: string | undefined,
     @Body() body: BuyerCartMutationPayload & { supplyLotId?: string } = {},
   ): Promise<BuyerCartResponse> {
     return this.buyerCartCheckoutService.addBuyerCartLine(
+      authorization,
       body.supplyLotId ?? '',
       body,
     );
@@ -33,28 +45,43 @@ export class BuyerCartCheckoutController {
 
   @Patch('cart/items/:lineId')
   async updateBuyerCartLine(
+    @Headers('authorization') authorization: string | undefined,
     @Param('lineId') lineId: string,
     @Body() body: BuyerCartMutationPayload = {},
   ): Promise<BuyerCartResponse> {
-    return this.buyerCartCheckoutService.updateBuyerCartLine(lineId, body);
+    return this.buyerCartCheckoutService.updateBuyerCartLine(
+      authorization,
+      lineId,
+      body,
+    );
   }
 
   @Post('checkout/fulfillment')
   async setCheckoutFulfillment(
+    @Headers('authorization') authorization: string | undefined,
     @Body() body: BuyerFulfillmentDetails = {} as BuyerFulfillmentDetails,
   ): Promise<BuyerFulfillmentResponse> {
-    return this.buyerCartCheckoutService.setCheckoutFulfillment(body);
+    return this.buyerCartCheckoutService.setCheckoutFulfillment(
+      authorization,
+      body,
+    );
   }
 
   @Post('checkout/payment')
   async setCheckoutPayment(
+    @Headers('authorization') authorization: string | undefined,
     @Body() body: BuyerPaymentDetails = {} as BuyerPaymentDetails,
   ): Promise<BuyerPaymentResponse> {
-    return this.buyerCartCheckoutService.setCheckoutPayment(body);
+    return this.buyerCartCheckoutService.setCheckoutPayment(
+      authorization,
+      body,
+    );
   }
 
   @Post('checkout/submit')
-  async submitCheckout(): Promise<BuyerCheckoutSubmitResponse> {
-    return this.buyerCartCheckoutService.submitCheckout();
+  async submitCheckout(
+    @Headers('authorization') authorization?: string,
+  ): Promise<BuyerCheckoutSubmitResponse> {
+    return this.buyerCartCheckoutService.submitCheckout(authorization);
   }
 }

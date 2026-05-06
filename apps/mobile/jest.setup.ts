@@ -51,6 +51,26 @@ jest.mock('react-native-safe-area-context', () => {
   };
 });
 jest.mock("expo-constants", () => ({ expoConfig: { hostUri: "localhost:19000" } }));
+jest.mock("expo-image-picker", () => ({
+  requestMediaLibraryPermissionsAsync: jest.fn(() => Promise.resolve({ granted: true })),
+  launchImageLibraryAsync: jest.fn(() => Promise.resolve({ canceled: true, assets: [] })),
+  MediaTypeOptions: { Images: "Images" },
+}));
+jest.mock("expo-print", () => ({ printToFileAsync: jest.fn(() => Promise.resolve({ uri: "file://handoff.pdf" })) }));
+jest.mock("expo-sharing", () => ({ isAvailableAsync: jest.fn(() => Promise.resolve(true)), shareAsync: jest.fn(() => Promise.resolve()) }));
+jest.mock("expo-camera", () => {
+  const React = require("react");
+  const { View } = require("react-native");
+  return {
+    CameraView: (props: any) => React.createElement(View, props),
+    useCameraPermissions: () => [{ granted: false }, jest.fn()],
+  };
+});
+jest.mock("qrcode", () => ({
+  __esModule: true,
+  default: { toDataURL: jest.fn(() => Promise.resolve("data:image/png;base64,qr")) },
+  toDataURL: jest.fn(() => Promise.resolve("data:image/png;base64,qr")),
+}));
 
 jest.mock('@react-native-async-storage/async-storage', () => {
   const store: Record<string, string> = {};

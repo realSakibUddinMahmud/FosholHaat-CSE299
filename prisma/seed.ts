@@ -19,6 +19,10 @@ for (const envPath of envPaths) {
 
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 
+if (process.env.NODE_ENV === 'production' || process.env.FOSHOLHAAT_ALLOW_DEV_SEED !== 'true') {
+  throw new Error('Dev/demo seed is blocked. Set FOSHOLHAAT_ALLOW_DEV_SEED=true outside production to run it.');
+}
+
 if (!connectionString) {
   throw new Error('DIRECT_URL or DATABASE_URL is required to run the seed script.');
 }

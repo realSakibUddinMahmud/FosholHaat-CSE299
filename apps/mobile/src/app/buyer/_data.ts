@@ -1,12 +1,4 @@
-import type {
-  BuyerCartLine,
-  BuyerCartResponse,
-  BuyerCheckoutConfirmationSnapshot,
-  BuyerCheckoutSubmitResponse,
-  BuyerFulfillmentDetails,
-  BuyerPaymentDetails,
-  Locale,
-} from "@fosholhaat/types";
+import type { BuyerCartLine, Locale } from "@fosholhaat/types";
 import { getBuyerCartCheckoutCopy } from "@fosholhaat/types";
 
 export type BuyerStepKey = "cart" | "fulfillment" | "payment" | "confirmation";
@@ -17,77 +9,6 @@ export const BUYER_STEP_ORDER: BuyerStepKey[] = [
   "payment",
   "confirmation",
 ];
-
-export const BUYER_CART_FIXTURE: BuyerCartResponse = {
-  lines: [
-    {
-      lineId: "CL-1001",
-      productId: "PR-2201",
-      productName: "Bogura onion lot",
-      sellerName: "Shibganj trade desk",
-      quantity: 12,
-      unit: "bags",
-      unitPrice: 1200,
-      subtotal: 14400,
-      note: "Fresh arrival from the morning lane.",
-    },
-    {
-      lineId: "CL-1002",
-      productId: "PR-2202",
-      productName: "Dhaka potato lot",
-      sellerName: "Aditmari wholesale line",
-      quantity: 20,
-      unit: "crates",
-      unitPrice: 1650,
-      subtotal: 33000,
-      note: "Sorted for mixed-size buyers.",
-    },
-    {
-      lineId: "CL-1003",
-      productId: "PR-2203",
-      productName: "Season vegetables mix",
-      sellerName: "Kahaloo produce cluster",
-      quantity: 8,
-      unit: "baskets",
-      unitPrice: 900,
-      subtotal: 7200,
-      note: "Ready for same-day handoff.",
-    },
-  ],
-  totals: {
-    subtotal: 54600,
-    deliveryFee: 1200,
-    serviceFee: 900,
-    payableTotal: 56700,
-  },
-  nextRoute: "/buyer/checkout",
-};
-
-export const BUYER_FULFILLMENT_FIXTURE: BuyerFulfillmentDetails = {
-  choice: "hub-pickup",
-  recipientName: "Abdul Karim",
-  phone: "+8801712345678",
-  addressLabel: "Bogura Sadar hub gate",
-  note: "Call before handoff.",
-};
-
-export const BUYER_PAYMENT_FIXTURE: BuyerPaymentDetails = {
-  method: "mobile-banking",
-  payableTotal: BUYER_CART_FIXTURE.totals.payableTotal,
-  referenceLabel: "bKash 01711 111111",
-};
-
-export const BUYER_CONFIRMATION_FIXTURE: BuyerCheckoutConfirmationSnapshot = {
-  lines: BUYER_CART_FIXTURE.lines,
-  totals: BUYER_CART_FIXTURE.totals,
-  fulfillment: BUYER_FULFILLMENT_FIXTURE,
-  payment: BUYER_PAYMENT_FIXTURE,
-};
-
-export const BUYER_SUCCESS_FIXTURE: BuyerCheckoutSubmitResponse = {
-  orderId: "ORD-2404",
-  successRoute: "/buyer/orders/success",
-};
 
 type BuyerFlowCopy = {
   shellTitle: string;
@@ -141,7 +62,7 @@ const BUYER_FLOW_COPY: Record<Locale, BuyerFlowCopy> = {
     validationFulfillment: "Add recipient, phone, and address to continue.",
     validationPayment: "Select a payment method to continue.",
     validationSubmit: "Fix the missing details before you place the order.",
-    orderTrackingNote: "Order tracking will open in the next slice.",
+    orderTrackingNote: "Track this order from the Orders tab.",
   },
   bn: {
     shellTitle: "বায়ার কর্মক্ষেত্র",
@@ -167,7 +88,7 @@ const BUYER_FLOW_COPY: Record<Locale, BuyerFlowCopy> = {
     validationFulfillment: "চালিয়ে যেতে গ্রহণকারী, ফোন, আর ঠিকানা দিন।",
     validationPayment: "চালিয়ে যেতে একটি পেমেন্ট পদ্ধতি বাছুন।",
     validationSubmit: "অর্ডার দেওয়ার আগে ঘাটতি ঠিক করুন।",
-    orderTrackingNote: "অর্ডার ট্র্যাকিং পরের স্লাইসে আসবে।",
+    orderTrackingNote: "অর্ডার ট্যাব থেকে এই অর্ডার ট্র্যাক করুন।",
   },
 };
 

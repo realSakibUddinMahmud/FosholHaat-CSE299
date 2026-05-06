@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginTop: 6,
   },
-  heroTitle: { color: TOKENS.color.textStrong, fontSize: 26, fontWeight: "900", letterSpacing: -0.8 },
+  heroTitle: { color: TOKENS.color.textStrong, fontSize: 26, fontWeight: "900", letterSpacing: 0 },
   heroSubtitle: { color: TOKENS.color.textSecondary, fontSize: 15, fontWeight: "700" },
   progressCard: {
     borderRadius: MOBILE_TOKENS.radius.heroCard,

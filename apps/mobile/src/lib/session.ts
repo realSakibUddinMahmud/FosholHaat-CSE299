@@ -25,6 +25,10 @@ export async function getSession(): Promise<MobileSession | null> {
   }
 }
 
+export async function clearSession() {
+  await AsyncStorage.removeItem(SESSION_KEY);
+}
+
 export function nextRouteForRole(role: AuthRole) {
   if (role === "seller") return "/seller";
   if (role === "hub_manager") return "/hub";

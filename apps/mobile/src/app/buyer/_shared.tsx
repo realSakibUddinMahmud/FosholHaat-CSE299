@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     color: TOKENS.color.textStrong,
     fontSize: MOBILE_TOKENS.font.sectionTitle.size,
     fontWeight: MOBILE_TOKENS.font.sectionTitle.weight,
-    letterSpacing: -0.5,
+    letterSpacing: 0,
   },
   brandSubtitle: { color: TOKENS.color.textTertiary, fontSize: 11, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
   headerPill: { flexDirection: "row", gap: 6, alignItems: "center", paddingHorizontal: 12, height: 36, borderRadius: 18, backgroundColor: TOKENS.color.soft },
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 1,
   },
-  heroTitle: { color: TOKENS.color.textStrong, fontSize: 22, fontWeight: "900", letterSpacing: -0.8 },
+  heroTitle: { color: TOKENS.color.textStrong, fontSize: 22, fontWeight: "900", letterSpacing: 0 },
   heroSubtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20 },
   stepRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   stepChip: {

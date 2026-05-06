@@ -1,0 +1,27 @@
+.page{min-height:100vh;padding:28px;background:linear-gradient(180deg,color-mix(in srgb,var(--color-success-soft) 34%,transparent) 0%,transparent 260px),var(--color-canvas);color:var(--color-text-primary)}
+.hero,.card,.detail,.empty,.side{border:1px solid var(--color-border-soft);border-radius:22px;background:var(--color-surface);box-shadow:var(--shadow-shell)}
+.hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-end;padding:28px;margin-bottom:18px}
+.kicker,.label,.chip,.pill{font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.kicker{color:var(--brand-primary)}
+.title{margin:8px 0 0;color:var(--color-text-strong);font-size:clamp(2rem,3vw,3.2rem);line-height:1;font-weight:950;letter-spacing:0}
+.subtitle{margin:10px 0 0;color:var(--color-text-secondary);font-size:1rem;line-height:1.55}
+.heroStats,.stats,.actions,.tabs,.row,.fieldRow{display:flex;gap:10px;flex-wrap:wrap}
+.chip,.pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:8px 12px;background:var(--color-primary-tint);color:var(--brand-primary)}
+.stats{margin-bottom:18px}.stat{flex:1;min-width:160px;border-radius:18px;background:var(--color-surface-muted);padding:16px}
+.stat strong{display:block;margin-top:4px;color:var(--color-text-strong);font-size:2rem;line-height:1;font-weight:950}
+.grid{display:grid;grid-template-columns:minmax(320px,.9fr) minmax(0,1.35fr);gap:18px;align-items:start}
+.list{display:grid;gap:10px}.card{display:block;padding:16px;text-decoration:none;color:inherit}.buttonCard{width:100%;text-align:left;cursor:pointer}
+.card:hover,.selected{border-color:var(--brand-primary);box-shadow:0 0 0 1px var(--brand-primary)}
+.cardTop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.cardTitle{margin-top:8px;color:var(--color-text-strong);font-size:1.05rem;font-weight:900}
+.muted,.meta{color:var(--color-text-secondary);font-size:.88rem;line-height:1.5}.meta{font-size:.78rem;font-weight:800}
+.detail,.side{padding:18px}.detailHead{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid var(--color-border-soft);padding-bottom:14px;margin-bottom:14px}
+.detailTitle{margin:0;color:var(--color-text-strong);font-size:1.7rem;font-weight:950;letter-spacing:0}.detailSub{margin:5px 0 0;color:var(--color-text-secondary)}
+.fieldGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}.field{border-radius:14px;background:var(--color-surface-muted);padding:12px}.label{color:var(--color-text-tertiary)}.value{margin-top:5px;color:var(--color-text-strong);font-weight:850}
+.progress{height:9px;border-radius:999px;background:var(--color-border-soft);overflow:hidden}.bar{height:100%;border-radius:inherit;background:var(--brand-primary)}
+.primary,.secondary,.ghost{border:0;border-radius:14px;padding:12px 14px;font:inherit;font-weight:900;cursor:pointer;text-decoration:none}
+.primary{background:var(--brand-strong);color:var(--color-surface)}.secondary{background:var(--color-primary-tint);color:var(--brand-primary)}.ghost{background:var(--color-surface-muted);color:var(--color-text-strong)}
+.input{width:100%;border:1px solid var(--color-border-soft);border-radius:14px;background:var(--color-surface);padding:12px;font:inherit;font-weight:750}
+.empty{display:grid;place-items:center;min-height:220px;padding:24px;text-align:center}.empty h3{margin:0;color:var(--color-text-strong);font-size:1.35rem;font-weight:950}.empty p{max-width:34rem;color:var(--color-text-secondary)}
+.timeline{display:grid;gap:10px;margin-top:14px}.event{border:1px solid var(--color-border-soft);border-radius:14px;padding:12px;background:var(--color-surface-muted)}
+.tabs{margin-bottom:14px}.tab{border:1px solid var(--color-border-soft);border-radius:999px;background:var(--color-surface);padding:8px 12px;font:inherit;font-weight:900;color:var(--color-text-secondary);cursor:pointer}.tabActive{background:var(--brand-primary);color:var(--color-surface);border-color:var(--brand-primary)}
+@media(max-width:960px){.page{padding:16px}.hero,.grid{display:grid}.fieldGrid{grid-template-columns:1fr}.heroStats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}

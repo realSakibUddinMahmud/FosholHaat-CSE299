@@ -6,6 +6,9 @@
   "build": {
     "preview": {
       "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://fosholhaat-api.vercel.app"
       }

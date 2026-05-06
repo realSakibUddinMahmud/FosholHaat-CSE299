@@ -1,7 +1,11 @@
 .page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, var(--color-primary-tint), transparent 22%),
+    radial-gradient(
+      circle at top left,
+      var(--color-primary-tint),
+      transparent 22%
+    ),
     linear-gradient(180deg, var(--color-surface) 0%, var(--color-canvas) 100%);
   color: var(--color-text-primary);
 }
@@ -41,7 +45,7 @@
   margin: 0;
   font-size: clamp(2.3rem, 3.8vw, 4rem);
   line-height: 1.05;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
   font-weight: 900;
 }
 
@@ -114,6 +118,92 @@
   gap: 8px;
 }
 
+.formCard {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 28px;
+  background: var(--color-surface);
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.choiceGrid,
+.fieldGrid,
+.reviewGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.choiceCard {
+  min-height: 118px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 20px;
+  background: var(--color-surface-muted);
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.choiceCard:has(input:checked) {
+  border-color: var(--brand-primary);
+  background: var(--color-success-soft);
+}
+
+.choiceCard input {
+  width: fit-content;
+}
+
+.choiceCard strong,
+.reviewTile strong,
+.reviewTileWide strong {
+  color: var(--color-text-primary);
+}
+
+.choiceCard span,
+.reviewTile span,
+.reviewTileWide span {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.field,
+.fieldWide {
+  display: grid;
+  gap: 8px;
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.fieldWide,
+.reviewTileWide {
+  grid-column: 1 / -1;
+}
+
+.field input,
+.fieldWide input {
+  min-height: 48px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 16px;
+  background: var(--color-surface);
+  padding: 0 14px;
+  color: var(--color-text-primary);
+  font: inherit;
+}
+
+.reviewTile,
+.reviewTileWide {
+  border: 1px solid var(--color-border-soft);
+  border-radius: 18px;
+  background: var(--color-surface-muted);
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+}
+
 .row {
   display: flex;
   justify-content: space-between;
@@ -182,6 +272,12 @@
 
 @media (max-width: 960px) {
   .content {
+    grid-template-columns: 1fr;
+  }
+
+  .choiceGrid,
+  .fieldGrid,
+  .reviewGrid {
     grid-template-columns: 1fr;
   }
 

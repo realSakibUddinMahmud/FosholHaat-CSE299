@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post } from '@nestjs/common';
+import { Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import { HubDispatchOperationsService } from './hub-dispatch-operations.service';
 import type {
   HubDispatchDetailResponse,
@@ -13,28 +13,42 @@ export class HubDispatchOperationsController {
   ) {}
 
   @Get()
-  async getDispatchQueue(): Promise<HubDispatchQueueResponse> {
-    return this.hubDispatchOperationsService.getDispatchQueue();
+  async getDispatchQueue(
+    @Headers('authorization') authorization?: string,
+  ): Promise<HubDispatchQueueResponse> {
+    return this.hubDispatchOperationsService.getDispatchQueue(authorization);
   }
 
   @Get(':loadId')
   async getDispatchLoad(
+    @Headers('authorization') authorization: string | undefined,
     @Param('loadId') loadId: string,
   ): Promise<HubDispatchDetailResponse> {
-    return this.hubDispatchOperationsService.getDispatchLoad(loadId);
+    return this.hubDispatchOperationsService.getDispatchLoad(
+      authorization,
+      loadId,
+    );
   }
 
   @Post(':loadId/assign')
   async assignDispatchLoad(
+    @Headers('authorization') authorization: string | undefined,
     @Param('loadId') loadId: string,
   ): Promise<HubDispatchMutationResponse> {
-    return this.hubDispatchOperationsService.assignDispatchLoad(loadId);
+    return this.hubDispatchOperationsService.assignDispatchLoad(
+      authorization,
+      loadId,
+    );
   }
 
   @Post(':loadId/dispatched')
   async markDispatchLoadDispatched(
+    @Headers('authorization') authorization: string | undefined,
     @Param('loadId') loadId: string,
   ): Promise<HubDispatchMutationResponse> {
-    return this.hubDispatchOperationsService.markDispatchLoadDispatched(loadId);
+    return this.hubDispatchOperationsService.markDispatchLoadDispatched(
+      authorization,
+      loadId,
+    );
   }
 }

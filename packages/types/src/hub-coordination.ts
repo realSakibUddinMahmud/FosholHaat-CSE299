@@ -31,6 +31,20 @@ export interface HubCoordinationAssignmentResponse {
   assignment: HubCoordinationAssignmentPayload;
 }
 
+export interface HubReceiveHandoffPayload {
+  handoffCode: string;
+  sealCode: string;
+  discrepancyNotes?: string;
+}
+
+export interface HubReceiveHandoffResponse {
+  success: true;
+  orderCode: string;
+  handoffCode: string;
+  status: "HUB_RECEIVED" | "DISCREPANCY";
+  message: string;
+}
+
 export type HubCoordinationCopy = {
   screenTitle: string;
   screenSubtitle: string;

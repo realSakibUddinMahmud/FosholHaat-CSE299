@@ -17,9 +17,10 @@ import {
   Truck,
   AlertTriangle,
 } from "lucide-react";
-import type { BuyerOrderTrackingResponse } from "@fosholhaat/types";
+import type { BuyerOrderDetail, BuyerOrderTrackingResponse } from "@fosholhaat/types";
 import { apiFetch } from "../../../../../lib/api-client";
 import { getOrderCopy } from "../../order-data";
+import { downloadOrderInvoice } from "../../invoice";
 import styles from "./tracking.module.css";
 
 /* ─── Timeline step icons by key ─── */
@@ -30,7 +31,7 @@ function StepIcon({ stepKey, status }: { stepKey: string; status: string }) {
 
   if (stepKey === "ORDER_PLACED" || stepKey === "ORDER_CONFIRMED")
     return <span className={cls}><CheckCircle2 size={20} /></span>;
-  if (stepKey === "PACKED_AT_HUB" || stepKey === "PROCESSING")
+  if (stepKey === "SELLER_CONFIRMATION" || stepKey === "HUB_RECEIPT" || stepKey === "GROUP_TARGET_PENDING")
     return <span className={cls}><Package size={20} /></span>;
   if (stepKey === "IN_TRANSIT")
     return <span className={cls}><Truck size={20} /></span>;
@@ -39,12 +40,26 @@ function StepIcon({ stepKey, status }: { stepKey: string; status: string }) {
   return <span className={cls}><Clock size={20} /></span>;
 }
 
+export function BuyerOrderTrackingView({ orderId, locale = "en" }: { orderId: string; locale?: "en" | "bn" }) {
+  const copy = getOrderCopy(locale);
+
+  return (
+    <main className={styles.page}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>{copy.notFoundTitle}</h1>
+        <p className={styles.headerMeta}>{copy.notFoundBody}</p>
+        <Link href="/buyer/orders" className={styles.backLink}>{copy.backToOrders}</Link>
+      </div>
+    </main>
+  );
+}
+
 export default function BuyerOrderTrackingPage() {
   const params = useParams<{ orderId: string }>();
   const orderId = params.orderId;
-  const copy = getOrderCopy("en");
   const [tracking, setTracking] = useState<BuyerOrderTrackingResponse | null>(null);
   const [error, setError] = useState("");
+  const [invoiceBusy, setInvoiceBusy] = useState(false);
 
   useEffect(() => {
     apiFetch<BuyerOrderTrackingResponse>(`/api/buyer/orders/${orderId}/tracking`)
@@ -54,11 +69,19 @@ export default function BuyerOrderTrackingPage() {
 
   /* Derive timeline steps */
   const timeline = tracking?.timeline ?? [];
-  const currentStepIdx = timeline.findIndex((s) => s.status === "current");
-
   /* Derive logistics metadata */
   const logistics = tracking?.logistics;
   const snapshot = tracking?.snapshot;
+  const handleInvoice = async () => {
+    setInvoiceBusy(true);
+    try {
+      downloadOrderInvoice(await apiFetch<BuyerOrderDetail>(`/api/buyer/orders/${orderId}`));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invoice could not be downloaded.");
+    } finally {
+      setInvoiceBusy(false);
+    }
+  };
 
   return (
     <main className={styles.page}>
@@ -77,13 +100,13 @@ export default function BuyerOrderTrackingPage() {
           <h1 className={styles.title}>Order Tracking</h1>
           <p className={styles.headerMeta}>
             {tracking
-              ? `Managing bulk shipment from ${logistics?.originHub ?? "Origin Hub"} to ${logistics?.destinationHub ?? "Destination Hub"}`
+              ? `Managing bulk shipment from ${logistics?.originHub ?? "Not assigned"} to ${logistics?.destinationHub ?? "Not assigned"}`
               : `Tracking order #${orderId}`}
           </p>
         </div>
         <div className={styles.headerActions}>
-          <button type="button" className={styles.outlineBtn}>
-            <Download size={16} /> Download Invoice
+          <button type="button" className={styles.outlineBtn} onClick={handleInvoice} disabled={invoiceBusy}>
+            <Download size={16} /> {invoiceBusy ? "Preparing..." : "Download Invoice"}
           </button>
           <button type="button" className={styles.solidBtn}>
             <Share2 size={16} /> Share Status
@@ -203,9 +226,9 @@ export default function BuyerOrderTrackingPage() {
               <ShieldCheck size={18} /> Quality Assurance
             </h3>
             <p className={styles.qaDesc}>
-              Digitally verified 3-stage quality check performed at {logistics?.originHub ?? "the Hub"}.
+              Hub quality records appear here after the warehouse receipt is logged.
             </p>
-            <a href="#" className={styles.qaLink}>View Quality Certificate</a>
+            <span className={styles.qaLink}>No certificate recorded yet</span>
           </div>
         </aside>
       </div>
@@ -215,16 +238,16 @@ export default function BuyerOrderTrackingPage() {
         <section className={styles.logisticsPanel}>
           <div className={styles.logisticsInfo}>
             <h2 className={styles.logisticsTitle}>Logistics Intelligence</h2>
-            <span className={styles.liveBadge}>Live tracking active</span>
+            <span className={styles.liveBadge}>Database status tracking</span>
 
             <div className={styles.logisticsMeta}>
               <div>
                 <span className={styles.logisticsLabel}>TRUCK ID</span>
-                <span className={styles.logisticsValue}>{logistics.truckId ?? "DH-METRO-1234"}</span>
+                <span className={styles.logisticsValue}>{logistics.truckId ?? "Not assigned"}</span>
               </div>
               <div>
                 <span className={styles.logisticsLabel}>FLEET PARTNER</span>
-                <span className={styles.logisticsValue}>{logistics.fleetPartner ?? "FosholLogistics™"}</span>
+                <span className={styles.logisticsValue}>{logistics.fleetPartner ?? "Not assigned"}</span>
               </div>
             </div>
 
@@ -236,7 +259,7 @@ export default function BuyerOrderTrackingPage() {
 
           <div className={styles.mapPlaceholder}>
             <Truck size={32} className={styles.mapIcon} />
-            <span className={styles.mapLabel}>{logistics.lastPing ?? "In Transit"}</span>
+            <span className={styles.mapLabel}>{logistics.lastPing ?? "No live ping"}</span>
           </div>
         </section>
       )}

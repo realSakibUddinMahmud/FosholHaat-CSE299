@@ -2,8 +2,7 @@
   min-height: 100vh;
   color: var(--color-text-primary);
   background:
-    radial-gradient(circle at top left, var(--color-primary-tint), transparent 30%),
-    radial-gradient(circle at top right, var(--color-success-soft), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-success-soft) 34%, transparent) 0%, transparent 260px),
     var(--color-canvas);
 }
 
@@ -48,7 +47,7 @@
   color: var(--brand-primary);
   font-size: 1.1rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .brandSub,
@@ -142,7 +141,7 @@
   margin-top: 0.7rem;
   font-size: clamp(2rem, 2.6vw, 3rem);
   line-height: 1.08;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   font-weight: 900;
   color: var(--color-text-strong);
 }
@@ -209,7 +208,7 @@
   color: var(--color-text-strong);
   font-size: 1.35rem;
   font-weight: 900;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 .contentGrid {
@@ -234,7 +233,7 @@
 .sectionTitle {
   font-size: 1.1rem;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   color: var(--color-text-strong);
 }
 
@@ -304,7 +303,7 @@
 .queueCardId,
 .detailTitle {
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
   color: var(--color-text-strong);
 }
 

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import {
   GroupBuySummary,
   GroupBuyDetail,
@@ -7,48 +7,78 @@ import {
   JoinGroupBuyResponse,
 } from '@fosholhaat/types';
 import { PrismaService } from '../prisma/prisma.service';
+import { resolveCurrentBuyer } from '../auth/current-user';
+
+function unpackPhotoUrls(value: string) {
+  try {
+    const parsed = JSON.parse(value) as { photoUrls?: string[] };
+    return Array.isArray(parsed.photoUrls) ? parsed.photoUrls.slice(0, 3) : [];
+  } catch {
+    return [];
+  }
+}
+
+function apiStatus(status: string) {
+  return status === 'LIVE' ? 'ACTIVE' : status;
+}
 
 @Injectable()
 export class BuyerGroupBuyService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async getBuyer() {
-    const user = await this.prisma.user.findFirst({ where: { role: 'BUYER' } });
-    if (!user) throw new BadRequestException('No buyer found.');
-    return user;
-  }
-
-  async getGroupBuys(): Promise<GroupBuySummary[]> {
+  async getGroupBuys(authorization?: string): Promise<GroupBuySummary[]> {
     const groupBuys = await this.prisma.groupBuy.findMany({
+      where: {
+        status: 'LIVE',
+        supplyLot: {
+          groupBuyEnabled: true,
+        },
+      },
       include: {
         product: true,
-        supplyLot: { include: { seller: true, business: true } },
+        supplyLot: { include: { seller: { include: { business: true } }, business: true } },
         commitments: true,
       },
     });
 
-    return groupBuys.map((gb) => ({
+    return groupBuys.map((gb) => {
+      const sellerName =
+        gb.supplyLot.business?.name ||
+        gb.supplyLot.seller.business?.name ||
+        gb.supplyLot.seller.fullName;
+      return {
       id: gb.code,
-      productId: gb.product.slug,
+      productId: gb.product.category,
       productName: { bn: gb.product.name, en: gb.product.name },
-      productImage: gb.product.imageUrl || '',
+      productImage:
+        unpackPhotoUrls(gb.supplyLot.stockHint)[0] || gb.product.imageUrl || '',
       unitPrice: gb.supplyLot.askingPrice,
       groupPrice: gb.groupPrice,
       targetQuantity: gb.targetQty,
       currentQuantity: gb.committedQty,
       deadline: gb.deadlineAt.toISOString(),
-      status: gb.status as any,
+      status: apiStatus(gb.status) as any,
       participantCount: gb.commitments.length,
       unit: { bn: gb.supplyLot.unit, en: gb.supplyLot.unit },
-    }));
+      sellerName,
+    };
+    });
   }
 
-  async getGroupBuyDetail(id: string): Promise<GroupBuyDetail | undefined> {
-    const gb = await this.prisma.groupBuy.findUnique({
-      where: { code: id },
+  async getGroupBuyDetail(
+    authorization: string | undefined,
+    id: string,
+  ): Promise<GroupBuyDetail | undefined> {
+    const gb = await this.prisma.groupBuy.findFirst({
+      where: {
+        code: id,
+        supplyLot: {
+          groupBuyEnabled: true,
+        },
+      },
       include: {
         product: true,
-        supplyLot: { include: { seller: true, business: true } },
+        supplyLot: { include: { seller: { include: { business: true } }, business: true } },
         commitments: true,
       },
     });
@@ -57,35 +87,51 @@ export class BuyerGroupBuyService {
 
     return {
       id: gb.code,
-      productId: gb.product.slug,
+      productId: gb.product.category,
       productName: { bn: gb.product.name, en: gb.product.name },
-      productImage: gb.product.imageUrl || '',
+      productImage:
+        unpackPhotoUrls(gb.supplyLot.stockHint)[0] || gb.product.imageUrl || '',
       unitPrice: gb.supplyLot.askingPrice,
       groupPrice: gb.groupPrice,
       targetQuantity: gb.targetQty,
       currentQuantity: gb.committedQty,
       deadline: gb.deadlineAt.toISOString(),
-      status: gb.status as any,
+      status: apiStatus(gb.status) as any,
       participantCount: gb.commitments.length,
       description: {
         bn: `Group buy for ${gb.product.name}`,
         en: `Group buy for ${gb.product.name}`,
       },
-      sellerName: gb.supplyLot.business?.name || gb.supplyLot.seller.fullName,
-      minimumJoinQuantity: 1,
+      sellerName:
+        gb.supplyLot.business?.name ||
+        gb.supplyLot.seller.business?.name ||
+        gb.supplyLot.seller.fullName,
+      minimumJoinQuantity: gb.minimumJoinQty,
+      maximumJoinQuantity: gb.maximumJoinQty ?? gb.targetQty,
       unit: { bn: gb.supplyLot.unit, en: gb.supplyLot.unit },
     };
   }
 
   async joinGroupBuy(
+    authorization: string | undefined,
     id: string,
     request: JoinGroupBuyDto,
   ): Promise<JoinGroupBuyResponse> {
-    const gb = await this.prisma.groupBuy.findUnique({ where: { code: id } });
+    const gb = await this.prisma.groupBuy.findUnique({
+      where: { code: id },
+      include: { supplyLot: true },
+    });
     if (!gb) return { success: false, message: 'Group buy not found' };
 
     if (!Number.isFinite(request.quantity) || request.quantity <= 0) {
       return { success: false, message: 'Join quantity must be positive' };
+    }
+    const maxJoin = gb.maximumJoinQty ?? gb.targetQty;
+    if (request.quantity < gb.minimumJoinQty || request.quantity > maxJoin) {
+      return {
+        success: false,
+        message: `Join quantity must be between ${gb.minimumJoinQty} and ${maxJoin}.`,
+      };
     }
 
     if (gb.status !== 'LIVE') {
@@ -95,36 +141,65 @@ export class BuyerGroupBuyService {
       };
     }
 
-    const buyer = await this.getBuyer();
+    const buyer = await resolveCurrentBuyer(this.prisma, authorization);
 
-    const existing = await this.prisma.groupBuyCommitment.findUnique({
-      where: { groupBuyId_buyerId: { groupBuyId: gb.id, buyerId: buyer.id } },
-    });
-
-    if (existing) {
-      await this.prisma.groupBuyCommitment.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + request.quantity },
+    if (
+      !gb.supplyLot.groupBuyEnabled ||
+      gb.committedQty + request.quantity > gb.targetQty
+    ) {
+      return {
+        success: false,
+        message: 'Quantity exceeds the remaining group-buy target',
+      };
+    }
+    await this.prisma.$transaction(async (tx) => {
+      let cart = await tx.cart.findFirst({
+        where: { userId: buyer.id, status: 'ACTIVE' },
       });
-    } else {
-      await this.prisma.groupBuyCommitment.create({
-        data: {
+      if (!cart) {
+        cart = await tx.cart.create({
+          data: {
+            userId: buyer.id,
+            status: 'ACTIVE',
+            locale: buyer.locale as any,
+          },
+        });
+      }
+
+      const line = await tx.cartLine.findFirst({
+        where: {
+          cartId: cart.id,
+          supplyLotId: gb.supplyLotId,
+          mode: 'GROUP',
           groupBuyId: gb.id,
-          buyerId: buyer.id,
-          quantity: request.quantity,
         },
       });
-    }
-
-    await this.prisma.groupBuy.update({
-      where: { id: gb.id },
-      data: { committedQty: gb.committedQty + request.quantity },
+      if (line) {
+        await tx.cartLine.update({
+          where: { id: line.id },
+          data: {
+            quantity: line.quantity + request.quantity,
+            unitPrice: gb.groupPrice,
+          },
+        });
+      } else {
+        await tx.cartLine.create({
+          data: {
+            cartId: cart.id,
+            supplyLotId: gb.supplyLotId,
+            quantity: request.quantity,
+            unitPrice: gb.groupPrice,
+            mode: 'GROUP',
+            groupBuyId: gb.id,
+          },
+        });
+      }
     });
 
     return {
       success: true,
-      orderId: `ord-gb-${Math.random().toString(36).slice(2, 11)}`,
-      message: 'Successfully joined the group buy!',
+      message:
+        'Group-buy quantity added to cart. Checkout now; fulfillment waits until the target is filled.',
     };
   }
 }

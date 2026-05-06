@@ -4,10 +4,50 @@ export const SELLER_ORDER_STATUSES = [
   "incoming",
   "accepted",
   "packed",
+  "handoff_ready",
+  "hub_received",
+  "sorting",
   "ready",
   "rejected",
 ] as const;
 export type SellerOrderStatus = (typeof SELLER_ORDER_STATUSES)[number];
+
+export type SellerOrderNextAction =
+  | "accept"
+  | "print_label"
+  | "ready_for_hub"
+  | "reject"
+  | "none";
+
+export type SellerHandoffStatus =
+  | "CREATED"
+  | "LABEL_PRINTED"
+  | "READY_FOR_HUB"
+  | "RECEIVED"
+  | "DISCREPANCY";
+
+export interface SellerHandoffInfo {
+  handoffCode: string;
+  qrPayload: string;
+  sealCode: string;
+  status: SellerHandoffStatus;
+  hubName: string;
+  hubDistrict: string;
+  labelPrintedAt?: string;
+  sellerReadyAt?: string;
+  hubReceivedAt?: string;
+  discrepancyNotes?: string;
+}
+
+export interface SellerOrderEvent {
+  id: string;
+  eventType: string;
+  label: string;
+  message: string;
+  actorRole: "BUYER" | "SELLER" | "HUB_MANAGER";
+  createdAt: string;
+  status: "done" | "current" | "upcoming";
+}
 
 export interface SellerOrderSummary {
   id: string;
@@ -15,7 +55,13 @@ export interface SellerOrderSummary {
   quantityLabel: string;
   dueLabel: string;
   status: SellerOrderStatus;
-  nextAction: "accept" | "pack" | "ready" | "reject" | "none";
+  nextAction: SellerOrderNextAction;
+  orderType: "SINGLE" | "GROUP";
+  paymentStatus: "PENDING" | "AUTHORIZED" | "PAID" | "FAILED" | "REFUNDED";
+  totalLabel: string;
+  productName?: string;
+  productImageUrl?: string;
+  hubName?: string;
 }
 
 export interface SellerOrderItem {
@@ -28,6 +74,21 @@ export interface SellerOrderDetail extends SellerOrderSummary {
   items: SellerOrderItem[];
   pickupWindow: string;
   notes: string[];
+  unitPriceLabel: string;
+  handoff?: SellerHandoffInfo;
+  trackingEvents: SellerOrderEvent[];
+}
+
+export interface SellerGroupProgress {
+  id: string;
+  supplyLotId: string;
+  title: string;
+  committedQty: number;
+  targetQty: number;
+  percent: number;
+  unit: string;
+  deadlineLabel: string;
+  buyerCount: number;
 }
 
 export interface SellerOrderQueueResponse {
@@ -35,8 +96,10 @@ export interface SellerOrderQueueResponse {
     incoming: number;
     active: number;
     ready: number;
+    groupProgress: number;
   };
   orders: SellerOrderSummary[];
+  groupProgress: SellerGroupProgress[];
 }
 
 export interface SellerOrderDetailResponse {
@@ -108,6 +171,9 @@ export const SELLER_ORDERS_COPY: Record<Locale, SellerOrdersCopy> = {
       incoming: "Incoming",
       accepted: "Accepted",
       packed: "Packed",
+      handoff_ready: "Ready for hub",
+      hub_received: "Hub received",
+      sorting: "Sorting",
       ready: "Ready",
       rejected: "Rejected",
     },
@@ -140,6 +206,9 @@ export const SELLER_ORDERS_COPY: Record<Locale, SellerOrdersCopy> = {
       incoming: "নতুন",
       accepted: "গ্রহণ করা",
       packed: "প্যাক হয়েছে",
+      handoff_ready: "হাবে পাঠানোর জন্য প্রস্তুত",
+      hub_received: "হাব গ্রহণ করেছে",
+      sorting: "সর্টিং চলছে",
       ready: "প্রস্তুত",
       rejected: "বাতিল",
     },

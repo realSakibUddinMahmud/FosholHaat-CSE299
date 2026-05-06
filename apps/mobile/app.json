@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "FosholHaat",
-    "slug": "fosholhaat",
+    "slug": "foshol-haat",
     "version": "1.0.0",
     "scheme": "fosholhaat-mobile",
     "orientation": "portrait",
@@ -27,13 +27,21 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "48957ada-cc2c-4b06-9ac1-1a509d3b5ce6"
+      }
+    },
+    "owner": "realsakibmahmuds-organization"
   }
 }

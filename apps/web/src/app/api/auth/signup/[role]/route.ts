@@ -4,8 +4,7 @@ import {
   SESSION_ROLE_COOKIE,
   SESSION_TOKEN_COOKIE,
 } from '../../../../../lib/session';
-
-const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://fosholhaat-api.vercel.app';
+import { getBackendUrl } from '../../../_backend';
 
 export async function POST(
   request: NextRequest,
@@ -13,7 +12,7 @@ export async function POST(
 ) {
   const { role } = await params;
   const body = await request.json();
-  const backendResponse = await fetch(`${BACKEND_URL}/auth/signup/${role}`, {
+  const backendResponse = await fetch(`${getBackendUrl()}/auth/signup/${role}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...body, role }),

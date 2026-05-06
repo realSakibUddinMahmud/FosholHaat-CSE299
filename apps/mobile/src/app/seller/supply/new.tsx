@@ -1,8 +1,11 @@
 import React, { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { Locale, SellerSupplyCommodity, SellerSupplyUnit } from "@fosholhaat/types";
+import { apiPost } from "../../../lib/api-client";
 import { useStoredLocale } from "../../../lib/locale";
 import { TOKENS } from "../../../styles/tokens";
 import { getMobileSellerCopy } from "./supply-data";
@@ -10,15 +13,17 @@ import { getMobileSellerCopy } from "./supply-data";
 const CATEGORIES: Array<{
   value: SellerSupplyCommodity;
   note: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
 }> = [
-  { value: "potato", note: "Fast-moving lane" },
-  { value: "onion", note: "Core wholesale line" },
-  { value: "vegetables", note: "Fresh daily stock" },
+  { value: "potato", note: "Fast-moving lane", icon: "eco" },
+  { value: "onion", note: "Core wholesale line", icon: "spa" },
+  { value: "vegetables", note: "Fresh daily stock", icon: "local-florist" },
 ];
 
 const GRADES = ["Grade A", "Grade B", "Grade C"] as const;
 
 export function SellerNewSupplyScreen({ locale }: { locale: Locale }) {
+  const router = useRouter();
   const copy = getMobileSellerCopy(locale);
   const [commodity, setCommodity] = useState<SellerSupplyCommodity>("potato");
   const [grade, setGrade] = useState("");
@@ -26,16 +31,87 @@ export function SellerNewSupplyScreen({ locale }: { locale: Locale }) {
   const [unit, setUnit] = useState<SellerSupplyUnit>("bag");
   const [price, setPrice] = useState("");
   const [availableFrom, setAvailableFrom] = useState("");
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [singleBuyEnabled, setSingleBuyEnabled] = useState(true);
+  const [groupBuyEnabled, setGroupBuyEnabled] = useState(false);
+  const [singleMinQty, setSingleMinQty] = useState("1");
+  const [singleMaxQty, setSingleMaxQty] = useState("");
+  const [groupMinQty, setGroupMinQty] = useState("1");
+  const [groupTargetQty, setGroupTargetQty] = useState("");
+  const [groupPrice, setGroupPrice] = useState("");
+  const [groupDeadline, setGroupDeadline] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  function submit() {
+  async function pickPhotos() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      setErrors(["Photo library permission is required."]);
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      base64: true,
+      quality: 0.72,
+      selectionLimit: 3,
+    });
+    if (result.canceled) return;
+    const next = result.assets
+      .map((asset) => asset.base64 ? `data:${asset.mimeType ?? "image/jpeg"};base64,${asset.base64}` : asset.uri)
+      .filter(Boolean)
+      .slice(0, 3);
+    setPhotoUrls((current) => [...current, ...next].slice(0, 3));
+  }
+
+  async function submit() {
     const nextErrors: string[] = [];
+    const qty = Number(quantity);
+    const asking = Number(price);
+    const singleMin = Number(singleMinQty) || 1;
+    const singleMax = Number(singleMaxQty) || qty;
+    const groupMin = Number(groupMinQty) || 1;
+    const groupTarget = Number(groupTargetQty) || qty;
+    const groupDealPrice = Number(groupPrice) || Math.max(1, Math.floor(asking * 0.95));
     if (!grade.trim()) nextErrors.push(copy.errors.grade);
-    if (!quantity || Number(quantity) <= 0) nextErrors.push(copy.errors.quantity);
-    if (!price || Number(price) <= 0) nextErrors.push(copy.errors.price);
+    if (!quantity || qty <= 0) nextErrors.push(copy.errors.quantity);
+    if (!price || asking <= 0) nextErrors.push(copy.errors.price);
+    if (!singleBuyEnabled && !groupBuyEnabled) nextErrors.push("Choose single buy, group buy, or both.");
+    if (singleBuyEnabled && (singleMin > singleMax || singleMax > qty)) nextErrors.push("Single-buy min/max must stay inside stock.");
+    if (groupBuyEnabled && (groupMin > groupTarget || groupTarget > qty)) nextErrors.push("Group-buy min/target must stay inside stock.");
+    if (groupBuyEnabled && groupDealPrice > asking) nextErrors.push("Group price cannot exceed asking price.");
+    const photoBytes = photoUrls.reduce((sum, uri) => sum + uri.length, 0);
+    if (photoBytes > 18_000_000) nextErrors.push("Selected photos are too large. Remove one photo or choose smaller images.");
     setErrors(nextErrors);
-    setSaved(nextErrors.length === 0);
+    if (nextErrors.length) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      await apiPost("/seller/supply", {
+        commodity,
+        quantity: qty,
+        unit,
+        gradeLabel: grade,
+        askingPrice: asking,
+        availableFrom: /^\d{4}-\d{2}-\d{2}/.test(availableFrom) ? availableFrom : undefined,
+        photoUrls,
+        singleBuyEnabled,
+        groupBuyEnabled,
+        singleMinQty: singleBuyEnabled ? singleMin : undefined,
+        singleMaxQty: singleBuyEnabled ? singleMax : undefined,
+        groupMinQty: groupBuyEnabled ? groupMin : undefined,
+        groupTargetQty: groupBuyEnabled ? groupTarget : undefined,
+        groupPrice: groupBuyEnabled ? groupDealPrice : undefined,
+        groupDeadline: /^\d{4}-\d{2}-\d{2}/.test(groupDeadline) ? groupDeadline : undefined,
+      });
+      setSaved(true);
+      router.replace("/seller/supply");
+    } catch (error) {
+      setErrors([error instanceof Error ? error.message : "Supply save failed"]);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -58,7 +134,9 @@ export function SellerNewSupplyScreen({ locale }: { locale: Locale }) {
                   style={[styles.categoryCard, active && styles.categoryCardActive]}
                   onPress={() => setCommodity(item.value)}
                 >
-                  <View style={styles.categoryMedia} />
+                  <View style={styles.categoryMedia}>
+                    <MaterialIcons name={item.icon} size={34} color={TOKENS.brand.primary} />
+                  </View>
                   <Text style={styles.categoryLabel}>{copy.commodities[item.value]}</Text>
                   <Text style={styles.categoryMeta}>{item.note}</Text>
                 </Pressable>
@@ -151,20 +229,47 @@ export function SellerNewSupplyScreen({ locale }: { locale: Locale }) {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Operational settings</Text>
-          <View style={styles.summaryRow}>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryLabel}>{copy.metrics.active}</Text>
-              <Text style={styles.summaryValue}>3</Text>
+          <Text style={styles.sectionTitle}>Supply photo</Text>
+          <Pressable accessibilityRole="button" style={styles.photoPicker} onPress={pickPhotos}>
+            <MaterialIcons name="add-a-photo" size={24} color={TOKENS.brand.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.photoPickerTitle}>Choose supply photos</Text>
+              <Text style={styles.photoPickerBody}>Upload up to 3 real photos from this device.</Text>
             </View>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryLabel}>{copy.metrics.readyToday}</Text>
-              <Text style={styles.summaryValue}>2</Text>
-            </View>
+          </Pressable>
+          <View style={styles.photoGrid}>
+            {photoUrls.map((uri) => (
+              <View key={uri.slice(0, 42)} style={styles.photoThumbWrap}>
+                <Image source={{ uri }} style={styles.photoThumb} />
+                <Pressable style={styles.photoRemove} onPress={() => setPhotoUrls((current) => current.filter((item) => item !== uri))}>
+                  <Text style={styles.photoRemoveText}>Remove</Text>
+                </Pressable>
+              </View>
+            ))}
           </View>
-          <View style={styles.summaryCardSoft}>
-            <MaterialIcons name="local-shipping" size={18} color={TOKENS.brand.primary} />
-            <Text style={styles.summarySoftText}>Daily dispatch: 8:00 PM</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Operational settings</Text>
+          <View style={styles.toggleRow}>
+            <Pressable style={[styles.toggle, singleBuyEnabled && styles.toggleActive]} onPress={() => setSingleBuyEnabled(!singleBuyEnabled)}>
+              <Text style={[styles.toggleText, singleBuyEnabled && styles.toggleTextActive]}>Single buy</Text>
+            </Pressable>
+            <Pressable style={[styles.toggle, groupBuyEnabled && styles.toggleActive]} onPress={() => setGroupBuyEnabled(!groupBuyEnabled)}>
+              <Text style={[styles.toggleText, groupBuyEnabled && styles.toggleTextActive]}>Group buy</Text>
+            </Pressable>
+          </View>
+          <View style={styles.inlineGrid}>
+            <View style={styles.field}><Text style={styles.fieldLabel}>Single min</Text><TextInput style={styles.input} keyboardType="numeric" value={singleMinQty} onChangeText={setSingleMinQty} /></View>
+            <View style={styles.field}><Text style={styles.fieldLabel}>Single max</Text><TextInput style={styles.input} keyboardType="numeric" value={singleMaxQty} onChangeText={setSingleMaxQty} /></View>
+          </View>
+          <View style={styles.inlineGrid}>
+            <View style={styles.field}><Text style={styles.fieldLabel}>Group min</Text><TextInput style={styles.input} keyboardType="numeric" value={groupMinQty} onChangeText={setGroupMinQty} /></View>
+            <View style={styles.field}><Text style={styles.fieldLabel}>Target qty</Text><TextInput style={styles.input} keyboardType="numeric" value={groupTargetQty} onChangeText={setGroupTargetQty} /></View>
+          </View>
+          <View style={styles.inlineGrid}>
+            <View style={styles.field}><Text style={styles.fieldLabel}>Group price</Text><TextInput style={styles.input} keyboardType="numeric" value={groupPrice} onChangeText={setGroupPrice} /></View>
+            <View style={styles.field}><Text style={styles.fieldLabel}>Deadline</Text><TextInput style={styles.input} placeholder="2026-05-12" value={groupDeadline} onChangeText={setGroupDeadline} /></View>
           </View>
         </View>
 
@@ -185,9 +290,9 @@ export function SellerNewSupplyScreen({ locale }: { locale: Locale }) {
       </ScrollView>
 
       <View style={styles.stickyBar}>
-        <Pressable accessibilityRole="button" onPress={submit} style={styles.button}>
+        <Pressable accessibilityRole="button" onPress={submit} style={[styles.button, saving && styles.buttonDisabled]} disabled={saving}>
           <MaterialIcons name="publish" size={20} color={TOKENS.color.surface} />
-          <Text style={styles.buttonText}>{copy.saveSupply}</Text>
+          <Text style={styles.buttonText}>{saving ? "Saving..." : copy.saveSupply}</Text>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -204,7 +309,7 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 112, gap: 14 },
   hero: { gap: 8 },
   kicker: { color: TOKENS.brand.primary, fontSize: 11, fontWeight: "900", letterSpacing: 1.2, textTransform: "uppercase" },
-  title: { color: TOKENS.color.textStrong, fontSize: 28, lineHeight: 32, fontWeight: "900", letterSpacing: -1 },
+  title: { color: TOKENS.color.textStrong, fontSize: 28, lineHeight: 32, fontWeight: "900", letterSpacing: 0 },
   subtitle: { color: TOKENS.color.textSecondary, fontSize: 14, lineHeight: 20 },
   card: {
     borderWidth: 1,
@@ -214,7 +319,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 12,
   },
-  sectionTitle: { color: TOKENS.color.textStrong, fontSize: 18, fontWeight: "900", letterSpacing: -0.4 },
+  sectionTitle: { color: TOKENS.color.textStrong, fontSize: 18, fontWeight: "900", letterSpacing: 0 },
   categoryGrid: { flexDirection: "row", gap: 10 },
   categoryCard: {
     flex: 1,
@@ -238,6 +343,8 @@ const styles = StyleSheet.create({
     backgroundColor: TOKENS.color.soft,
     borderWidth: 1,
     borderColor: TOKENS.color.borderNeutral,
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryLabel: { color: TOKENS.color.textStrong, fontSize: 14, fontWeight: "900" },
   categoryMeta: { color: TOKENS.color.textSecondary, fontSize: 12, lineHeight: 16 },
@@ -273,7 +380,31 @@ const styles = StyleSheet.create({
   },
   gradeChipText: { color: TOKENS.color.textSecondary, fontSize: 15, fontWeight: "800" },
   gradeChipTextActive: { color: TOKENS.brand.primary },
+  toggleRow: { flexDirection: "row", gap: 10 },
+  toggle: { flex: 1, minHeight: 44, borderRadius: 22, backgroundColor: TOKENS.color.soft, alignItems: "center", justifyContent: "center" },
+  toggleActive: { backgroundColor: TOKENS.brand.primary },
+  toggleText: { color: TOKENS.color.textSecondary, fontSize: 13, fontWeight: "900" },
+  toggleTextActive: { color: TOKENS.color.surface },
   helperText: { color: TOKENS.color.textSecondary, fontSize: 13, lineHeight: 19 },
+  photoPicker: {
+    minHeight: 88,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: TOKENS.brand.primary,
+    backgroundColor: TOKENS.color.soft,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  photoPickerTitle: { color: TOKENS.brand.primary, fontSize: 15, fontWeight: "900" },
+  photoPickerBody: { color: TOKENS.color.textSecondary, fontSize: 12, fontWeight: "700", lineHeight: 17 },
+  photoGrid: { flexDirection: "row", gap: 10, flexWrap: "wrap" },
+  photoThumbWrap: { width: 96, height: 96, borderRadius: 14, overflow: "hidden", backgroundColor: TOKENS.color.canvas },
+  photoThumb: { width: "100%", height: "100%" },
+  photoRemove: { position: "absolute", right: 6, bottom: 6, borderRadius: 999, backgroundColor: TOKENS.color.surface, paddingHorizontal: 8, paddingVertical: 5 },
+  photoRemoveText: { color: TOKENS.color.textStrong, fontSize: 11, fontWeight: "900" },
   summaryRow: { flexDirection: "row", gap: 10 },
   summaryCard: {
     flex: 1,
@@ -318,5 +449,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
   },
+  buttonDisabled: { opacity: 0.65 },
   buttonText: { color: TOKENS.color.surface, fontSize: 16, fontWeight: "900" },
 });

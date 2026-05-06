@@ -39,6 +39,6 @@ describe("buyer cart and checkout web lane", () => {
     expect(screen.getByRole("heading", { name: "Payment details" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Confirm order" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Order placed" })).toBeInTheDocument();
-    expect(screen.getByText("FH-8492")).toBeInTheDocument();
+    expect(screen.getByText("Order pending")).toBeInTheDocument();
   });
 });

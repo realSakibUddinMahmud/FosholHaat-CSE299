@@ -1,19 +1,9 @@
 .page {
   min-height: 100vh;
-  position: relative;
   background:
-    radial-gradient(circle at top left, var(--color-success-soft), transparent 32%),
-    radial-gradient(circle at top right, var(--color-primary-tint), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-success-soft) 34%, transparent) 0%, transparent 260px),
     var(--color-canvas);
   color: var(--color-text-primary);
-}
-
-.page::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 0%, var(--color-surface-overlay-strong) 100%);
-  pointer-events: none;
 }
 
 .header {
@@ -59,7 +49,7 @@
   color: var(--brand-primary);
   font-size: 1.1rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .brandSub {
@@ -141,7 +131,7 @@
   margin-top: 0.7rem;
   font-size: clamp(2rem, 2.6vw, 3rem);
   line-height: 1.08;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   font-weight: 900;
   color: var(--color-text-strong);
 }
@@ -225,7 +215,7 @@
   font-size: clamp(2.25rem, 4vw, 3rem);
   line-height: 1;
   font-weight: 900;
-  letter-spacing: -0.06em;
+  letter-spacing: 0;
 }
 
 .breakdownButton,
@@ -284,7 +274,7 @@
   color: var(--color-text-strong);
   font-size: 1.05rem;
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .summaryStatHint {
@@ -320,7 +310,7 @@
 .detailTitle {
   color: var(--color-text-strong);
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .sectionTitle {
@@ -399,7 +389,7 @@
 .queueCardId,
 .queueCardTitle,
 .detailTitle {
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .queueCardId {

@@ -1,0 +1,46 @@
+DO $$ BEGIN
+  CREATE TYPE "PurchaseMode" AS ENUM ('SINGLE', 'GROUP');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+ALTER TYPE "OrderStatus" ADD VALUE IF NOT EXISTS 'PENDING_GROUP_LOCK';
+
+ALTER TABLE "SupplyLot"
+  ADD COLUMN IF NOT EXISTS "singleBuyEnabled" BOOLEAN NOT NULL DEFAULT true,
+  ADD COLUMN IF NOT EXISTS "groupBuyEnabled" BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS "singleMinQty" INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS "singleMaxQty" INTEGER;
+
+ALTER TABLE "CartLine"
+  ADD COLUMN IF NOT EXISTS "mode" "PurchaseMode" NOT NULL DEFAULT 'SINGLE',
+  ADD COLUMN IF NOT EXISTS "groupBuyId" TEXT;
+
+ALTER TABLE "Order"
+  ADD COLUMN IF NOT EXISTS "orderType" "PurchaseMode" NOT NULL DEFAULT 'SINGLE';
+
+ALTER TABLE "OrderLine"
+  ADD COLUMN IF NOT EXISTS "mode" "PurchaseMode" NOT NULL DEFAULT 'SINGLE',
+  ADD COLUMN IF NOT EXISTS "groupBuyId" TEXT;
+
+ALTER TABLE "GroupBuy"
+  ADD COLUMN IF NOT EXISTS "minimumJoinQty" INTEGER NOT NULL DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS "maximumJoinQty" INTEGER;
+
+DROP INDEX IF EXISTS "CartLine_cartId_supplyLotId_key";
+CREATE UNIQUE INDEX IF NOT EXISTS "CartLine_cartId_supplyLotId_mode_groupBuyId_key"
+  ON "CartLine"("cartId", "supplyLotId", "mode", "groupBuyId");
+
+DO $$ BEGIN
+  ALTER TABLE "CartLine" ADD CONSTRAINT "CartLine_groupBuyId_fkey"
+    FOREIGN KEY ("groupBuyId") REFERENCES "GroupBuy"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE "OrderLine" ADD CONSTRAINT "OrderLine_groupBuyId_fkey"
+    FOREIGN KEY ("groupBuyId") REFERENCES "GroupBuy"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;

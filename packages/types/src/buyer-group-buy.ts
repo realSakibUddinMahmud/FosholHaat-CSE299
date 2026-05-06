@@ -15,6 +15,7 @@ export interface GroupBuySummary {
   status: GroupBuyStatus;
   participantCount: number;
   unit: { [key in Locale]: string };
+  sellerName?: string;
 }
 
 export interface GroupBuyDetail extends GroupBuySummary {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import type {
   SortingBatchDetailResponse,
   SortingBatchHoldPayload,
@@ -15,38 +15,59 @@ export class HubSortingOperationsController {
   ) {}
 
   @Get()
-  async getSortingQueue(): Promise<SortingQueueResponse> {
-    return this.hubSortingOperationsService.getSortingQueue();
+  async getSortingQueue(
+    @Headers('authorization') authorization?: string,
+  ): Promise<SortingQueueResponse> {
+    return this.hubSortingOperationsService.getSortingQueue(authorization);
   }
 
   @Get(':batchId')
   async getSortingBatch(
+    @Headers('authorization') authorization: string | undefined,
     @Param('batchId') batchId: string,
   ): Promise<SortingBatchDetailResponse> {
-    return this.hubSortingOperationsService.getSortingBatch(batchId);
+    return this.hubSortingOperationsService.getSortingBatch(
+      authorization,
+      batchId,
+    );
   }
 
   @Post(':batchId/start')
   async startSortingBatch(
+    @Headers('authorization') authorization: string | undefined,
     @Param('batchId') batchId: string,
     @Body() body: SortingBatchTransitionPayload = {},
   ): Promise<SortingBatchMutationResponse> {
-    return this.hubSortingOperationsService.startSortingBatch(batchId, body);
+    return this.hubSortingOperationsService.startSortingBatch(
+      authorization,
+      batchId,
+      body,
+    );
   }
 
   @Post(':batchId/hold')
   async holdSortingBatch(
+    @Headers('authorization') authorization: string | undefined,
     @Param('batchId') batchId: string,
     @Body() body: SortingBatchHoldPayload,
   ): Promise<SortingBatchMutationResponse> {
-    return this.hubSortingOperationsService.holdSortingBatch(batchId, body);
+    return this.hubSortingOperationsService.holdSortingBatch(
+      authorization,
+      batchId,
+      body,
+    );
   }
 
   @Post(':batchId/complete')
   async completeSortingBatch(
+    @Headers('authorization') authorization: string | undefined,
     @Param('batchId') batchId: string,
     @Body() body: SortingBatchTransitionPayload = {},
   ): Promise<SortingBatchMutationResponse> {
-    return this.hubSortingOperationsService.completeSortingBatch(batchId, body);
+    return this.hubSortingOperationsService.completeSortingBatch(
+      authorization,
+      batchId,
+      body,
+    );
   }
 }

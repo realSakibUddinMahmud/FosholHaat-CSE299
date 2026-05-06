@@ -4,9 +4,9 @@ import { SellerWorkspaceScreen } from "../src/app/seller/index";
 
 describe("seller supply mobile lane", () => {
   it("renders the supply queue", () => {
-    render(<SellerWorkspaceScreen locale="en" />);
+    render(<SellerWorkspaceScreen locale="en" mode="supply" />);
 
-    expect(screen.getByText("Supply workspace")).toBeTruthy();
+    expect(screen.getByText("Supply list")).toBeTruthy();
     expect(screen.getByText("Potato")).toBeTruthy();
   });
 });

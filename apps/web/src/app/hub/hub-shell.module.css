@@ -190,6 +190,7 @@
 }
 
 .iconBtn {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -207,15 +208,20 @@
   background: var(--color-primary-tint-soft, #f0f7f4);
 }
 
-.notifDot {
+.notifBadge {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-alert-live, #dc2626);
-  border: 2px solid var(--color-surface);
+  top: -3px;
+  right: -3px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--color-primary, #00543a);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 17px;
+  text-align: center;
 }
 
 .hubUser {
@@ -223,7 +229,13 @@
   align-items: center;
   gap: 10px;
   margin-left: 8px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
 }
+.hubUser::-webkit-details-marker { display: none; }
+.hubUser:hover { background: var(--color-primary-tint-soft, #f0f7f4); }
 .hubUserInfo {
   text-align: right;
 }
@@ -249,6 +261,51 @@
   align-items: center;
   justify-content: center;
   color: var(--color-text-secondary);
+}
+
+.profileMenu {
+  position: relative;
+}
+
+.profilePanel {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 90;
+  width: 260px;
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--color-border-soft);
+  border-radius: 16px;
+  background: var(--color-surface);
+  box-shadow: 0 18px 46px color-mix(in srgb, var(--brand-primary) 14%, transparent);
+}
+
+.profilePanel strong {
+  color: var(--color-text-strong);
+  font-size: 14px;
+}
+
+.profilePanel span,
+.profilePanel a {
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.profilePanel button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: var(--brand-strong);
+  color: var(--color-surface);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 /* ─── Content ─── */

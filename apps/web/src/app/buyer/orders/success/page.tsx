@@ -1,12 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useBrowserLocale } from "../../../../lib/locale";
-import { BUYER_WEB_SUCCESS, getBuyerWebCheckoutCopy } from "../../_data";
+import { getBuyerWebCheckoutCopy } from "../../_data";
 import { BuyerLinkRow, BuyerOrderSummary, BuyerPageShell } from "../../_shared";
 import styles from "../../buyer-checkout.module.css";
 
 export default function BuyerOrderSuccessPage() {
   const { locale } = useBrowserLocale();
+  const [orderId] = useState(() =>
+    typeof window === "undefined"
+      ? "Order pending"
+      : (new URLSearchParams(window.location.search).get("orderId") ?? "Order pending"),
+  );
   const laneCopy = getBuyerWebCheckoutCopy(locale);
 
   return (
@@ -19,11 +25,10 @@ export default function BuyerOrderSuccessPage() {
     >
       <div className={styles.card}>
         <div className={styles.row}>
-          <strong>{BUYER_WEB_SUCCESS.orderId}</strong>
-          <span>{BUYER_WEB_SUCCESS.placedAt}</span>
+          <strong>{orderId}</strong>
+          <span>Submitted</span>
         </div>
-        <p className={styles.hint}>{BUYER_WEB_SUCCESS.receiptNote}</p>
-        <p className={styles.hint}>{BUYER_WEB_SUCCESS.handoffNote}</p>
+        <p className={styles.hint}>Order confirmation is loaded from the database-backed checkout response.</p>
       </div>
       <ul className={styles.list}>
         {laneCopy.receiptHints.map((item) => (

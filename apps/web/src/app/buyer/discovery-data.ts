@@ -21,12 +21,37 @@ export type BuyerDiscoveryProduct = {
   minOrder: Record<Locale, string>;
   trustTags: Record<Locale, string[]>;
   summary: Record<Locale, string>;
+  imageUrl?: string;
+  groupBuyId?: string;
+  singleMinQty?: number;
+  singleMaxQty?: number;
 };
 
 export const BUYER_DISCOVERY_CATEGORIES: BuyerDiscoveryCategory[] = [
-  { slug: "potato", label: { en: "Potato", bn: "আলু" }, blurb: { en: "Fresh lots with clear pack sizes.", bn: "পরিষ্কার প্যাক সাইজসহ তাজা লট।" } },
-  { slug: "onion", label: { en: "Onion", bn: "পেঁয়াজ" }, blurb: { en: "Grade-focused onion offers.", bn: "গ্রেডভিত্তিক পেঁয়াজের অফার।" } },
-  { slug: "vegetables", label: { en: "Vegetables", bn: "সবজি" }, blurb: { en: "Mixed veg stock for fast buying.", bn: "দ্রুত কেনার জন্য মিশ্র সবজির স্টক।" } },
+  {
+    slug: "potato",
+    label: { en: "Potato", bn: "আলু" },
+    blurb: {
+      en: "Fresh lots with clear pack sizes.",
+      bn: "পরিষ্কার প্যাক সাইজসহ তাজা লট।",
+    },
+  },
+  {
+    slug: "onion",
+    label: { en: "Onion", bn: "পেঁয়াজ" },
+    blurb: {
+      en: "Grade-focused onion offers.",
+      bn: "গ্রেডভিত্তিক পেঁয়াজের অফার।",
+    },
+  },
+  {
+    slug: "vegetables",
+    label: { en: "Vegetables", bn: "সবজি" },
+    blurb: {
+      en: "Mixed veg stock for fast buying.",
+      bn: "দ্রুত কেনার জন্য মিশ্র সবজির স্টক।",
+    },
+  },
 ];
 
 export const BUYER_DISCOVERY_PRODUCTS: BuyerDiscoveryProduct[] = [
@@ -41,8 +66,14 @@ export const BUYER_DISCOVERY_PRODUCTS: BuyerDiscoveryProduct[] = [
     pricePerPack: 820,
     availablePacks: 120,
     minOrder: { en: "Min 10 sacks", bn: "সর্বনিম্ন ১০ বস্তা" },
-    trustTags: { en: ["Hub checked", "Group-buy ready", "Same-day pickup"], bn: ["হাবে যাচাই", "গ্রুপ কেনা যাবে", "আজই তোলা যাবে"] },
-    summary: { en: "Strong wash quality with steady load availability for trade buyers.", bn: "বাণিজ্যিক ক্রেতাদের জন্য স্থির লোডসহ ভালো ধোয়ার মান।" },
+    trustTags: {
+      en: ["Hub checked", "Group-buy ready", "Same-day pickup"],
+      bn: ["হাবে যাচাই", "গ্রুপ কেনা যাবে", "আজই তোলা যাবে"],
+    },
+    summary: {
+      en: "Strong wash quality with steady load availability for trade buyers.",
+      bn: "বাণিজ্যিক ক্রেতাদের জন্য স্থির লোডসহ ভালো ধোয়ার মান।",
+    },
   },
   {
     productId: "onion-rahman-002",
@@ -55,13 +86,22 @@ export const BUYER_DISCOVERY_PRODUCTS: BuyerDiscoveryProduct[] = [
     pricePerPack: 1450,
     availablePacks: 82,
     minOrder: { en: "Min 8 bags", bn: "সর্বনিম্ন ৮ বস্তা" },
-    trustTags: { en: ["Grade A", "Price locked", "Easy resupply"], bn: ["গ্রেড এ", "দাম লক", "সহজ রিসাপ্লাই"] },
-    summary: { en: "Locked pricing and a clean grade split for repeat buyers.", bn: "বারবার কেনা ক্রেতাদের জন্য লক করা দাম ও পরিষ্কার গ্রেড বিভাজন।" },
+    trustTags: {
+      en: ["Grade A", "Price locked", "Easy resupply"],
+      bn: ["গ্রেড এ", "দাম লক", "সহজ রিসাপ্লাই"],
+    },
+    summary: {
+      en: "Locked pricing and a clean grade split for repeat buyers.",
+      bn: "বারবার কেনা ক্রেতাদের জন্য লক করা দাম ও পরিষ্কার গ্রেড বিভাজন।",
+    },
   },
   {
     productId: "veg-apon-003",
     categorySlug: "vegetables",
-    name: { en: "Vegetable mix, market crate", bn: "সবজি মিক্স, মার্কেট ক্রেট" },
+    name: {
+      en: "Vegetable mix, market crate",
+      bn: "সবজি মিক্স, মার্কেট ক্রেট",
+    },
     sellerName: "Apon Market Link",
     corridor: "Bogura -> Dhaka",
     location: "Nandigram yard",
@@ -69,8 +109,14 @@ export const BUYER_DISCOVERY_PRODUCTS: BuyerDiscoveryProduct[] = [
     pricePerPack: 860,
     availablePacks: 96,
     minOrder: { en: "Min 12 crates", bn: "সর্বনিম্ন ১২ ক্রেট" },
-    trustTags: { en: ["Pre-sorted", "Dispatch ready", "Group buying"], bn: ["আগেই বাছাই", "ডিসপ্যাচ প্রস্তুত", "গ্রুপ কেনা"] },
-    summary: { en: "Fast-moving mixed vegetables for small wholesale orders.", bn: "ছোট পাইকারি অর্ডারের জন্য দ্রুত চলা মিশ্র সবজি।" },
+    trustTags: {
+      en: ["Pre-sorted", "Dispatch ready", "Group buying"],
+      bn: ["আগেই বাছাই", "ডিসপ্যাচ প্রস্তুত", "গ্রুপ কেনা"],
+    },
+    summary: {
+      en: "Fast-moving mixed vegetables for small wholesale orders.",
+      bn: "ছোট পাইকারি অর্ডারের জন্য দ্রুত চলা মিশ্র সবজি।",
+    },
   },
   {
     productId: "potato-farid-004",
@@ -83,8 +129,14 @@ export const BUYER_DISCOVERY_PRODUCTS: BuyerDiscoveryProduct[] = [
     pricePerPack: 860,
     availablePacks: 54,
     minOrder: { en: "Min 6 sacks", bn: "সর্বনিম্ন ৬ বস্তা" },
-    trustTags: { en: ["Hub verified", "Night load", "Stable stock"], bn: ["হাব যাচাই", "রাতের লোড", "স্থির স্টক"] },
-    summary: { en: "Large packs suited to buyers who want fewer touches per order.", bn: "কম হাতবদল চাওয়া ক্রেতাদের জন্য বড় প্যাক।" },
+    trustTags: {
+      en: ["Hub verified", "Night load", "Stable stock"],
+      bn: ["হাব যাচাই", "রাতের লোড", "স্থির স্টক"],
+    },
+    summary: {
+      en: "Large packs suited to buyers who want fewer touches per order.",
+      bn: "কম হাতবদল চাওয়া ক্রেতাদের জন্য বড় প্যাক।",
+    },
   },
 ];
 
@@ -124,7 +176,8 @@ export const BUYER_DISCOVERY_COPY: Record<
     resultsLabel: "Live offers",
     corridorLabel: "Corridor",
     trustTitle: "Why this view is safe",
-    trustBody: "Only browse-ready listings are shown here. No cart mutation or checkout flow lives in this slice.",
+    trustBody:
+      "Only browse-ready listings are shown here. No cart mutation or checkout flow lives in this slice.",
     detailBadge: "Product detail",
     detailActionLabel: "View details",
     relatedTitle: "More stock like this",
@@ -147,7 +200,8 @@ export const BUYER_DISCOVERY_COPY: Record<
     resultsLabel: "লাইভ অফার",
     corridorLabel: "করিডর",
     trustTitle: "এই ভিউ কেন নিরাপদ",
-    trustBody: "এখানে শুধু ব্রাউজ-রেডি লিস্টিং দেখানো হয়। এই স্লাইসে কার্ট মিউটেশন বা চেকআউট ফ্লো নেই।",
+    trustBody:
+      "এখানে শুধু ব্রাউজ-রেডি লিস্টিং দেখানো হয়। এই স্লাইসে কার্ট মিউটেশন বা চেকআউট ফ্লো নেই।",
     detailBadge: "পণ্যের বিস্তারিত",
     detailActionLabel: "বিস্তারিত দেখুন",
     relatedTitle: "এই ধরনের আরও স্টক",
@@ -167,5 +221,7 @@ export function getBuyerDiscoveryCopy(locale: Locale) {
 }
 
 export function getBuyerDiscoveryProduct(productId: string) {
-  return BUYER_DISCOVERY_PRODUCTS.find((product) => product.productId === productId);
+  return BUYER_DISCOVERY_PRODUCTS.find(
+    (product) => product.productId === productId,
+  );
 }

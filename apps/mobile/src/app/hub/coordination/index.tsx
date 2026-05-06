@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     borderBottomColor: TOKENS.color.borderSoft,
     backgroundColor: TOKENS.color.surface,
   },
-  brandTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "800", letterSpacing: -0.4 },
+  brandTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "800", letterSpacing: 0 },
   brandSubtitle: {
     color: TOKENS.color.textSecondary,
     fontSize: 11,
@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1.2,
     opacity: 0.78,
   },
-  heroTitle: { color: TOKENS.color.surface, fontSize: 28, fontWeight: "900", letterSpacing: -0.8, lineHeight: 32 },
+  heroTitle: { color: TOKENS.color.surface, fontSize: 28, fontWeight: "900", letterSpacing: 0, lineHeight: 32 },
   heroSubtitle: { color: TOKENS.color.surface, fontSize: 14, lineHeight: 20, opacity: 0.9 },
   heroMetrics: { flexDirection: "row", gap: 10 },
   statCard: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   feedHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  feedTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 },
+  feedTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "900", letterSpacing: 0 },
   viewAll: { color: TOKENS.brand.primary, fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.8 },
   alertList: { gap: 10 },
   alertItem: {
@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   urgentText: { color: TOKENS.color.alertLive, fontSize: 10, fontWeight: "900", textTransform: "uppercase" },
-  taskTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "900", lineHeight: 24, letterSpacing: -0.4 },
+  taskTitle: { color: TOKENS.color.textPrimary, fontSize: 18, fontWeight: "900", lineHeight: 24, letterSpacing: 0 },
   progressRow: { flexDirection: "row", gap: 8 },
   progressColumn: { flex: 1, gap: 6 },
   progressTrack: {

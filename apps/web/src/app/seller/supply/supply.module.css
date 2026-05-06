@@ -47,7 +47,7 @@
   color: var(--brand-primary);
   font-size: 1.15rem;
   font-weight: 800;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .brandSub {
@@ -179,7 +179,7 @@
   color: var(--color-text-strong);
   font-size: clamp(2rem, 2.4vw, 3rem);
   line-height: 1.1;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   font-weight: 900;
 }
 
@@ -200,6 +200,7 @@
 .primaryAction,
 .secondaryAction,
 .tertiaryAction,
+.tertiaryButton,
 .actionTile {
   min-height: 2.75rem;
   border-radius: 999px;
@@ -222,10 +223,28 @@
 }
 
 .secondaryAction,
-.tertiaryAction {
+.tertiaryAction,
+.tertiaryButton {
   border: 1px solid var(--color-border-soft);
   background: var(--color-surface);
   color: var(--color-text-primary);
+}
+
+.tertiaryButton {
+  cursor: pointer;
+}
+
+.disabledAction {
+  min-height: 2.75rem;
+  border-radius: 999px;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  font-size: 0.88rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
 }
 
 .summaryCard,
@@ -307,7 +326,7 @@
   color: var(--color-text-strong);
   font-size: 1.6rem;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .summaryStatHint {
@@ -343,7 +362,7 @@
   color: var(--color-text-strong);
   font-size: 1.2rem;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .sectionSubtitle {
@@ -381,6 +400,28 @@
   justify-content: center;
   font-size: 1.35rem;
   font-weight: 900;
+}
+
+.supplyPhoto {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: 1rem;
+  object-fit: cover;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-soft);
+}
+
+.supplyProductIcon {
+  width: 3.8rem;
+  height: 3.8rem;
+  filter: drop-shadow(0 0.25rem 0.35rem rgb(15 65 38 / 0.16));
+}
+
+.photoMissing {
+  margin: 0;
+  color: var(--color-alert-live);
+  font-size: 0.76rem;
+  font-weight: 800;
 }
 
 .supplyBody {
@@ -437,13 +478,26 @@
   color: var(--brand-primary);
   font-size: 1.2rem;
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .cardLinkRow {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+}
+
+.updatePanel {
+  border-top: 1px solid var(--color-border-soft);
+  padding-top: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.updatePanel .photoPreviewGrid,
+.updatePanel .formActionRow {
+  grid-column: 1 / -1;
 }
 
 .supportCard {
@@ -528,7 +582,16 @@
 .categoryMedia {
   height: 7rem;
   border-radius: 0.85rem;
-  background: linear-gradient(180deg, var(--color-success-soft), var(--color-surface-muted));
+  background: linear-gradient(180deg, #edf8ef, #f7fbf6);
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--color-border-soft);
+}
+
+.productIcon {
+  width: min(8rem, 70%);
+  height: 5rem;
+  filter: drop-shadow(0 0.35rem 0.45rem rgb(15 65 38 / 0.14));
 }
 
 .categoryLabel {
@@ -607,7 +670,7 @@
   color: var(--color-text-strong);
   font-size: 1.35rem;
   font-weight: 900;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .recordKicker {
@@ -686,7 +749,7 @@
   color: var(--color-text-strong);
   font-size: 1rem;
   font-weight: 900;
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
 }
 
 .railList {
@@ -809,6 +872,74 @@
   padding: 0 1rem;
   font-weight: 800;
   box-shadow: var(--shadow-cta);
+}
+
+.button:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.photoDrop {
+  border: 1px dashed var(--brand-primary);
+  border-radius: 1rem;
+  background: var(--color-primary-tint);
+  min-height: 7rem;
+  padding: 1rem;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  cursor: pointer;
+}
+
+.photoInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.photoDropTitle {
+  color: var(--brand-primary);
+  font-weight: 900;
+}
+
+.photoPreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.photoPreview {
+  position: relative;
+  min-height: 9rem;
+  border-radius: 1rem;
+  overflow: hidden;
+  border: 1px solid var(--color-border-soft);
+  background: var(--color-surface-muted);
+}
+
+.photoPreview img {
+  width: 100%;
+  height: 100%;
+  min-height: 9rem;
+  object-fit: cover;
+  display: block;
+}
+
+.photoRemove {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0.5rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-strong);
+  min-height: 2rem;
+  padding: 0 0.75rem;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
 .errorList {

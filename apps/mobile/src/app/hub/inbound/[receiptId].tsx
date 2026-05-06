@@ -1,12 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getHubInboundCopy } from "@fosholhaat/types";
+import { getHubInboundCopy, type InboundReceiptDetail } from "@fosholhaat/types";
 import { useStoredLocale } from "../../../lib/locale";
 import { MOBILE_TOKENS, TOKENS } from "../../../styles/tokens";
-import { HUB_INBOUND_QUEUE, getHubInboundDetail } from "./_data";
+import { apiFetch, apiPost } from "../../../lib/api-client";
 
 function dash(value: string | null | undefined) {
   return value ?? "-";
@@ -30,14 +30,29 @@ export default function HubInboundDetailScreen() {
   const params = useLocalSearchParams<{ receiptId?: string }>();
   const { locale } = useStoredLocale();
   const copy = getHubInboundCopy(locale);
-  const receipt = getHubInboundDetail(params.receiptId ?? HUB_INBOUND_QUEUE.featuredReceiptId);
+  const receiptId = Array.isArray(params.receiptId) ? params.receiptId[0] : params.receiptId;
+  const [receipt, setReceipt] = useState<InboundReceiptDetail | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    if (!receiptId) return;
+    apiFetch<{ receipt: InboundReceiptDetail }>(`/hub/inbound/${receiptId}`).then((data) => setReceipt(data.receipt)).catch((err: Error) => setError(err.message));
+  }, [receiptId]);
+  async function receive() {
+    if (!receiptId) return;
+    try {
+      const data = await apiPost<{ receipt: InboundReceiptDetail }>(`/hub/inbound/${receiptId}/receive`, { receiverName: "Hub manager" });
+      setReceipt(data.receipt);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not receive handoff");
+    }
+  }
 
   if (!receipt) {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={[styles.shell, styles.notFoundShell]}>
           <Text style={styles.notFoundTitle}>{copy.detailNotFoundTitle}</Text>
-          <Text style={styles.notFoundBody}>{copy.detailNotFoundBody}</Text>
+          <Text style={styles.notFoundBody}>{error || copy.detailNotFoundBody}</Text>
           <Pressable style={styles.secondaryButton} onPress={() => router.replace("/hub/inbound")}>
             <Text style={styles.secondaryButtonText}>{copy.backToQueue}</Text>
           </Pressable>
@@ -168,7 +183,7 @@ export default function HubInboundDetailScreen() {
           </View>
 
           <View style={styles.actionDock}>
-            <Pressable style={styles.primaryButton}>
+            <Pressable style={styles.primaryButton} onPress={receive}>
               <Text style={styles.primaryButtonText}>{copy.actions.receive}</Text>
             </Pressable>
             <Pressable style={styles.secondaryButton}>
@@ -223,7 +238,7 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
     marginTop: 6,
   },
-  heroTitle: { color: TOKENS.color.textStrong, fontSize: 26, fontWeight: "900", letterSpacing: -0.8 },
+  heroTitle: { color: TOKENS.color.textStrong, fontSize: 26, fontWeight: "900", letterSpacing: 0 },
   heroSubtitle: { color: TOKENS.color.textSecondary, fontSize: 15, fontWeight: "700" },
   heroMeta: { color: TOKENS.color.textSecondary, fontSize: 13, fontWeight: "700" },
   snapshotCard: {
