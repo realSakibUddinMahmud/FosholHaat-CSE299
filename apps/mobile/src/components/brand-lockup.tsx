@@ -17,7 +17,7 @@ export function BrandLockup({
         <Image
           source={require("../../assets/logo.png")}
           style={styles.logo}
-          resizeMode="contain"
+          resizeMode="cover"
         />
       </View>
       <View style={styles.copy}>
@@ -29,11 +29,9 @@ export function BrandLockup({
 }
 
 const styles = StyleSheet.create({
-  root: { flexDirection: "row", alignItems: "center", gap: 12 },
+  root: { flexDirection: "row", alignItems: "center", gap: 10, minWidth: 0 },
   logoWrap: {
     backgroundColor: TOKENS.color.surface,
-    borderWidth: 1,
-    borderColor: TOKENS.color.borderSoft,
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
@@ -43,11 +41,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 2,
     overflow: "hidden",
+    flexShrink: 0,
   },
   logoWrapCompact: { width: 44, height: 44 },
   logoWrapLarge: { width: 52, height: 52 },
   logo: { width: "100%", height: "100%" },
-  copy: { gap: 1 },
+  copy: { gap: 1, minWidth: 0, flexShrink: 1 },
   title: {
     color: TOKENS.brand.primary,
     fontSize: MOBILE_TOKENS.font.sectionTitle.size,
